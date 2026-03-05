@@ -434,23 +434,26 @@ const handleMouseDownIcon = async (e) => {
 
                 const initialMouseX = x;
                 const initialMouseY = y;
-                const dragThreshold = 5;
+
+                // Threshold in screen pixels converted to SVG units, so zoom doesn't affect sensitivity
+                const svgEl = getSVGElement();
+                const svgRect2 = svgEl ? svgEl.getBoundingClientRect() : { width: 1536 };
+                const svgViewW = svgEl ? svgEl.viewBox.baseVal.width : 1536;
+                const dragThreshold = 12 * (svgViewW / svgRect2.width); // ~12 screen pixels
 
                 function checkDragStartWithThreshold(moveEvent) {
                     const { x: currentX, y: currentY } = getSVGCoordsFromMouse(moveEvent);
                     const deltaX = Math.abs(currentX - initialMouseX);
                     const deltaY = Math.abs(currentY - initialMouseY);
-                    
+
                     if (deltaX > dragThreshold || deltaY > dragThreshold) {
                         document.removeEventListener('mousemove', checkDragStartWithThreshold);
                         document.removeEventListener('mouseup', cancelDragPrep);
                         window.removeEventListener('mouseup', cancelDragPrep);
-                        
+
                         const svg = getSVGElement();
-                        if (svg) {
-                            svg.removeEventListener('mouseup', cancelDragPrep);
-                        }
-                        
+                        if (svg) svg.removeEventListener('mouseup', cancelDragPrep);
+
                         startDrag(moveEvent);
                     }
                 }
@@ -458,12 +461,10 @@ const handleMouseDownIcon = async (e) => {
                 document.addEventListener('mousemove', checkDragStartWithThreshold);
                 document.addEventListener('mouseup', cancelDragPrep);
                 window.addEventListener('mouseup', cancelDragPrep);
-                
+
                 const svg = getSVGElement();
-                if (svg) {
-                    svg.addEventListener('mouseup', cancelDragPrep);
-                }
-                
+                if (svg) svg.addEventListener('mouseup', cancelDragPrep);
+
                 return;
             } else {
                 selectIcon(e);
@@ -576,7 +577,7 @@ const handleMouseDownIcon = async (e) => {
 
         pushCreateAction(iconShape);
 
-        finalIconGroup.addEventListener('click', selectIcon);
+        // mousedown handles selection; click listener removed to avoid double-selection conflicts
 
         if (hoveredFrameIcon) {
             hoveredFrameIcon.removeHighlight();
@@ -598,12 +599,15 @@ const handleMouseDownIcon = async (e) => {
     }
 
     // Auto-select placed icon and switch to selection tool
+    // requestAnimationFrame ensures the icon is painted before addSelectionOutline runs
     if (placedIconShape) {
         const selectBtn = document.querySelector(".bxs-pointer");
         if (selectBtn) selectBtn.click();
         currentShape = placedIconShape;
         currentShape.isSelected = true;
-        placedIconShape.selectShape();
+        requestAnimationFrame(() => {
+            placedIconShape.selectShape();
+        });
     }
 };
 
@@ -633,29 +637,13 @@ function addSelectionOutline() {
     const svg = getSVGElement();
     if (!svg) return;
 
-    const iconId = selectedIcon.shapeID || selectedIcon.getAttribute('id');
-    const iconElement = document.getElementById(iconId);
-    
-    if (!iconElement) {
-        console.warn('Could not find icon element by ID');
-        return;
-    }
-
-    const bbox = iconElement.getBoundingClientRect();
-    const svgRect = svg.getBoundingClientRect();
-    
-    const viewBox = svg.viewBox.baseVal;
-    const scaleX = viewBox.width / svgRect.width;
-    const scaleY = viewBox.height / svgRect.height;
-    
-    const x = viewBox.x + (bbox.left - svgRect.left) * scaleX;
-    const y = viewBox.y + (bbox.top - svgRect.top) * scaleY;
-    const width = bbox.width * scaleX;
-    const height = bbox.height * scaleY;
-    
+    // Use stored SVG-space data attributes — reliable even immediately after DOM insertion
+    const x = parseFloat(selectedIcon.getAttribute('data-shape-x')) || 0;
+    const y = parseFloat(selectedIcon.getAttribute('data-shape-y')) || 0;
+    const width = parseFloat(selectedIcon.getAttribute('data-shape-width')) || 40;
+    const height = parseFloat(selectedIcon.getAttribute('data-shape-height')) || 40;
     const rotation = parseFloat(selectedIcon.getAttribute('data-shape-rotation')) || 0;
-    console.log('SVG coordinates:', x, y, width, height, rotation);
-    
+
     const centerX = x + width / 2;
     const centerY = y + height / 2;
 
@@ -674,11 +662,13 @@ function addSelectionOutline() {
     outline.setAttribute("height", expandedHeight);
     outline.setAttribute("fill", "none");
     outline.setAttribute("stroke", "#5B57D1");
-    outline.setAttribute("stroke-width", Math.max(1, width * 0.02));
-    outline.setAttribute("stroke-dasharray", `${Math.max(3, width * 0.04)} ${Math.max(2, width * 0.02)}`);
+    outline.setAttribute("stroke-width", 1.5);
+    outline.setAttribute("stroke-dasharray", "4 3");
     outline.setAttribute("style", "pointer-events: none;");
     outline.setAttribute("class", "selection-outline");
-    outline.setAttribute("transform", `rotate(${rotation}, ${centerX}, ${centerY})`);
+    if (rotation !== 0) {
+        outline.setAttribute("transform", `rotate(${rotation}, ${centerX}, ${centerY})`);
+    }
 
     svg.appendChild(outline);
 
@@ -1484,27 +1474,45 @@ function addIconClickListeners() {
     });
 }
 
+// Track active category filter
+let activeCategory = null; // { query: string } or null
+
 // Category filter dropdowns
 document.querySelectorAll('.choiceBoxes').forEach(box => {
     box.addEventListener('click', async () => {
-        // Toggle selected state
         const wasSelected = box.classList.contains('selected');
         document.querySelectorAll('.choiceBoxes').forEach(b => b.classList.remove('selected'));
+
         if (!wasSelected) {
             box.classList.add('selected');
             const label = box.querySelector('p')?.textContent.trim() || '';
             const queryMap = {
-                'General Icons': 'icon',
-                'Tech Icons': 'tech programming',
-                'Devops Icons': 'devops cloud server'
+                'General Icons': null,           // null = default feed
+                'Tech Icons': 'tech',
+                'Devops Icons': 'devops'
             };
-            const query = queryMap[label] || label;
-            iconSearchInput.value = '';
-            await searchAndRenderIcons(query);
+            const catQuery = queryMap.hasOwnProperty(label) ? queryMap[label] : label.toLowerCase();
+            activeCategory = catQuery ? { query: catQuery } : null;
+
+            const searchText = iconSearchInput.value.trim();
+            if (searchText) {
+                // Combine category + search text
+                const combined = catQuery ? `${catQuery} ${searchText}` : searchText;
+                await searchAndRenderIcons(combined);
+            } else if (catQuery) {
+                await searchAndRenderIcons(catQuery);
+            } else {
+                await renderIconsFromServer();
+            }
         } else {
-            // Deselected — restore default feed
-            iconSearchInput.value = '';
-            await renderIconsFromServer();
+            // Deselected — fall back to search text or default feed
+            activeCategory = null;
+            const searchText = iconSearchInput.value.trim();
+            if (searchText) {
+                await searchAndRenderIcons(searchText);
+            } else {
+                await renderIconsFromServer();
+            }
         }
     });
 });
@@ -1518,9 +1526,16 @@ iconSearchInput.addEventListener('input', async (e) => {
 
     searchTimeout = setTimeout(async () => {
         if (query === '') {
-            await renderIconsFromServer();
+            // Respect active category when search is cleared
+            if (activeCategory) {
+                await searchAndRenderIcons(activeCategory.query);
+            } else {
+                await renderIconsFromServer();
+            }
         } else {
-            await searchAndRenderIcons(query);
+            // Combine with category if active
+            const combined = activeCategory ? `${activeCategory.query} ${query}` : query;
+            await searchAndRenderIcons(combined);
         }
     }, 300);
 });

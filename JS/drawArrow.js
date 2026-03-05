@@ -482,7 +482,7 @@ class Arrow {
             }
         }
 
-        if (this.arrowCurved) {
+        if (this.arrowCurved === "curved") {
             this.initializeCurveControlPoints();
         }
 
@@ -508,8 +508,8 @@ class Arrow {
 
     static findNearbyShape(point, tolerance = 20) {
     for (let shape of shapes) {
-        // Skip arrows - can't attach to other arrows
-        if (shape.shapeName === 'arrow') continue;
+        // Can't attach to other arrows or lines
+        if (shape.shapeName === 'arrow' || shape.shapeName === 'line') continue;
 
         let attachment = null;
 
@@ -1437,6 +1437,8 @@ updateFrameContainment() {
         } else if (anchorIndex === 1) {
             this.endPoint.x = newViewBoxX;
             this.endPoint.y = newViewBoxY;
+        } else if (anchorIndex === 2 && this.arrowCurved === "elbow") {
+            this.elbowX = newViewBoxX;
         } else if (anchorIndex === 2 && this.controlPoint1) {
             this.controlPoint1.x = newViewBoxX;
             this.controlPoint1.y = newViewBoxY;
@@ -1450,11 +1452,16 @@ updateFrameContainment() {
     contains(viewBoxX, viewBoxY) {
         const tolerance = Math.max(5, this.options.strokeWidth * 2) / currentZoom;
 
-        if (this.arrowCurved && this.controlPoint1 && this.controlPoint2) {
+        if (this.arrowCurved === "curved" && this.controlPoint1 && this.controlPoint2) {
             return this.pointToCubicBezierDistance(viewBoxX, viewBoxY) <= tolerance;
+        } else if (this.arrowCurved === "elbow") {
+            const ex = this.elbowX !== null ? this.elbowX : (this.startPoint.x + this.endPoint.x) / 2;
+            const d1 = this.pointToLineDistance(viewBoxX, viewBoxY, this.startPoint.x, this.startPoint.y, ex, this.startPoint.y);
+            const d2 = this.pointToLineDistance(viewBoxX, viewBoxY, ex, this.startPoint.y, ex, this.endPoint.y);
+            const d3 = this.pointToLineDistance(viewBoxX, viewBoxY, ex, this.endPoint.y, this.endPoint.x, this.endPoint.y);
+            return Math.min(d1, d2, d3) <= tolerance;
         } else {
-            const distance = this.pointToLineDistance(viewBoxX, viewBoxY, this.startPoint.x, this.startPoint.y, this.endPoint.x, this.endPoint.y);
-            return distance <= tolerance;
+            return this.pointToLineDistance(viewBoxX, viewBoxY, this.startPoint.x, this.startPoint.y, this.endPoint.x, this.endPoint.y) <= tolerance;
         }
     }
 
@@ -1517,12 +1524,18 @@ updateFrameContainment() {
             const wasCurved = this.arrowCurved;
             this.arrowCurved = newOptions.arrowCurved;
 
-            if (this.arrowCurved && !wasCurved) {
+            if (this.arrowCurved === "curved" && wasCurved !== "curved") {
                 this.initializeCurveControlPoints();
-            } else if (!this.arrowCurved && wasCurved) {
+            } else if (this.arrowCurved !== "curved") {
                 this.controlPoint1 = null;
                 this.controlPoint2 = null;
             }
+            if (this.arrowCurved !== "elbow") {
+                this.elbowX = null;
+            }
+        }
+        if (newOptions.elbowX !== undefined) {
+            this.elbowX = newOptions.elbowX;
         }
         if (newOptions.stroke !== undefined) {
             this.options.stroke = newOptions.stroke;
@@ -1545,6 +1558,27 @@ updateFrameContainment() {
         }
 
         this.draw();
+    }
+
+    updateSidebar() {
+        arrowStrokeColorOptions.forEach(span => {
+            span.classList.toggle('selected', span.getAttribute('data-id') === this.options.stroke);
+        });
+        arrowStrokeThicknessValue.forEach(span => {
+            span.classList.toggle('selected', parseInt(span.getAttribute('data-id')) === this.options.strokeWidth);
+        });
+        arrowOutlineStyleValue.forEach(span => {
+            span.classList.toggle('selected', span.getAttribute('data-id') === this.arrowOutlineStyle);
+        });
+        arrowTypeStyleValue.forEach(span => {
+            span.classList.toggle('selected', span.getAttribute('data-id') === this.arrowCurved);
+        });
+        arrowHeadStyleValue.forEach(span => {
+            span.classList.toggle('selected', span.getAttribute('data-id') === this.arrowHeadStyle);
+        });
+        arrowCurveAmountOptions.forEach(span => {
+            span.classList.toggle('selected', parseInt(span.getAttribute('data-id')) === this.arrowCurveAmount);
+        });
     }
 
     destroy() {
@@ -1944,8 +1978,16 @@ arrowTypeStyleValue.forEach((span) => {
         event.stopPropagation();
         arrowTypeStyleValue.forEach((el) => el.classList.remove("selected"));
         span.classList.add("selected");
-        const isCurved = span.getAttribute("data-id") === 'true';
-        updateSelectedArrowStyle({ arrowCurved: isCurved });
+        updateSelectedArrowStyle({ arrowCurved: span.getAttribute("data-id") });
+    });
+});
+
+arrowCurveAmountOptions.forEach((span) => {
+    span.addEventListener("click", (event) => {
+        event.stopPropagation();
+        arrowCurveAmountOptions.forEach((el) => el.classList.remove("selected"));
+        span.classList.add("selected");
+        updateSelectedArrowStyle({ arrowCurveAmount: parseInt(span.getAttribute("data-id")) });
     });
 });
 

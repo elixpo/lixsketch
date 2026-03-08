@@ -1,7 +1,7 @@
 "use client"
 
 import useSketchStore, { TOOLS } from '@/store/useSketchStore'
-import ShapeSidebar, { PropertySection, Divider } from './ShapeSidebar'
+import ShapeSidebar, { ToolbarButton, Divider } from './ShapeSidebar'
 import { useState } from 'react'
 
 export default function FrameSidebar() {
@@ -10,24 +10,25 @@ export default function FrameSidebar() {
 
   return (
     <ShapeSidebar visible={activeTool === TOOLS.FRAME}>
-      <PropertySection icon="bx-rename">
+      <ToolbarButton icon="bx-rename" tooltip="Frame name">
+        <p className="text-[10px] text-[#888] uppercase tracking-wider mb-2">Name</p>
         <input
           type="text"
           value={frameName}
           onChange={(e) => setFrameName(e.target.value)}
-          className="w-28 px-2 py-1.5 bg-white/[0.05] border border-white/[0.08] rounded-lg text-text-secondary text-xs outline-none focus:border-accent/50 transition-all duration-150 font-[lixFont]"
+          className="w-32 px-2.5 py-1.5 bg-white/[0.05] border border-white/[0.1] rounded-lg text-white text-xs outline-none focus:border-[#5B57D1]/50 transition-all duration-150 font-[lixFont]"
           spellCheck={false}
         />
-      </PropertySection>
+      </ToolbarButton>
 
       <Divider />
 
-      <PropertySection icon="bx-expand" defaultOpen={true}>
-        <button className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-text-muted text-[11px] hover:bg-white/[0.05] hover:text-text-primary transition-all duration-150">
+      <ToolbarButton icon="bx-expand" tooltip="Actions">
+        <button className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-[#aaa] text-[11px] hover:bg-white/[0.06] hover:text-white transition-all duration-100">
           <i className="bx bx-expand text-sm" />
           Resize to Fit
         </button>
-      </PropertySection>
+      </ToolbarButton>
     </ShapeSidebar>
   )
 }

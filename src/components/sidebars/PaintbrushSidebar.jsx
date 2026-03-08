@@ -1,40 +1,23 @@
 "use client"
 
 import useSketchStore, { TOOLS } from '@/store/useSketchStore'
-import ShapeSidebar, { PropertySection, Divider } from './ShapeSidebar'
+import ShapeSidebar, { ToolbarButton, Divider } from './ShapeSidebar'
 import { useState } from 'react'
 
-const STROKE_COLORS = [
-  { color: '#fff', label: 'White' },
-  { color: '#FF8383', label: 'Red' },
-  { color: '#3A994C', label: 'Green' },
-  { color: '#56A2E8', label: 'Blue' },
-  { color: '#FFD700', label: 'Gold' },
-]
+const STROKE_COLORS = ['#fff', '#FF8383', '#3A994C', '#56A2E8', '#FFD700', '#FF69B4', '#A855F7']
 
-const THICKNESSES = [
-  { value: 2, width: 'h-px' },
-  { value: 5, width: 'h-0.5' },
-  { value: 7, width: 'h-1' },
-]
-
-const STYLES = [
-  { value: 'solid', dash: '' },
-  { value: 'dashed', dash: '6 4' },
-  { value: 'dotted', dash: '2 4' },
-]
-
-const TAPERS = [
-  { value: 'uniform', icon: 'bx-minus' },
-  { value: 'pen', icon: 'bx-pen' },
-  { value: 'brush', icon: 'bx-brush' },
-]
-
-const ROUGHNESS_OPTIONS = [
-  { value: 'smooth', icon: 'bx-water' },
-  { value: 'medium', icon: 'bx-wind' },
-  { value: 'rough', icon: 'bx-scatter-chart' },
-]
+function ColorGrid({ colors, selected, onSelect }) {
+  return (
+    <div className="grid grid-cols-4 gap-1.5">
+      {colors.map((c) => (
+        <button key={c} onClick={() => onSelect(c)}
+          className={`w-7 h-7 rounded-md border-[1.5px] transition-all duration-100 ${selected === c ? 'border-[#5B57D1] scale-110' : 'border-white/[0.08] hover:border-white/20'}`}
+          style={{ backgroundColor: c }}
+        />
+      ))}
+    </div>
+  )
+}
 
 export default function PaintbrushSidebar() {
   const activeTool = useSketchStore((s) => s.activeTool)
@@ -47,108 +30,91 @@ export default function PaintbrushSidebar() {
 
   return (
     <ShapeSidebar visible={activeTool === TOOLS.FREEHAND}>
-      <PropertySection icon="bx-palette" label={<span className="w-3 h-3 rounded-full inline-block border border-white/20" style={{ backgroundColor: strokeColor }} />}>
-        <div className="flex items-center gap-2">
-          {STROKE_COLORS.map((c) => (
-            <button
-              key={c.color}
-              onClick={() => setStrokeColor(c.color)}
-              className={`w-5 h-5 rounded-full border-[1.5px] transition-all duration-150 ${
-                strokeColor === c.color ? 'border-accent scale-125' : 'border-transparent hover:scale-110'
-              }`}
-              style={{ backgroundColor: c.color }}
-            />
-          ))}
-        </div>
-      </PropertySection>
+      <ToolbarButton tooltip="Stroke color"
+        preview={<span className="w-4 h-4 rounded-md border border-white/20" style={{ backgroundColor: strokeColor }} />}
+      >
+        <p className="text-[10px] text-[#888] uppercase tracking-wider mb-2">Stroke</p>
+        <ColorGrid colors={STROKE_COLORS} selected={strokeColor} onSelect={setStrokeColor} />
+      </ToolbarButton>
 
       <Divider />
 
-      <PropertySection icon="bx-line-chart">
+      <ToolbarButton icon="bx-line-chart" tooltip="Stroke width">
+        <p className="text-[10px] text-[#888] uppercase tracking-wider mb-2">Width</p>
         <div className="flex items-center gap-1">
-          {THICKNESSES.map((t) => (
-            <button
-              key={t.value}
-              onClick={() => setThickness(t.value)}
-              className={`w-9 h-8 flex items-center justify-center rounded-lg transition-all duration-150 ${
-                thickness === t.value ? 'bg-white/10 text-white' : 'text-text-muted hover:bg-white/[0.05]'
-              }`}
+          {[1, 2, 4, 7].map((w) => (
+            <button key={w} onClick={() => setThickness(w)}
+              className={`w-9 h-8 flex items-center justify-center rounded-lg transition-all duration-100 ${thickness === w ? 'bg-[#5B57D1]/20 text-[#5B57D1]' : 'text-[#888] hover:bg-white/[0.06]'}`}
             >
-              <div className={`w-5 ${t.width} bg-current rounded-full`} />
+              <div className="w-5 rounded-full bg-current" style={{ height: Math.max(1, w) }} />
             </button>
           ))}
         </div>
-      </PropertySection>
+      </ToolbarButton>
 
       <Divider />
 
-      <PropertySection icon="bx-pulse">
+      <ToolbarButton icon="bx-pulse" tooltip="Stroke style">
+        <p className="text-[10px] text-[#888] uppercase tracking-wider mb-2">Style</p>
         <div className="flex items-center gap-1">
-          {STYLES.map((s) => (
-            <button
-              key={s.value}
-              onClick={() => setLineStyle(s.value)}
-              className={`w-10 h-8 flex items-center justify-center rounded-lg transition-all duration-150 ${
-                lineStyle === s.value ? 'bg-white/10' : 'hover:bg-white/[0.05]'
-              }`}
+          {[{ v: 'solid', d: '' }, { v: 'dashed', d: '6 4' }, { v: 'dotted', d: '2 3' }].map((s) => (
+            <button key={s.v} onClick={() => setLineStyle(s.v)}
+              className={`w-11 h-8 flex items-center justify-center rounded-lg transition-all duration-100 ${lineStyle === s.v ? 'bg-[#5B57D1]/20' : 'hover:bg-white/[0.06]'}`}
             >
-              <svg width="24" height="3" viewBox="0 0 32 12">
-                <line x1="2" y1="6" x2="30" y2="6" stroke="currentColor" strokeWidth="2" strokeDasharray={s.dash} strokeLinecap="round" />
-              </svg>
+              <svg width="28" height="4" viewBox="0 0 28 4"><line x1="0" y1="2" x2="28" y2="2" stroke="currentColor" strokeWidth="2" strokeDasharray={s.d} strokeLinecap="round" /></svg>
             </button>
           ))}
         </div>
-      </PropertySection>
+      </ToolbarButton>
 
       <Divider />
 
-      <PropertySection icon="bx-pen">
-        <div className="flex items-center gap-1">
-          {TAPERS.map((t) => (
-            <button
-              key={t.value}
-              onClick={() => setTaper(t.value)}
-              className={`w-8 h-8 flex items-center justify-center rounded-lg transition-all duration-150 ${
-                taper === t.value ? 'bg-white/10 text-white' : 'text-text-muted hover:bg-white/[0.05]'
-              }`}
+      <ToolbarButton icon="bx-pen" tooltip="Taper">
+        <p className="text-[10px] text-[#888] uppercase tracking-wider mb-2">Taper</p>
+        <div className="flex flex-col gap-0.5">
+          {[
+            { v: 'uniform', i: 'bx-minus', l: 'Uniform' },
+            { v: 'pen', i: 'bx-pen', l: 'Pen' },
+            { v: 'brush', i: 'bx-brush', l: 'Brush' },
+          ].map((t) => (
+            <button key={t.v} onClick={() => setTaper(t.v)}
+              className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-[11px] transition-all duration-100 ${taper === t.v ? 'bg-[#5B57D1] text-white' : 'text-[#aaa] hover:bg-white/[0.06]'}`}
             >
-              <i className={`bx ${t.icon} text-sm`} />
+              <i className={`bx ${t.i} text-sm`} /> {t.l}
             </button>
           ))}
         </div>
-      </PropertySection>
+      </ToolbarButton>
 
       <Divider />
 
-      <PropertySection icon="bx-shape-polygon">
-        <div className="flex items-center gap-1">
-          {ROUGHNESS_OPTIONS.map((r) => (
-            <button
-              key={r.value}
-              onClick={() => setRoughness(r.value)}
-              className={`w-8 h-8 flex items-center justify-center rounded-lg transition-all duration-150 ${
-                roughness === r.value ? 'bg-white/10 text-white' : 'text-text-muted hover:bg-white/[0.05]'
-              }`}
+      <ToolbarButton icon="bx-shape-polygon" tooltip="Roughness">
+        <p className="text-[10px] text-[#888] uppercase tracking-wider mb-2">Roughness</p>
+        <div className="flex flex-col gap-0.5">
+          {[
+            { v: 'smooth', i: 'bx-water', l: 'Smooth' },
+            { v: 'medium', i: 'bx-wind', l: 'Medium' },
+            { v: 'rough', i: 'bx-scatter-chart', l: 'Rough' },
+          ].map((r) => (
+            <button key={r.v} onClick={() => setRoughness(r.v)}
+              className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-[11px] transition-all duration-100 ${roughness === r.v ? 'bg-[#5B57D1] text-white' : 'text-[#aaa] hover:bg-white/[0.06]'}`}
             >
-              <i className={`bx ${r.icon} text-sm`} />
+              <i className={`bx ${r.i} text-sm`} /> {r.l}
             </button>
           ))}
         </div>
-      </PropertySection>
+      </ToolbarButton>
 
       <Divider />
 
-      <PropertySection icon="bx-sun" label={`${Math.round(opacity * 100)}%`}>
+      <ToolbarButton icon="bx-sun" tooltip="Opacity">
+        <p className="text-[10px] text-[#888] uppercase tracking-wider mb-2">Opacity {Math.round(opacity * 100)}%</p>
         <input
-          type="range"
-          min="0"
-          max="1"
-          step="0.05"
-          value={opacity}
+          type="range" min="0" max="1" step="0.05" value={opacity}
           onChange={(e) => setOpacity(parseFloat(e.target.value))}
-          className="w-24 h-1 bg-white/10 rounded-full appearance-none cursor-pointer accent-accent-blue"
+          className="w-28 h-1 bg-white/10 rounded-full appearance-none cursor-pointer accent-[#5B57D1]"
         />
-      </PropertySection>
+      </ToolbarButton>
     </ShapeSidebar>
   )
 }

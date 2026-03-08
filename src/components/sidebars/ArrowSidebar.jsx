@@ -1,62 +1,33 @@
 "use client"
 
 import useSketchStore, { TOOLS } from '@/store/useSketchStore'
-import ShapeSidebar, { PropertySection, Divider } from './ShapeSidebar'
+import ShapeSidebar, { ToolbarButton, Divider } from './ShapeSidebar'
 import { useState } from 'react'
 
-const STROKE_COLORS = [
-  { color: '#fff', label: 'White' },
-  { color: '#FF8383', label: 'Red' },
-  { color: '#3A994C', label: 'Green' },
-  { color: '#56A2E8', label: 'Blue' },
-  { color: '#FFD700', label: 'Gold' },
-]
-
-const THICKNESSES = [
-  { value: 2, width: 'h-px' },
-  { value: 5, width: 'h-0.5' },
-  { value: 7, width: 'h-1' },
-]
-
-const OUTLINE_STYLES = [
-  { value: 'solid', dash: '' },
-  { value: 'dashed', dash: '6 4' },
-  { value: 'dotted', dash: '2 4' },
-]
+const STROKE_COLORS = ['#fff', '#FF8383', '#3A994C', '#56A2E8', '#FFD700', '#FF69B4', '#A855F7']
 
 const HEAD_STYLES = [
-  {
-    value: 'default',
-    svg: '<svg width="20" height="14" viewBox="0 0 24 16"><line x1="2" y1="8" x2="18" y2="8" stroke="currentColor" stroke-width="2"/><polyline points="14,3 20,8 14,13" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>',
-  },
-  {
-    value: 'square',
-    svg: '<svg width="20" height="14" viewBox="0 0 24 16"><line x1="2" y1="8" x2="16" y2="8" stroke="currentColor" stroke-width="2"/><rect x="15" y="4" width="6" height="8" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>',
-  },
-  {
-    value: 'outline',
-    svg: '<svg width="20" height="14" viewBox="0 0 24 16"><line x1="2" y1="8" x2="15" y2="8" stroke="currentColor" stroke-width="2"/><polygon points="14,3 22,8 14,13" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>',
-  },
-  {
-    value: 'solid',
-    svg: '<svg width="20" height="14" viewBox="0 0 24 16"><line x1="2" y1="8" x2="15" y2="8" stroke="currentColor" stroke-width="2"/><polygon points="14,3 22,8 14,13" fill="currentColor" stroke="currentColor" stroke-width="1"/></svg>',
-  },
-]
-
-const ARROW_TYPES = [
-  { value: 'straight', icon: 'bx-trending-up' },
-  { value: 'curved', icon: 'bx-transfer' },
-  { value: 'elbow', icon: 'bx-git-branch' },
-]
-
-const CURVATURES = [
-  { value: 8, label: 'Lo' },
-  { value: 20, label: 'Md' },
-  { value: 40, label: 'Hi' },
+  { value: 'default', svg: '<svg width="22" height="12" viewBox="0 0 24 14"><line x1="2" y1="7" x2="16" y2="7" stroke="currentColor" stroke-width="2"/><polyline points="13,2 19,7 13,12" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>' },
+  { value: 'square', svg: '<svg width="22" height="12" viewBox="0 0 24 14"><line x1="2" y1="7" x2="14" y2="7" stroke="currentColor" stroke-width="2"/><rect x="14" y="3" width="6" height="8" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>' },
+  { value: 'outline', svg: '<svg width="22" height="12" viewBox="0 0 24 14"><line x1="2" y1="7" x2="13" y2="7" stroke="currentColor" stroke-width="2"/><polygon points="13,2 21,7 13,12" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>' },
+  { value: 'solid', svg: '<svg width="22" height="12" viewBox="0 0 24 14"><line x1="2" y1="7" x2="13" y2="7" stroke="currentColor" stroke-width="2"/><polygon points="13,2 21,7 13,12" fill="currentColor"/></svg>' },
 ]
 
 function SvgIcon({ svg }) {
   return <span dangerouslySetInnerHTML={{ __html: svg }} />
+}
+
+function ColorGrid({ colors, selected, onSelect }) {
+  return (
+    <div className="grid grid-cols-4 gap-1.5">
+      {colors.map((c) => (
+        <button key={c} onClick={() => onSelect(c)}
+          className={`w-7 h-7 rounded-md border-[1.5px] transition-all duration-100 ${selected === c ? 'border-[#5B57D1] scale-110' : 'border-white/[0.08] hover:border-white/20'}`}
+          style={{ backgroundColor: c }}
+        />
+      ))}
+    </div>
+  )
 }
 
 export default function ArrowSidebar() {
@@ -70,115 +41,91 @@ export default function ArrowSidebar() {
 
   return (
     <ShapeSidebar visible={activeTool === TOOLS.ARROW}>
-      <PropertySection icon="bx-chevrons-right">
+      {/* Head style */}
+      <ToolbarButton icon="bx-chevrons-right" tooltip="Arrow head">
+        <p className="text-[10px] text-[#888] uppercase tracking-wider mb-2">Head</p>
         <div className="flex items-center gap-1">
           {HEAD_STYLES.map((h) => (
-            <button
-              key={h.value}
-              onClick={() => setHeadStyle(h.value)}
-              className={`w-9 h-8 flex items-center justify-center rounded-lg transition-all duration-150 ${
-                headStyle === h.value ? 'bg-white/10 text-white' : 'text-text-muted hover:bg-white/[0.05]'
-              }`}
+            <button key={h.value} onClick={() => setHeadStyle(h.value)}
+              className={`w-10 h-8 flex items-center justify-center rounded-lg transition-all duration-100 ${headStyle === h.value ? 'bg-[#5B57D1]/20 text-[#5B57D1]' : 'text-[#888] hover:bg-white/[0.06]'}`}
             >
               <SvgIcon svg={h.svg} />
             </button>
           ))}
         </div>
-      </PropertySection>
+      </ToolbarButton>
 
       <Divider />
 
-      <PropertySection icon="bx-palette" label={<span className="w-3 h-3 rounded-full inline-block border border-white/20" style={{ backgroundColor: strokeColor }} />}>
-        <div className="flex items-center gap-2">
-          {STROKE_COLORS.map((c) => (
-            <button
-              key={c.color}
-              onClick={() => setStrokeColor(c.color)}
-              className={`w-5 h-5 rounded-full border-[1.5px] transition-all duration-150 ${
-                strokeColor === c.color ? 'border-accent scale-125' : 'border-transparent hover:scale-110'
-              }`}
-              style={{ backgroundColor: c.color }}
-            />
-          ))}
-        </div>
-      </PropertySection>
+      <ToolbarButton tooltip="Stroke color"
+        preview={<span className="w-4 h-4 rounded-md border border-white/20" style={{ backgroundColor: strokeColor }} />}
+      >
+        <p className="text-[10px] text-[#888] uppercase tracking-wider mb-2">Stroke</p>
+        <ColorGrid colors={STROKE_COLORS} selected={strokeColor} onSelect={setStrokeColor} />
+      </ToolbarButton>
 
       <Divider />
 
-      <PropertySection icon="bx-line-chart">
+      <ToolbarButton icon="bx-line-chart" tooltip="Stroke width">
+        <p className="text-[10px] text-[#888] uppercase tracking-wider mb-2">Width</p>
         <div className="flex items-center gap-1">
-          {THICKNESSES.map((t) => (
-            <button
-              key={t.value}
-              onClick={() => setThickness(t.value)}
-              className={`w-9 h-8 flex items-center justify-center rounded-lg transition-all duration-150 ${
-                thickness === t.value ? 'bg-white/10 text-white' : 'text-text-muted hover:bg-white/[0.05]'
-              }`}
+          {[1, 2, 4, 7].map((w) => (
+            <button key={w} onClick={() => setThickness(w)}
+              className={`w-9 h-8 flex items-center justify-center rounded-lg transition-all duration-100 ${thickness === w ? 'bg-[#5B57D1]/20 text-[#5B57D1]' : 'text-[#888] hover:bg-white/[0.06]'}`}
             >
-              <div className={`w-5 ${t.width} bg-current rounded-full`} />
+              <div className="w-5 rounded-full bg-current" style={{ height: Math.max(1, w) }} />
             </button>
           ))}
         </div>
-      </PropertySection>
+      </ToolbarButton>
 
       <Divider />
 
-      <PropertySection icon="bx-pulse">
+      <ToolbarButton icon="bx-pulse" tooltip="Stroke style">
+        <p className="text-[10px] text-[#888] uppercase tracking-wider mb-2">Style</p>
         <div className="flex items-center gap-1">
-          {OUTLINE_STYLES.map((s) => (
-            <button
-              key={s.value}
-              onClick={() => setOutlineStyle(s.value)}
-              className={`w-10 h-8 flex items-center justify-center rounded-lg transition-all duration-150 ${
-                outlineStyle === s.value ? 'bg-white/10' : 'hover:bg-white/[0.05]'
-              }`}
+          {[{ v: 'solid', d: '' }, { v: 'dashed', d: '6 4' }, { v: 'dotted', d: '2 3' }].map((s) => (
+            <button key={s.v} onClick={() => setOutlineStyle(s.v)}
+              className={`w-11 h-8 flex items-center justify-center rounded-lg transition-all duration-100 ${outlineStyle === s.v ? 'bg-[#5B57D1]/20' : 'hover:bg-white/[0.06]'}`}
             >
-              <svg width="24" height="3" viewBox="0 0 32 12">
-                <line x1="2" y1="6" x2="30" y2="6" stroke="currentColor" strokeWidth="2" strokeDasharray={s.dash} strokeLinecap="round" />
-              </svg>
+              <svg width="28" height="4" viewBox="0 0 28 4"><line x1="0" y1="2" x2="28" y2="2" stroke="currentColor" strokeWidth="2" strokeDasharray={s.d} strokeLinecap="round" /></svg>
             </button>
           ))}
         </div>
-      </PropertySection>
+      </ToolbarButton>
 
       <Divider />
 
-      <PropertySection icon="bx-git-merge">
-        <div className="flex items-center gap-1">
-          {ARROW_TYPES.map((a) => (
-            <button
-              key={a.value}
-              onClick={() => setArrowType(a.value)}
-              className={`w-8 h-8 flex items-center justify-center rounded-lg transition-all duration-150 ${
-                arrowType === a.value ? 'bg-white/10 text-white' : 'text-text-muted hover:bg-white/[0.05]'
-              }`}
+      {/* Arrow type */}
+      <ToolbarButton icon="bx-git-merge" tooltip="Arrow type">
+        <p className="text-[10px] text-[#888] uppercase tracking-wider mb-2">Type</p>
+        <div className="flex flex-col gap-0.5">
+          {[
+            { v: 'straight', i: 'bx-trending-up', l: 'Straight' },
+            { v: 'curved', i: 'bx-transfer', l: 'Curved' },
+            { v: 'elbow', i: 'bx-git-branch', l: 'Elbow' },
+          ].map((a) => (
+            <button key={a.v} onClick={() => setArrowType(a.v)}
+              className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-[11px] transition-all duration-100 ${arrowType === a.v ? 'bg-[#5B57D1] text-white' : 'text-[#aaa] hover:bg-white/[0.06]'}`}
             >
-              <i className={`bx ${a.icon} text-sm`} />
+              <i className={`bx ${a.i} text-sm`} /> {a.l}
             </button>
           ))}
+          {arrowType === 'curved' && (
+            <>
+              <div className="w-full h-px bg-white/[0.08] my-1" />
+              <p className="text-[9px] text-[#666] uppercase tracking-wider mb-1">Curvature</p>
+              <div className="flex items-center gap-1">
+                {[{ v: 8, l: 'Lo' }, { v: 20, l: 'Md' }, { v: 40, l: 'Hi' }].map((c) => (
+                  <button key={c.v} onClick={() => setCurvature(c.v)}
+                    className={`flex-1 py-1 rounded-md text-[10px] text-center transition-all duration-100 ${curvature === c.v ? 'bg-[#5B57D1]/20 text-[#5B57D1]' : 'text-[#888] hover:bg-white/[0.06]'}`}
+                  >{c.l}</button>
+                ))}
+              </div>
+            </>
+          )}
         </div>
-      </PropertySection>
-
-      {arrowType === 'curved' && (
-        <>
-          <Divider />
-          <PropertySection icon="bx-trip">
-            <div className="flex items-center gap-1">
-              {CURVATURES.map((c) => (
-                <button
-                  key={c.value}
-                  onClick={() => setCurvature(c.value)}
-                  className={`w-8 h-8 flex items-center justify-center rounded-lg text-[10px] transition-all duration-150 ${
-                    curvature === c.value ? 'bg-white/10 text-white' : 'text-text-muted hover:bg-white/[0.05]'
-                  }`}
-                >
-                  {c.label}
-                </button>
-              ))}
-            </div>
-          </PropertySection>
-        </>
-      )}
+      </ToolbarButton>
     </ShapeSidebar>
   )
 }

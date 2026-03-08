@@ -1,36 +1,11 @@
 "use client"
 
 import useSketchStore, { TOOLS } from '@/store/useSketchStore'
-import ShapeSidebar, { PropertySection, Divider } from './ShapeSidebar'
+import ShapeSidebar, { ToolbarButton, Divider } from './ShapeSidebar'
 import { useState } from 'react'
 
-const STROKE_COLORS = [
-  { color: '#fff', label: 'White' },
-  { color: '#FF8383', label: 'Red' },
-  { color: '#3A994C', label: 'Green' },
-  { color: '#56A2E8', label: 'Blue' },
-  { color: '#FFD700', label: 'Gold' },
-]
-
-const BG_COLORS = [
-  { color: '#f0f0f0', label: 'Light Gray' },
-  { color: '#ffcccb', label: 'Light Red' },
-  { color: '#90ee90', label: 'Light Green' },
-  { color: '#add8e6', label: 'Light Blue' },
-  { color: 'transparent', label: 'None' },
-]
-
-const THICKNESSES = [
-  { value: 2, width: 'h-px' },
-  { value: 5, width: 'h-0.5' },
-  { value: 7, width: 'h-1' },
-]
-
-const STYLES = [
-  { value: 'solid', dash: '' },
-  { value: 'dashed', dash: '6 4' },
-  { value: 'dotted', dash: '2 4' },
-]
+const STROKE_COLORS = ['#fff', '#FF8383', '#3A994C', '#56A2E8', '#FFD700', '#FF69B4', '#A855F7']
+const BG_COLORS = ['transparent', '#f0f0f0', '#ffcccb', '#90ee90', '#add8e6', '#FFE4B5', '#DDA0DD', '#2d2d2d']
 
 const FILLS = [
   { value: 'hachure', label: 'Hachure' },
@@ -40,22 +15,29 @@ const FILLS = [
   { value: 'transparent', label: 'None' },
 ]
 
-function ColorDot({ color, selected, onClick }) {
-  const isTrans = color === 'transparent'
+function ColorGrid({ colors, selected, onSelect }) {
   return (
-    <button
-      onClick={onClick}
-      className={`w-5 h-5 rounded-full border-[1.5px] transition-all duration-150 ${
-        selected ? 'border-accent scale-125 shadow-sm shadow-accent/30' : 'border-transparent hover:scale-110'
-      }`}
-      style={!isTrans ? { backgroundColor: color } : undefined}
-    >
-      {isTrans && (
-        <svg className="w-full h-full text-text-dim" viewBox="0 0 20 20">
-          <line x1="4" y1="16" x2="16" y2="4" stroke="currentColor" strokeWidth="1.5" />
-        </svg>
-      )}
-    </button>
+    <div className="grid grid-cols-4 gap-1.5">
+      {colors.map((c) => {
+        const isTrans = c === 'transparent'
+        return (
+          <button
+            key={c}
+            onClick={() => onSelect(c)}
+            className={`w-7 h-7 rounded-md border-[1.5px] transition-all duration-100 ${
+              selected === c ? 'border-[#5B57D1] scale-110' : 'border-white/[0.08] hover:border-white/20'
+            }`}
+            style={!isTrans ? { backgroundColor: c } : undefined}
+          >
+            {isTrans && (
+              <svg className="w-full h-full text-[#666]" viewBox="0 0 20 20">
+                <line x1="4" y1="16" x2="16" y2="4" stroke="currentColor" strokeWidth="2" />
+              </svg>
+            )}
+          </button>
+        )
+      })}
+    </div>
   )
 }
 
@@ -69,79 +51,73 @@ export default function CircleSidebar() {
 
   return (
     <ShapeSidebar visible={activeTool === TOOLS.CIRCLE}>
-      <PropertySection icon="bx-palette" label={<span className="w-3 h-3 rounded-full inline-block border border-white/20" style={{ backgroundColor: strokeColor }} />}>
-        <div className="flex items-center gap-2">
-          {STROKE_COLORS.map((c) => (
-            <ColorDot key={c.color} color={c.color} selected={strokeColor === c.color} onClick={() => setStrokeColor(c.color)} />
-          ))}
-        </div>
-      </PropertySection>
+      <ToolbarButton
+        tooltip="Stroke color"
+        preview={<span className="w-4 h-4 rounded-md border border-white/20" style={{ backgroundColor: strokeColor }} />}
+      >
+        <p className="text-[10px] text-[#888] uppercase tracking-wider mb-2">Stroke</p>
+        <ColorGrid colors={STROKE_COLORS} selected={strokeColor} onSelect={setStrokeColor} />
+      </ToolbarButton>
 
       <Divider />
 
-      <PropertySection icon="bx-paint-roll" label={<span className="w-3 h-3 rounded-full inline-block border border-white/20" style={{ backgroundColor: bgColor === 'transparent' ? 'transparent' : bgColor }} />}>
-        <div className="flex items-center gap-2">
-          {BG_COLORS.map((c) => (
-            <ColorDot key={c.color} color={c.color} selected={bgColor === c.color} onClick={() => setBgColor(c.color)} />
-          ))}
-        </div>
-      </PropertySection>
+      <ToolbarButton
+        tooltip="Fill color"
+        preview={
+          <span className="w-4 h-4 rounded-md border border-white/20" style={{ backgroundColor: bgColor === 'transparent' ? 'transparent' : bgColor }}>
+            {bgColor === 'transparent' && <svg className="w-full h-full text-[#666]" viewBox="0 0 16 16"><line x1="2" y1="14" x2="14" y2="2" stroke="currentColor" strokeWidth="1.5" /></svg>}
+          </span>
+        }
+      >
+        <p className="text-[10px] text-[#888] uppercase tracking-wider mb-2">Background</p>
+        <ColorGrid colors={BG_COLORS} selected={bgColor} onSelect={setBgColor} />
+      </ToolbarButton>
 
       <Divider />
 
-      <PropertySection icon="bx-line-chart">
+      <ToolbarButton icon="bx-line-chart" tooltip="Stroke width">
+        <p className="text-[10px] text-[#888] uppercase tracking-wider mb-2">Width</p>
         <div className="flex items-center gap-1">
-          {THICKNESSES.map((t) => (
-            <button
-              key={t.value}
-              onClick={() => setThickness(t.value)}
-              className={`w-9 h-8 flex items-center justify-center rounded-lg transition-all duration-150 ${
-                thickness === t.value ? 'bg-white/10 text-white' : 'text-text-muted hover:bg-white/[0.05]'
-              }`}
+          {[1, 2, 4, 7].map((w) => (
+            <button key={w} onClick={() => setThickness(w)}
+              className={`w-9 h-8 flex items-center justify-center rounded-lg transition-all duration-100 ${thickness === w ? 'bg-[#5B57D1]/20 text-[#5B57D1]' : 'text-[#888] hover:bg-white/[0.06]'}`}
             >
-              <div className={`w-5 ${t.width} bg-current rounded-full`} />
+              <div className="w-5 rounded-full bg-current" style={{ height: Math.max(1, w) }} />
             </button>
           ))}
         </div>
-      </PropertySection>
+      </ToolbarButton>
 
       <Divider />
 
-      <PropertySection icon="bx-pulse">
+      <ToolbarButton icon="bx-pulse" tooltip="Stroke style">
+        <p className="text-[10px] text-[#888] uppercase tracking-wider mb-2">Style</p>
         <div className="flex items-center gap-1">
-          {STYLES.map((s) => (
-            <button
-              key={s.value}
-              onClick={() => setLineStyle(s.value)}
-              className={`w-10 h-8 flex items-center justify-center rounded-lg transition-all duration-150 ${
-                lineStyle === s.value ? 'bg-white/10' : 'hover:bg-white/[0.05]'
-              }`}
+          {[{ v: 'solid', d: '' }, { v: 'dashed', d: '6 4' }, { v: 'dotted', d: '2 3' }].map((s) => (
+            <button key={s.v} onClick={() => setLineStyle(s.v)}
+              className={`w-11 h-8 flex items-center justify-center rounded-lg transition-all duration-100 ${lineStyle === s.v ? 'bg-[#5B57D1]/20' : 'hover:bg-white/[0.06]'}`}
             >
-              <svg width="24" height="3" viewBox="0 0 32 12">
-                <line x1="2" y1="6" x2="30" y2="6" stroke="currentColor" strokeWidth="2" strokeDasharray={s.dash} strokeLinecap="round" />
-              </svg>
+              <svg width="28" height="4" viewBox="0 0 28 4"><line x1="0" y1="2" x2="28" y2="2" stroke="currentColor" strokeWidth="2" strokeDasharray={s.d} strokeLinecap="round" /></svg>
             </button>
           ))}
         </div>
-      </PropertySection>
+      </ToolbarButton>
 
       <Divider />
 
-      <PropertySection icon="bx-brush">
-        <div className="flex items-center gap-1">
+      <ToolbarButton icon="bx-brush" tooltip="Fill style">
+        <p className="text-[10px] text-[#888] uppercase tracking-wider mb-2">Fill</p>
+        <div className="flex flex-col gap-0.5">
           {FILLS.map((f) => (
-            <button
-              key={f.value}
-              onClick={() => setFillStyle(f.value)}
-              className={`px-2.5 py-1.5 rounded-lg text-[10px] transition-all duration-150 ${
-                fillStyle === f.value ? 'bg-white/10 text-white' : 'text-text-muted hover:bg-white/[0.05]'
-              }`}
+            <button key={f.value} onClick={() => setFillStyle(f.value)}
+              className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-[11px] transition-all duration-100 ${fillStyle === f.value ? 'bg-[#5B57D1] text-white' : 'text-[#aaa] hover:bg-white/[0.06]'}`}
             >
+              <span className="w-1.5 h-1.5 rounded-full bg-current" />
               {f.label}
             </button>
           ))}
         </div>
-      </PropertySection>
+      </ToolbarButton>
     </ShapeSidebar>
   )
 }

@@ -1,40 +1,49 @@
 "use client"
 
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 
 /**
- * A single property section in the bottom bar.
- * Shows an icon + current value preview. Clicking expands to show all options.
+ * A toolbar button that opens a popover panel above it on click.
+ * Shows an icon (or custom preview) in the bar, popover shows full options.
  */
-export function PropertySection({ icon, label, children, defaultOpen = false }) {
-  const [open, setOpen] = useState(defaultOpen)
+export function ToolbarButton({ icon, preview, children, tooltip }) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef(null)
+
+  // Close on outside click
+  useEffect(() => {
+    if (!open) return
+    const handler = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [open])
 
   return (
-    <div className="relative flex flex-col items-center">
+    <div ref={ref} className="relative flex items-center">
       <button
         onClick={() => setOpen(!open)}
-        className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-[11px] transition-all duration-150 ${
+        title={tooltip}
+        className={`h-8 flex items-center gap-1.5 px-2.5 rounded-lg transition-all duration-100 ${
           open
-            ? 'bg-white/[0.08] text-text-primary'
-            : 'text-text-muted hover:text-text-primary hover:bg-white/[0.05]'
+            ? 'bg-white/[0.12] text-white'
+            : 'text-[#999] hover:text-white hover:bg-white/[0.06]'
         }`}
       >
-        {icon && <i className={`bx ${icon} text-sm`} />}
-        {label && <span className="whitespace-nowrap">{label}</span>}
-        <svg
-          className={`w-2.5 h-2.5 opacity-40 transition-transform duration-150 ${open ? 'rotate-180' : ''}`}
-          viewBox="0 0 10 10"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-        >
-          <path d="M2 4l3 3 3-3" />
+        {preview || (icon && <i className={`bx ${icon} text-[15px]`} />)}
+        <svg className={`w-2 h-2 opacity-40 transition-transform duration-100 ${open ? 'rotate-180' : ''}`} viewBox="0 0 8 5" fill="none" stroke="currentColor" strokeWidth="1.5">
+          <path d="M1 1l3 3 3-3" />
         </svg>
       </button>
+
       {open && (
-        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 bg-[#1e1e1e] border border-white/[0.08] rounded-xl px-2.5 py-2 shadow-lg shadow-black/40 min-w-max z-10">
-          <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 rotate-45 w-2 h-2 bg-[#1e1e1e] border-r border-b border-white/[0.08]" />
-          {children}
+        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 z-20">
+          <div className="bg-[#252525] border border-white/[0.1] rounded-xl p-3 shadow-xl shadow-black/50 min-w-max">
+            {children}
+          </div>
+          {/* Arrow pointer */}
+          <div className="absolute -bottom-[5px] left-1/2 -translate-x-1/2 w-2.5 h-2.5 rotate-45 bg-[#252525] border-r border-b border-white/[0.1]" />
         </div>
       )}
     </div>
@@ -42,26 +51,25 @@ export function PropertySection({ icon, label, children, defaultOpen = false }) 
 }
 
 /**
- * Divider between sections
+ * Simple toolbar divider
  */
 function Divider() {
-  return <div className="w-px h-6 bg-white/[0.06] self-center mx-0.5 shrink-0" />
+  return <div className="w-px h-5 bg-white/[0.08] mx-0.5 shrink-0" />
 }
 
 /**
- * Bottom horizontal property panel container.
+ * Bottom toolbar container - appears when tool/shape is active
  */
 export default function ShapeSidebar({ visible, children }) {
   return (
     <div
-      className={`absolute bottom-14 left-1/2 -translate-x-1/2 max-w-[92vw] bg-[#1a1a1a] border border-white/[0.08] rounded-2xl px-2 py-1.5 z-[999] font-[lixFont] transition-all duration-200 ${
+      className={`absolute bottom-14 left-1/2 -translate-x-1/2 bg-[#1c1c1c] border border-white/[0.1] rounded-xl px-1.5 py-1 z-[999] font-[lixFont] transition-all duration-200 ${
         visible
           ? 'opacity-100 pointer-events-auto translate-y-0'
-          : 'opacity-0 pointer-events-none translate-y-3'
+          : 'opacity-0 pointer-events-none translate-y-2'
       }`}
-      style={{ backdropFilter: 'blur(12px)' }}
     >
-      <div className="flex items-center gap-0.5 overflow-x-auto scrollbar-hide">
+      <div className="flex items-center gap-0.5">
         {children}
       </div>
     </div>

@@ -306,6 +306,7 @@ class Circle {
 
         disableAllSideBars();
         circleSideBar.classList.remove("hidden");
+        if (window.__showSidebarForShape) window.__showSidebarForShape('circle');
         this.updateSidebar();
     }
 
@@ -438,56 +439,8 @@ class Circle {
         if (angle < 0) angle += 360;
         this.rotation = angle;
     }
-    updateSidebar() 
-    {
-        colorOptionsCircle.forEach(span => {
-            const color = span.getAttribute('data-id');
-            if (color === this.options.stroke) {
-            span.classList.add('selected');
-            } else {
-            span.classList.remove('selected');
-            }
-        });
-
-        backgroundColorOptionsCircle.forEach(span => {
-            const color = span.getAttribute('data-id');
-            if (color === this.options.fill) {
-            span.classList.add('selected');
-            } else {
-            span.classList.remove('selected');
-            }
-        });
-
-        fillStyleOptionsCircle.forEach(span => {
-            const style = span.getAttribute('data-id');
-            if (style === this.options.fillStyle) {
-            span.classList.add('selected');
-            } else {
-            span.classList.remove('selected');
-            }
-        });
-
-        strokeThicknessValueCircle.forEach(span => {
-            const thick = parseInt(span.getAttribute('data-id'), 10);
-            if (thick === this.options.strokeWidth) {
-            span.classList.add('selected');
-            } else {
-            span.classList.remove('selected');
-            }
-        });
-
-        outlineStyleValueCircle.forEach(span => {
-            const style = span.getAttribute('data-id');
-            let currentStyle = "solid";
-            if (this.options.strokeDasharray === "5,5") currentStyle = "dashed";
-            else if (this.options.strokeDasharray === "2,8") currentStyle = "dotted";
-            if (style === currentStyle) {
-            span.classList.add('selected');
-            } else {
-            span.classList.remove('selected');
-            }
-        });
-    }
+    // No-op: React sidebar handles UI updates via Zustand store
+    updateSidebar() {}
 
 }
 

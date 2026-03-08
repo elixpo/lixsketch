@@ -12,6 +12,8 @@ function getSVGCoordsFromMouse(e) {
     return { x: svgX, y: svgY };
 }
 
+let dragOldPosFrame = null;
+
 class Frame {
     constructor(x, y, width, height, options = {}) {
         this.x = x;

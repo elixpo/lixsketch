@@ -2,7 +2,7 @@
 
 import useSketchStore, { TOOLS } from '@/store/useSketchStore'
 import ShapeSidebar, { ToolbarButton, Divider } from './ShapeSidebar'
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 
 const STROKE_COLORS = ['#fff', '#FF8383', '#3A994C', '#56A2E8', '#FFD700', '#FF69B4', '#A855F7']
 
@@ -21,19 +21,26 @@ function ColorGrid({ colors, selected, onSelect }) {
 
 export default function LineSidebar() {
   const activeTool = useSketchStore((s) => s.activeTool)
+  const selectedShapeSidebar = useSketchStore((s) => s.selectedShapeSidebar)
   const [strokeColor, setStrokeColor] = useState('#fff')
   const [thickness, setThickness] = useState(2)
   const [lineStyle, setLineStyle] = useState('solid')
   const [sloppiness, setSloppiness] = useState(0)
   const [edge, setEdge] = useState('smooth')
 
+  const updateStroke = useCallback((v) => { setStrokeColor(v); if (window.updateSelectedLineStyle) window.updateSelectedLineStyle({ stroke: v }) }, [])
+  const updateThickness = useCallback((v) => { setThickness(v); if (window.updateSelectedLineStyle) window.updateSelectedLineStyle({ strokeWidth: v }) }, [])
+  const updateStyle = useCallback((v) => { setLineStyle(v); if (window.updateSelectedLineStyle) window.updateSelectedLineStyle({ strokeStyle: v }) }, [])
+  const updateSloppiness = useCallback((v) => { setSloppiness(v); if (window.updateSelectedLineStyle) window.updateSelectedLineStyle({ sloppiness: v }) }, [])
+  const updateEdge = useCallback((v) => { setEdge(v); if (window.updateSelectedLineStyle) window.updateSelectedLineStyle({ edge: v === 'smooth' ? 1 : 5 }) }, [])
+
   return (
-    <ShapeSidebar visible={activeTool === TOOLS.LINE}>
+    <ShapeSidebar visible={activeTool === TOOLS.LINE || selectedShapeSidebar === 'line'}>
       <ToolbarButton tooltip="Stroke color"
         preview={<span className="w-4 h-4 rounded-md border border-white/20" style={{ backgroundColor: strokeColor }} />}
       >
         <p className="text-[10px] text-[#888] uppercase tracking-wider mb-2">Stroke</p>
-        <ColorGrid colors={STROKE_COLORS} selected={strokeColor} onSelect={setStrokeColor} />
+        <ColorGrid colors={STROKE_COLORS} selected={strokeColor} onSelect={updateStroke} />
       </ToolbarButton>
 
       <Divider />
@@ -42,7 +49,7 @@ export default function LineSidebar() {
         <p className="text-[10px] text-[#888] uppercase tracking-wider mb-2">Width</p>
         <div className="flex items-center gap-1">
           {[1, 2, 4, 7].map((w) => (
-            <button key={w} onClick={() => setThickness(w)}
+            <button key={w} onClick={() => updateThickness(w)}
               className={`w-9 h-8 flex items-center justify-center rounded-lg transition-all duration-100 ${thickness === w ? 'bg-[#5B57D1]/20 text-[#5B57D1]' : 'text-[#888] hover:bg-white/[0.06]'}`}
             >
               <div className="w-5 rounded-full bg-current" style={{ height: Math.max(1, w) }} />
@@ -57,7 +64,7 @@ export default function LineSidebar() {
         <p className="text-[10px] text-[#888] uppercase tracking-wider mb-2">Style</p>
         <div className="flex items-center gap-1">
           {[{ v: 'solid', d: '' }, { v: 'dashed', d: '6 4' }, { v: 'dotted', d: '2 3' }].map((s) => (
-            <button key={s.v} onClick={() => setLineStyle(s.v)}
+            <button key={s.v} onClick={() => updateStyle(s.v)}
               className={`w-11 h-8 flex items-center justify-center rounded-lg transition-all duration-100 ${lineStyle === s.v ? 'bg-[#5B57D1]/20' : 'hover:bg-white/[0.06]'}`}
             >
               <svg width="28" height="4" viewBox="0 0 28 4"><line x1="0" y1="2" x2="28" y2="2" stroke="#fff" strokeWidth="2" strokeDasharray={s.d} strokeLinecap="round" /></svg>
@@ -69,11 +76,11 @@ export default function LineSidebar() {
       <Divider />
 
       <ToolbarButton icon="bxs-shape-polygon" tooltip="Sloppiness">
-        <p className="text-[10px] text-[#888] uppercase tracking-wider mb-2">Sloppiness</p>
+        <p className="text-[10px] text-text-muted uppercase tracking-wider mb-2">Sloppiness</p>
         <div className="flex items-center gap-1">
           {[{ v: 0, l: '0' }, { v: 2, l: '2' }, { v: 4, l: '4' }].map((s) => (
-            <button key={s.v} onClick={() => setSloppiness(s.v)}
-              className={`w-8 h-8 flex items-center justify-center rounded-lg text-[11px] transition-all duration-100 ${sloppiness === s.v ? 'bg-[#5B57D1]/20 text-[#5B57D1]' : 'text-[#888] hover:bg-white/[0.06]'}`}
+            <button key={s.v} onClick={() => updateSloppiness(s.v)}
+              className={`w-8 h-8 flex items-center justify-center rounded-lg text-[11px] transition-all duration-100 ${sloppiness === s.v ? 'bg-[#5B57D1]/20 text-accent-blue' : 'text-text-muted hover:bg-white/6'}`}
             >{s.l}</button>
           ))}
         </div>
@@ -82,11 +89,11 @@ export default function LineSidebar() {
       <Divider />
 
       <ToolbarButton icon="bxs-landscape" tooltip="Edge">
-        <p className="text-[10px] text-[#888] uppercase tracking-wider mb-2">Edge</p>
+        <p className="text-[10px] text-text-muted uppercase tracking-wider mb-2">Edge</p>
         <div className="flex flex-col gap-0.5">
           {[{ v: 'smooth', i: 'bxs-droplet', l: 'Smooth' }, { v: 'rough', i: 'bxs-bolt', l: 'Rough' }].map((e) => (
-            <button key={e.v} onClick={() => setEdge(e.v)}
-              className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-[11px] transition-all duration-100 ${edge === e.v ? 'bg-[#5B57D1] text-white' : 'text-[#aaa] hover:bg-white/[0.06]'}`}
+            <button key={e.v} onClick={() => updateEdge(e.v)}
+              className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-[11px] transition-all duration-100 ${edge === e.v ? 'bg-accent-blue text-white' : 'text-[#aaa] hover:bg-white/6'}`}
             >
               <i className={`bx ${e.i} text-sm`} /> {e.l}
             </button>

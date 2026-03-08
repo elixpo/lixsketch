@@ -445,6 +445,41 @@ function cloneOptions(options) {
 
 window.Line = Line;
 
+// Bridge line tool settings to React sidebar
+window.lineToolSettings = {
+    get strokeColor() { return lineColor; },
+    set strokeColor(v) { lineColor = v; },
+    get strokeWidth() { return lineStrokeWidth; },
+    set strokeWidth(v) { lineStrokeWidth = v; },
+    get strokeStyle() { return lineStrokeStyle; },
+    set strokeStyle(v) { lineStrokeStyle = v; },
+    get sloppiness() { return lineSktetchRate; },
+    set sloppiness(v) { lineSktetchRate = v; },
+    get edge() { return lineEdgeType; },
+    set edge(v) { lineEdgeType = v; },
+};
+window.updateSelectedLineStyle = function(changes) {
+    if (currentShape instanceof Line && currentShape.isSelected) {
+        const oldOptions = {...currentShape.options};
+        if (changes.stroke !== undefined) { lineColor = changes.stroke; currentShape.options.stroke = changes.stroke; }
+        if (changes.strokeWidth !== undefined) { lineStrokeWidth = changes.strokeWidth; currentShape.options.strokeWidth = changes.strokeWidth; }
+        if (changes.strokeStyle !== undefined) {
+            lineStrokeStyle = changes.strokeStyle;
+            currentShape.options.strokeDasharray = changes.strokeStyle === "dashed" ? "5,5" : (changes.strokeStyle === "dotted" ? "2,12" : "");
+        }
+        if (changes.sloppiness !== undefined) { lineSktetchRate = changes.sloppiness; currentShape.options.roughness = changes.sloppiness; }
+        if (changes.edge !== undefined) { lineEdgeType = changes.edge; currentShape.options.bowing = changes.edge; }
+        currentShape.draw();
+        pushOptionsChangeAction(currentShape, oldOptions);
+    } else {
+        if (changes.stroke !== undefined) lineColor = changes.stroke;
+        if (changes.strokeWidth !== undefined) lineStrokeWidth = changes.strokeWidth;
+        if (changes.strokeStyle !== undefined) lineStrokeStyle = changes.strokeStyle;
+        if (changes.sloppiness !== undefined) lineSktetchRate = changes.sloppiness;
+        if (changes.edge !== undefined) lineEdgeType = changes.edge;
+    }
+};
+
 export {
     handleMouseDown as handleMouseDownLine,
     handleMouseMove as handleMouseMoveLine,

@@ -246,6 +246,7 @@ removeSelection() {
     // Show line sidebar
     disableAllSideBars();
     lineSideBar.classList.remove("hidden");
+    if (window.__showSidebarForShape) window.__showSidebarForShape('line');
     this.updateSidebar();
     }
 
@@ -472,12 +473,8 @@ removeSelection() {
         return Math.sqrt(dx * dx + dy * dy);
     }
 
-    updateSidebar() {
-        // Update sidebar to reflect current line properties
-        if (typeof updateLineSidebar === 'function') {
-            updateLineSidebar(this);
-        }
-    }
+    // No-op: React sidebar handles UI updates via Zustand store
+    updateSidebar() {}
 }
 
 export { Line };

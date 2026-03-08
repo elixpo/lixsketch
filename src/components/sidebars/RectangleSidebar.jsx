@@ -2,7 +2,7 @@
 
 import useSketchStore, { TOOLS } from '@/store/useSketchStore'
 import ShapeSidebar, { ToolbarButton, Divider } from './ShapeSidebar'
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 
 const STROKE_COLORS = ['#fff', '#FF8383', '#3A994C', '#56A2E8', '#FFD700', '#FF69B4', '#A855F7']
 const BG_COLORS = ['transparent', '#f0f0f0', '#ffcccb', '#90ee90', '#add8e6', '#FFE4B5', '#DDA0DD', '#2d2d2d']
@@ -26,7 +26,7 @@ function ColorGrid({ colors, selected, onSelect }) {
             onClick={() => onSelect(c)}
             className={`w-7 h-7 rounded-md border-[1.5px] transition-all duration-100 ${
               selected === c ? 'border-[#5B57D1] scale-110' : 'border-white/[0.08] hover:border-white/20'
-            } ${isTrans ? '' : ''}`}
+            }`}
             style={!isTrans ? { backgroundColor: c } : undefined}
           >
             {isTrans && (
@@ -43,21 +43,33 @@ function ColorGrid({ colors, selected, onSelect }) {
 
 export default function RectangleSidebar() {
   const activeTool = useSketchStore((s) => s.activeTool)
+  const selectedShapeSidebar = useSketchStore((s) => s.selectedShapeSidebar)
   const [strokeColor, setStrokeColor] = useState('#fff')
   const [bgColor, setBgColor] = useState('transparent')
   const [thickness, setThickness] = useState(2)
   const [lineStyle, setLineStyle] = useState('solid')
   const [fillStyle, setFillStyle] = useState('hachure')
 
+  const update = useCallback((changes, localSetters) => {
+    Object.entries(localSetters).forEach(([, fn]) => fn())
+    if (window.updateSelectedRectStyle) window.updateSelectedRectStyle(changes)
+  }, [])
+
+  const updateStroke = useCallback((v) => { setStrokeColor(v); if (window.updateSelectedRectStyle) window.updateSelectedRectStyle({ stroke: v }) }, [])
+  const updateBg = useCallback((v) => { setBgColor(v); if (window.updateSelectedRectStyle) window.updateSelectedRectStyle({ fill: v }) }, [])
+  const updateThickness = useCallback((v) => { setThickness(v); if (window.updateSelectedRectStyle) window.updateSelectedRectStyle({ strokeWidth: v }) }, [])
+  const updateStyle = useCallback((v) => { setLineStyle(v); if (window.updateSelectedRectStyle) window.updateSelectedRectStyle({ outlineStyle: v }) }, [])
+  const updateFill = useCallback((v) => { setFillStyle(v); if (window.updateSelectedRectStyle) window.updateSelectedRectStyle({ fillStyle: v }) }, [])
+
   return (
-    <ShapeSidebar visible={activeTool === TOOLS.RECTANGLE}>
+    <ShapeSidebar visible={activeTool === TOOLS.RECTANGLE || selectedShapeSidebar === 'rectangle'}>
       {/* Stroke color */}
       <ToolbarButton
         tooltip="Stroke color"
         preview={<span className="w-4 h-4 rounded-md border border-white/20" style={{ backgroundColor: strokeColor }} />}
       >
         <p className="text-[10px] text-[#888] uppercase tracking-wider mb-2">Stroke</p>
-        <ColorGrid colors={STROKE_COLORS} selected={strokeColor} onSelect={setStrokeColor} />
+        <ColorGrid colors={STROKE_COLORS} selected={strokeColor} onSelect={updateStroke} />
       </ToolbarButton>
 
       <Divider />
@@ -74,7 +86,7 @@ export default function RectangleSidebar() {
         }
       >
         <p className="text-[10px] text-[#888] uppercase tracking-wider mb-2">Background</p>
-        <ColorGrid colors={BG_COLORS} selected={bgColor} onSelect={setBgColor} />
+        <ColorGrid colors={BG_COLORS} selected={bgColor} onSelect={updateBg} />
       </ToolbarButton>
 
       <Divider />
@@ -86,7 +98,7 @@ export default function RectangleSidebar() {
           {[1, 2, 4, 7].map((w) => (
             <button
               key={w}
-              onClick={() => setThickness(w)}
+              onClick={() => updateThickness(w)}
               className={`w-9 h-8 flex items-center justify-center rounded-lg transition-all duration-100 ${
                 thickness === w ? 'bg-[#5B57D1]/20 text-[#5B57D1]' : 'text-[#888] hover:bg-white/[0.06]'
               }`}
@@ -110,7 +122,7 @@ export default function RectangleSidebar() {
           ].map((s) => (
             <button
               key={s.v}
-              onClick={() => setLineStyle(s.v)}
+              onClick={() => updateStyle(s.v)}
               className={`w-11 h-8 flex items-center justify-center rounded-lg transition-all duration-100 ${
                 lineStyle === s.v ? 'bg-[#5B57D1]/20' : 'hover:bg-white/[0.06]'
               }`}
@@ -132,7 +144,7 @@ export default function RectangleSidebar() {
           {FILLS.map((f) => (
             <button
               key={f.value}
-              onClick={() => setFillStyle(f.value)}
+              onClick={() => updateFill(f.value)}
               className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-[11px] transition-all duration-100 ${
                 fillStyle === f.value ? 'bg-[#5B57D1] text-white' : 'text-[#aaa] hover:bg-white/[0.06]'
               }`}

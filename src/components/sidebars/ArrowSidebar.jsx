@@ -32,6 +32,7 @@ function ColorGrid({ colors, selected, onSelect }) {
 
 export default function ArrowSidebar() {
   const activeTool = useSketchStore((s) => s.activeTool)
+  const selectedShapeSidebar = useSketchStore((s) => s.selectedShapeSidebar)
   const [headStyle, setHeadStyle] = useState('default')
   const [strokeColor, setStrokeColor] = useState('#fff')
   const [thickness, setThickness] = useState(2)
@@ -77,7 +78,7 @@ export default function ArrowSidebar() {
   }, [])
 
   return (
-    <ShapeSidebar visible={activeTool === TOOLS.ARROW}>
+    <ShapeSidebar visible={activeTool === TOOLS.ARROW || selectedShapeSidebar === 'arrow'}>
       {/* Head style */}
       <ToolbarButton icon="bxs-right-arrow" tooltip="Arrow head">
         <p className="text-[10px] text-[#ccc] uppercase tracking-wider mb-2">Head</p>

@@ -120,13 +120,41 @@ class SketchEngine {
         // Container
         window.container = document.querySelector('.container') || document.body;
 
-        // Sidebar control — in React, sidebars are managed by Zustand,
-        // but legacy code calls this to hide all sidebars.
-        window.disableAllSideBars = window.disableAllSideBars || function() {
+        // Sidebar control — bridge legacy code to React/Zustand
+        window.disableAllSideBars = function() {
             // Hide all legacy sidebar elements
             [window.paintBrushSideBar, window.lineSideBar, window.squareSideBar,
              window.circleSideBar, window.arrowSideBar, window.textSideBar, window.frameSideBar
             ].forEach(el => { if (el) el.classList.add('hidden'); });
+            // Notify React to hide shape-selected sidebar
+            if (window.__sketchStoreApi) {
+                window.__sketchStoreApi.clearSelectedShapeSidebar();
+            }
+        };
+
+        // toolExtraPopup — legacy UI function, no-op in React
+        window.toolExtraPopup = window.toolExtraPopup || function() {};
+
+        // updateUndoRedoButtons — legacy UI function, no-op in React
+        window.updateUndoRedoButtons = window.updateUndoRedoButtons || function() {};
+
+        // Bridge for shape selection -> React sidebar
+        // Maps shape.shapeName to the sidebar key React understands
+        window.__showSidebarForShape = function(shapeName) {
+            const sidebarMap = {
+                'rectangle': 'rectangle',
+                'circle': 'circle',
+                'arrow': 'arrow',
+                'line': 'line',
+                'freehandStroke': 'paintbrush',
+                'text': 'text',
+                'code': 'text',
+                'frame': 'frame',
+            };
+            const sidebar = sidebarMap[shapeName];
+            if (sidebar && window.__sketchStoreApi) {
+                window.__sketchStoreApi.setSelectedShapeSidebar(sidebar);
+            }
         };
     }
 

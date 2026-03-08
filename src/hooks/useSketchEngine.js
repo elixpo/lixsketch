@@ -17,6 +17,15 @@ export default function useSketchEngine(svgRef, ready = true) {
 
     async function initEngine() {
       try {
+        // Expose Zustand store API on window BEFORE engine init
+        // so SketchEngine globals can call into React state
+        const storeState = useSketchStore.getState()
+        window.__sketchStoreApi = {
+          setSelectedShapeSidebar: (sidebar) => useSketchStore.getState().setSelectedShapeSidebar(sidebar),
+          clearSelectedShapeSidebar: () => useSketchStore.getState().clearSelectedShapeSidebar(),
+          setActiveTool: (tool) => useSketchStore.getState().setActiveTool(tool),
+        }
+
         const { SketchEngine } = await import('@/engine/SketchEngine')
         if (cancelled) return
 

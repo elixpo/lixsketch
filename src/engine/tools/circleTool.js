@@ -644,6 +644,42 @@ document.addEventListener('keydown', (e) => {
 
 window.Circle = Circle;
 
+// Bridge circle tool settings to React sidebar
+window.circleToolSettings = {
+    get strokeColor() { return circleStrokecolor; },
+    set strokeColor(v) { circleStrokecolor = v; },
+    get bgColor() { return circleBackgroundColor; },
+    set bgColor(v) { circleBackgroundColor = v; },
+    get fillStyle() { return circleFillStyleValue; },
+    set fillStyle(v) { circleFillStyleValue = v; },
+    get strokeWidth() { return circleStrokeThicknes; },
+    set strokeWidth(v) { circleStrokeThicknes = v; },
+    get outlineStyle() { return circleOutlineStyle; },
+    set outlineStyle(v) { circleOutlineStyle = v; },
+};
+window.updateSelectedCircleStyle = function(changes) {
+    if (currentShape && currentShape.shapeName === 'circle' && currentShape.isSelected) {
+        pushOptionsChangeAction(currentShape, { ...currentShape.options });
+        if (changes.stroke !== undefined) { circleStrokecolor = changes.stroke; currentShape.options.stroke = changes.stroke; }
+        if (changes.fill !== undefined) { circleBackgroundColor = changes.fill; currentShape.options.fill = changes.fill; }
+        if (changes.fillStyle !== undefined) { circleFillStyleValue = changes.fillStyle; currentShape.options.fillStyle = changes.fillStyle; }
+        if (changes.strokeWidth !== undefined) { circleStrokeThicknes = changes.strokeWidth; currentShape.options.strokeWidth = changes.strokeWidth; }
+        if (changes.outlineStyle !== undefined) {
+            circleOutlineStyle = changes.outlineStyle;
+            if (changes.outlineStyle === "dashed") currentShape.options.strokeDasharray = "5,5";
+            else if (changes.outlineStyle === "dotted") currentShape.options.strokeDasharray = "2,8";
+            else currentShape.options.strokeDasharray = "";
+        }
+        currentShape.draw();
+    } else {
+        if (changes.stroke !== undefined) circleStrokecolor = changes.stroke;
+        if (changes.fill !== undefined) circleBackgroundColor = changes.fill;
+        if (changes.fillStyle !== undefined) circleFillStyleValue = changes.fillStyle;
+        if (changes.strokeWidth !== undefined) circleStrokeThicknes = changes.strokeWidth;
+        if (changes.outlineStyle !== undefined) circleOutlineStyle = changes.outlineStyle;
+    }
+};
+
 export {
     handleMouseDown as handleMouseDownCircle,
     handleMouseMove as handleMouseMoveCircle,

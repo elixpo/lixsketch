@@ -6,10 +6,11 @@ import { useState } from 'react'
 
 export default function FrameSidebar() {
   const activeTool = useSketchStore((s) => s.activeTool)
+  const selectedShapeSidebar = useSketchStore((s) => s.selectedShapeSidebar)
   const [frameName, setFrameName] = useState('Frame 1')
 
   return (
-    <ShapeSidebar visible={activeTool === TOOLS.FRAME}>
+    <ShapeSidebar visible={activeTool === TOOLS.FRAME || selectedShapeSidebar === 'frame'}>
       <ToolbarButton icon="bxs-rename" tooltip="Frame name">
         <p className="text-[10px] text-[#888] uppercase tracking-wider mb-2">Name</p>
         <input

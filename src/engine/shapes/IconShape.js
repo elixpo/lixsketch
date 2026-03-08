@@ -7,6 +7,9 @@ function getSVGElement() {
     return document.getElementById('freehand-canvas');
 }
 
+// Stub — icon selection is handled by iconTool.js
+function selectIcon() {}
+
 class IconShape {
     constructor(element) {
         this.element = element;

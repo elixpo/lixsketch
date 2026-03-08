@@ -590,7 +590,39 @@ document.addEventListener('keydown', (e) => {
 // svg.addEventListener('mousemove', handleMouseMove);
 // svg.addEventListener('mouseup', handleMouseUp);
 
-export 
+// Bridge freehand tool settings to React sidebar
+window.freehandToolSettings = {
+    get strokeColor() { return strokeColor; },
+    set strokeColor(v) { strokeColor = v; },
+    get strokeWidth() { return strokeThickness; },
+    set strokeWidth(v) { strokeThickness = v; },
+    get strokeStyle() { return strokeStyleValue; },
+    set strokeStyle(v) { strokeStyleValue = v; },
+    get thinning() { return strokeThinning; },
+    set thinning(v) { strokeThinning = v; },
+    get roughness() { return strokeRoughnessValue; },
+    set roughness(v) { strokeRoughnessValue = v; },
+    get opacity() { return strokeOpacity; },
+    set opacity(v) { strokeOpacity = v; },
+};
+window.updateSelectedFreehandStyle = function(changes) {
+    if (currentShape && currentShape.shapeName === 'freehandStroke' && currentShape.isSelected) {
+        if (changes.stroke !== undefined) { strokeColor = changes.stroke; currentShape.options.stroke = changes.stroke; }
+        if (changes.strokeWidth !== undefined) { strokeThickness = changes.strokeWidth; currentShape.options.strokeWidth = changes.strokeWidth; }
+        if (changes.thinning !== undefined) { strokeThinning = changes.thinning; currentShape.options.thinning = changes.thinning; }
+        if (changes.roughness !== undefined) { strokeRoughnessValue = changes.roughness; currentShape.options.roughness = changes.roughness; }
+        if (changes.opacity !== undefined) { strokeOpacity = changes.opacity; currentShape.options.strokeOpacity = changes.opacity; }
+        currentShape.draw();
+    } else {
+        if (changes.stroke !== undefined) strokeColor = changes.stroke;
+        if (changes.strokeWidth !== undefined) strokeThickness = changes.strokeWidth;
+        if (changes.thinning !== undefined) strokeThinning = changes.thinning;
+        if (changes.roughness !== undefined) strokeRoughnessValue = changes.roughness;
+        if (changes.opacity !== undefined) strokeOpacity = changes.opacity;
+    }
+};
+
+export
 {
     handleMouseDown as handleFreehandMouseDown,
     handleMouseMove as handleFreehandMouseMove,

@@ -387,6 +387,7 @@ class FreehandStroke {
         // Show sidebar and update it with current stroke properties
         disableAllSideBars();
         paintBrushSideBar.classList.remove("hidden");
+        if (window.__showSidebarForShape) window.__showSidebarForShape('freehandStroke');
         this.updateSidebar();
     }
 
@@ -415,28 +416,8 @@ class FreehandStroke {
         this.isSelected = false;
     }
 
-    // Add updateSidebar method similar to Circle class
-    updateSidebar() {
-        strokeColors.forEach(span => {
-            span.classList.toggle('selected', span.getAttribute('data-id') === this.options.stroke);
-        });
-        strokeThicknesses.forEach(span => {
-            span.classList.toggle('selected', parseInt(span.getAttribute('data-id'), 10) === this.options.strokeWidth);
-        });
-        strokeStyles.forEach(span => {
-            span.classList.toggle('selected', span.getAttribute('data-id') === this.options.strokeStyle);
-        });
-        strokeTapers.forEach(span => {
-            span.classList.toggle('selected', parseFloat(span.getAttribute('data-id')) === this.options.thinning);
-        });
-        strokeRoughnesses.forEach(span => {
-            span.classList.toggle('selected', span.getAttribute('data-id') === this.options.roughness);
-        });
-        const opacityValue = document.getElementById("opacityContainerValue");
-        if (opacityValue) {
-            opacityValue.textContent = (this.options.strokeOpacity * 100).toFixed(0);
-        }
-    }
+    // No-op: React sidebar handles UI updates via Zustand store
+    updateSidebar() {}
 
     contains(x, y) {
         // Simple bounding box check
@@ -621,6 +602,7 @@ class FreehandStroke {
     // Show sidebar when anchors are added (when shape is selected)
     disableAllSideBars();
     paintBrushSideBar.classList.remove("hidden");
+    if (window.__showSidebarForShape) window.__showSidebarForShape('freehandStroke');
     this.updateSidebar();
 }
 

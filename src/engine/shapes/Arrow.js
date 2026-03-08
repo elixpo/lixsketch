@@ -4,6 +4,7 @@
 
 let isDragging = false;
 let hoveredFrameArrow = null;
+let dragOldPosArrow = null;
 
 function getSVGCoordsFromMouse(e) {
     const viewBox = svg.viewBox.baseVal;
@@ -172,6 +173,7 @@ class Arrow {
         this.isSelected = true;
         disableAllSideBars();
         arrowSideBar.classList.remove("hidden");
+        if (window.__showSidebarForShape) window.__showSidebarForShape('arrow');
         this.updateSidebar();
         this.draw();
     }
@@ -361,6 +363,7 @@ class Arrow {
         // Show sidebar
         disableAllSideBars();
         arrowSideBar.classList.remove("hidden");
+        if (window.__showSidebarForShape) window.__showSidebarForShape('arrow');
         this.updateSidebar();
 
         anchorPositions.forEach((point, index) => {

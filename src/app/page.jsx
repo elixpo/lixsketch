@@ -1,23 +1,56 @@
 'use client'
 
 import Script from 'next/script'
-import SketchCanvas from '../components/SketchCanvas'
+import Header from '@/components/header/Header'
+import Toolbar from '@/components/toolbar/Toolbar'
+import Footer from '@/components/footer/Footer'
+import AppMenu from '@/components/menu/AppMenu'
+import ShortcutsModal from '@/components/modals/ShortcutsModal'
+import SaveModal from '@/components/modals/SaveModal'
+import RectangleSidebar from '@/components/sidebars/RectangleSidebar'
+import CircleSidebar from '@/components/sidebars/CircleSidebar'
+import LineSidebar from '@/components/sidebars/LineSidebar'
+import ArrowSidebar from '@/components/sidebars/ArrowSidebar'
+import PaintbrushSidebar from '@/components/sidebars/PaintbrushSidebar'
+import TextSidebar from '@/components/sidebars/TextSidebar'
+import FrameSidebar from '@/components/sidebars/FrameSidebar'
+import SVGCanvas from '@/components/canvas/SVGCanvas'
+import useKeyboardShortcuts from '@/hooks/useKeyboardShortcuts'
 
 export default function Home() {
+  useKeyboardShortcuts()
+
   return (
-    <>
-      {/* CDN libraries loaded first */}
+    <div className="relative w-screen h-screen overflow-hidden bg-black">
+      {/* CDN libraries needed by canvas engine */}
       <Script src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js" type="module" strategy="beforeInteractive" />
       <Script src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js" noModule strategy="beforeInteractive" />
       <Script src="https://unpkg.com/boxicons@2.1.4/dist/boxicons.js" strategy="beforeInteractive" />
       <Script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/highlight.min.js" strategy="beforeInteractive" />
-      <Script src="https://unpkg.com/konva@9/konva.min.js" strategy="beforeInteractive" />
-      <Script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.0/fabric.min.js" strategy="beforeInteractive" />
-      <Script src="https://cdnjs.cloudflare.com/ajax/libs/paper.js/0.12.18/paper-full.min.js" strategy="beforeInteractive" />
 
-      <SketchCanvas />
+      {/* UI Shell */}
+      <Header />
+      <Toolbar />
 
-      {/* App scripts — order matters */}
+      {/* Sidebars */}
+      <RectangleSidebar />
+      <CircleSidebar />
+      <LineSidebar />
+      <ArrowSidebar />
+      <PaintbrushSidebar />
+      <TextSidebar />
+      <FrameSidebar />
+
+      {/* Canvas */}
+      <SVGCanvas />
+
+      {/* Overlays */}
+      <Footer />
+      <AppMenu />
+      <ShortcutsModal />
+      <SaveModal />
+
+      {/* Canvas engine scripts (imperative SVG manipulation — will be migrated to engine module later) */}
       <Script src="/JS/imports.js" type="module" strategy="afterInteractive" />
       <Script src="/JS/sketchGeneric.js" strategy="afterInteractive" />
       <Script src="/JS/eventListeners.js" type="module" strategy="afterInteractive" />
@@ -38,6 +71,6 @@ export default function Home() {
       <Script src="/JS/laserTool.js" strategy="afterInteractive" />
       <Script src="/JS/eraserTrail.js" strategy="afterInteractive" />
       <Script src="/JS/eraserTool.js" strategy="afterInteractive" />
-    </>
+    </div>
   )
 }

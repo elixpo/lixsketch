@@ -71,7 +71,7 @@ export default function IconSidebar() {
 
   return (
     <div
-      className={`absolute bottom-14 left-1/2 -translate-x-1/2 w-[340px] max-w-[92vw] bg-[#1a1a1a] border border-white/[0.08] rounded-2xl z-[999] font-[lixFont] transition-all duration-200 overflow-hidden ${
+      className={`absolute bottom-14 left-1/2 -translate-x-1/2 w-[460px] max-w-[92vw] bg-[#1a1a1a] border border-white/[0.08] rounded-2xl z-[999] font-[lixFont] transition-all duration-200 overflow-hidden ${
         visible
           ? 'opacity-100 pointer-events-auto translate-y-0'
           : 'opacity-0 pointer-events-none translate-y-3'
@@ -81,14 +81,14 @@ export default function IconSidebar() {
       {/* Search */}
       <div className="px-3 pt-3 pb-2">
         <div className="flex items-center gap-2 bg-white/[0.05] border border-white/[0.08] rounded-xl px-2.5 py-1.5">
-          <i className="bx bxs-search text-text-dim text-sm" />
+          <i className="bx bxs-search text-text-dim text-base" />
           <input
             id="iconSearchInput"
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search icons..."
-            className="flex-1 bg-transparent text-text-secondary text-xs outline-none placeholder:text-text-dim"
+            className="flex-1 bg-transparent text-text-secondary text-sm outline-none placeholder:text-text-dim"
             spellCheck={false}
           />
           {query && (
@@ -105,42 +105,42 @@ export default function IconSidebar() {
           <button
             key={cat.value || 'all'}
             onClick={() => setCategory(cat.value)}
-            className={`flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] transition-all duration-150 ${
+            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs transition-all duration-150 ${
               category === cat.value
                 ? 'bg-white/10 text-white'
                 : 'text-text-muted hover:bg-white/[0.05] hover:text-text-primary'
             }`}
           >
-            <i className={`bx ${cat.icon} text-xs`} />
+            <i className={`bx ${cat.icon} text-sm`} />
             {cat.label}
           </button>
         ))}
       </div>
 
       {/* Icon grid */}
-      <div className="px-3 pb-3 max-h-[200px] overflow-y-auto scrollbar-hide" id="iconsContainer">
+      <div className="px-3 pb-3 max-h-[260px] overflow-y-auto scrollbar-hide" id="iconsContainer">
         {loading ? (
-          <div className="flex items-center justify-center py-6 text-text-dim text-xs">
+          <div className="flex items-center justify-center py-6 text-text-dim text-sm">
             <i className="bx bxs-hourglass bx-spin text-lg mr-2" />
             Loading...
           </div>
         ) : icons.length === 0 ? (
-          <div className="flex items-center justify-center py-6 text-text-dim text-xs">
+          <div className="flex items-center justify-center py-6 text-text-dim text-sm">
             No icons found
           </div>
         ) : (
-          <div className="grid grid-cols-7 gap-1">
+          <div className="grid grid-cols-8 gap-1.5">
             {icons.map((icon, i) => (
               <button
                 key={icon.filename || i}
                 onClick={() => handleIconClick(icon.filename)}
                 title={icon.filename?.replace('.svg', '') || ''}
-                className="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-white/[0.08] transition-all duration-150 text-white/80 hover:text-white"
+                className="w-12 h-12 flex items-center justify-center rounded-lg hover:bg-white/[0.08] transition-all duration-150 text-white/80 hover:text-white"
               >
                 <img
                   src={`/api/icons/serve?name=${encodeURIComponent(icon.filename)}`}
                   alt=""
-                  className="w-6 h-6 invert"
+                  className="w-7 h-7 invert"
                   loading="lazy"
                 />
               </button>

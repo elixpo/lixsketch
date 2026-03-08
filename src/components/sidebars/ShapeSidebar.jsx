@@ -25,13 +25,13 @@ export function ToolbarButton({ icon, preview, children, tooltip }) {
       <button
         onClick={() => setOpen(!open)}
         title={tooltip}
-        className={`h-8 flex items-center gap-1.5 px-2.5 rounded-lg transition-all duration-100 ${
+        className={`h-9 flex items-center gap-1.5 px-3 rounded-lg transition-all duration-100 ${
           open
             ? 'bg-white/[0.12] text-white'
             : 'text-[#999] hover:text-white hover:bg-white/[0.06]'
         }`}
       >
-        {preview || (icon && <i className={`bx ${icon} text-[15px]`} />)}
+        {preview || (icon && <i className={`bx ${icon} text-base`} />)}
         <svg className={`w-2 h-2 opacity-40 transition-transform duration-100 ${open ? 'rotate-180' : ''}`} viewBox="0 0 8 5" fill="none" stroke="currentColor" strokeWidth="1.5">
           <path d="M1 1l3 3 3-3" />
         </svg>
@@ -63,7 +63,7 @@ function Divider() {
 export default function ShapeSidebar({ visible, children }) {
   return (
     <div
-      className={`absolute bottom-14 left-1/2 -translate-x-1/2 bg-[#1c1c1c] border border-white/[0.1] rounded-xl px-1.5 py-1 z-[999] font-[lixFont] transition-all duration-200 ${
+      className={`absolute bottom-14 left-1/2 -translate-x-1/2 bg-[#1c1c1c] border border-white/[0.1] rounded-xl px-2 py-1.5 z-[999] font-[lixFont] transition-all duration-200 ${
         visible
           ? 'opacity-100 pointer-events-auto translate-y-0'
           : 'opacity-0 pointer-events-none translate-y-2'

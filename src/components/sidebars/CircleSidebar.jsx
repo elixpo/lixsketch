@@ -62,7 +62,7 @@ export default function CircleSidebar() {
         tooltip="Stroke color"
         preview={<span className="w-4 h-4 rounded-md border border-white/20" style={{ backgroundColor: strokeColor }} />}
       >
-        <p className="text-[10px] text-[#888] uppercase tracking-wider mb-2">Stroke</p>
+        <p className="text-xs text-[#888] uppercase tracking-wider mb-2">Stroke</p>
         <ColorGrid colors={STROKE_COLORS} selected={strokeColor} onSelect={updateStroke} />
       </ToolbarButton>
 
@@ -76,14 +76,14 @@ export default function CircleSidebar() {
           </span>
         }
       >
-        <p className="text-[10px] text-[#888] uppercase tracking-wider mb-2">Background</p>
+        <p className="text-xs text-[#888] uppercase tracking-wider mb-2">Background</p>
         <ColorGrid colors={BG_COLORS} selected={bgColor} onSelect={updateBg} />
       </ToolbarButton>
 
       <Divider />
 
       <ToolbarButton icon="bxs-edit-alt" tooltip="Stroke width">
-        <p className="text-[10px] text-[#888] uppercase tracking-wider mb-2">Width</p>
+        <p className="text-xs text-[#888] uppercase tracking-wider mb-2">Width</p>
         <div className="flex items-center gap-1">
           {[1, 2, 4, 7].map((w) => (
             <button key={w} onClick={() => updateThickness(w)}
@@ -98,7 +98,7 @@ export default function CircleSidebar() {
       <Divider />
 
       <ToolbarButton icon="bxs-minus-circle" tooltip="Stroke style">
-        <p className="text-[10px] text-[#888] uppercase tracking-wider mb-2">Style</p>
+        <p className="text-xs text-[#888] uppercase tracking-wider mb-2">Style</p>
         <div className="flex items-center gap-1">
           {[{ v: 'solid', d: '' }, { v: 'dashed', d: '6 4' }, { v: 'dotted', d: '2 3' }].map((s) => (
             <button key={s.v} onClick={() => updateStyle(s.v)}
@@ -113,11 +113,11 @@ export default function CircleSidebar() {
       <Divider />
 
       <ToolbarButton icon="bxs-brush" tooltip="Fill style">
-        <p className="text-[10px] text-[#888] uppercase tracking-wider mb-2">Fill</p>
+        <p className="text-xs text-[#888] uppercase tracking-wider mb-2">Fill</p>
         <div className="flex flex-col gap-0.5">
           {FILLS.map((f) => (
             <button key={f.value} onClick={() => updateFill(f.value)}
-              className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-[11px] transition-all duration-100 ${fillStyle === f.value ? 'bg-[#5B57D1] text-white' : 'text-[#aaa] hover:bg-white/[0.06]'}`}
+              className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs transition-all duration-100 ${fillStyle === f.value ? 'bg-[#5B57D1] text-white' : 'text-[#aaa] hover:bg-white/[0.06]'}`}
             >
               <span className="w-1.5 h-1.5 rounded-full bg-current" />
               {f.label}

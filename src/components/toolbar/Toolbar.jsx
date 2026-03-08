@@ -26,7 +26,7 @@ export default function Toolbar() {
   const setActiveTool = useSketchStore((s) => s.setActiveTool)
 
   return (
-    <div className="absolute top-[60px] left-2.5 w-[42px] rounded-xl bg-surface z-[1000] flex flex-col items-center py-1.5 gap-0.5 font-[lixFont]">
+    <div className="absolute top-[60px] left-2.5 w-[46px] rounded-xl bg-surface z-[1000] flex flex-col items-center py-1.5 gap-0.5 font-[lixFont]">
       {TOOL_ITEMS.map((item, idx) => {
         if (item === 'spacer') {
           return (
@@ -44,11 +44,11 @@ export default function Toolbar() {
             <button
               key="ai"
               title={item.title}
-              className="w-[34px] h-[34px] flex items-center justify-center rounded-lg text-text-muted hover:text-accent hover:bg-surface-hover transition-all duration-200"
+              className="w-[38px] h-[38px] flex items-center justify-center rounded-lg text-text-muted hover:text-accent hover:bg-surface-hover transition-all duration-200"
             >
               <svg
-                width="16"
-                height="16"
+                width="18"
+                height="18"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
@@ -68,14 +68,14 @@ export default function Toolbar() {
             key={item.tool}
             title={item.title}
             onClick={() => setActiveTool(item.tool)}
-            className={`w-[34px] h-[34px] flex items-center justify-center rounded-lg transition-all duration-200 ${
+            className={`w-[33px] h-[33px] flex items-center justify-center rounded-lg transition-all duration-200 ${
               isActive
                 ? 'bg-surface-active text-text-primary'
                 : 'text-text-muted hover:text-text-primary hover:bg-surface-hover'
             }`}
           >
             <i
-              className={`bx ${item.icon} text-lg`}
+              className={`bx ${item.icon} text-xl`}
               style={item.rotate ? { transform: 'rotate(-45deg)' } : undefined}
             />
           </button>

@@ -63,7 +63,7 @@ export default function Footer() {
         <button
           onClick={handleZoomReset}
           title="Reset Zoom (Ctrl+0)"
-          className="min-w-[52px] h-9 flex items-center justify-center text-text-secondary text-xs px-2 hover:bg-surface-hover transition-all duration-200"
+          className="min-w-[52px] h-9 flex items-center justify-center text-text-secondary text-sm px-2 hover:bg-surface-hover transition-all duration-200"
         >
           {zoomPercent}%
         </button>

@@ -47,6 +47,7 @@ body {
   overflow: hidden;
   background: #000;
   font-family: "lixFont", sans-serif;
+  font-size: 14px;
 }
 
 /* Hide scrollbars */

@@ -200,9 +200,6 @@ document.addEventListener("DOMContentLoaded", function() {
           case "png":
             exportCanvasAsImage(name);
             break;
-          case "svg":
-            saveCanvasAsSVG(name);
-            break;
           case "pdf":
             exportCanvasAsPDF(name);
             break;
@@ -246,20 +243,6 @@ function exportCanvasAsImage(name) {
     link.click();
   };
   img.src = url;
-}
-
-// --- Save canvas as SVG ---
-function saveCanvasAsSVG(name) {
-  const svgClone = svg.cloneNode(true);
-  svgClone.querySelectorAll('.selection-box, .resize-handle, .multi-selection-rect').forEach(el => el.remove());
-
-  const svgData = new XMLSerializer().serializeToString(svgClone);
-  const blob = new Blob([svgData], { type: "image/svg+xml;charset=utf-8" });
-  const link = document.createElement("a");
-  link.download = name + ".svg";
-  link.href = URL.createObjectURL(blob);
-  link.click();
-  URL.revokeObjectURL(link.href);
 }
 
 // --- Export canvas as PDF ---

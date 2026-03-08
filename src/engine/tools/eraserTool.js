@@ -5,6 +5,17 @@ import { createEraserTrail, updateEraserTrail, fadeOutEraserTrail, getIsErasing,
 
 const eraserCursorSVG = `data:image/svg+xml;base64,${btoa('<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20"><circle cx="10" cy="10" r="7" fill="#222" stroke="white" stroke-width="2"/></svg>')}`;
 
+// Walk up from any element to find its top-level SVG child (direct child of svg)
+function findTopLevelGroup(element) {
+    if (!element || element === svg) return null;
+    let current = element;
+    while (current && current.parentNode !== svg) {
+        current = current.parentNode;
+        if (!current || current === document.body) return null;
+    }
+    return current;
+}
+
 // --- Function to highlight elements under the eraser ---
 function handleElementHighlight(clientX, clientY) {
   if (!getIsErasing()) return;
@@ -13,47 +24,19 @@ function handleElementHighlight(clientX, clientY) {
   const element = document.elementFromPoint(clientX, clientY);
   if (!element || element === svg) return;
 
-  let elementToHighlight = element;
+  // Find the top-level SVG child group for this element
+  let elementToHighlight = findTopLevelGroup(element);
 
-  while (elementToHighlight && elementToHighlight !== svg) {
-    let groupType = elementToHighlight.closest("g[data-type='text-group']");
-    let circleGroupType = elementToHighlight.closest("g[data-type='circle-group']");
-    let squareGroupType = elementToHighlight.closest("g[data-type='square-group']");
-    let lineGroupType = elementToHighlight.closest("g[data-type='line-group']");
-    let arrowGroupType = elementToHighlight.closest("g[data-type='arrow-group']");
+  // Skip the eraser trail path itself
+  if (!elementToHighlight) return;
+  if (elementToHighlight.tagName === 'path' && elementToHighlight.getAttribute('stroke')?.includes('53, 53, 53')) return;
 
-    if (squareGroupType) {
-        elementToHighlight = squareGroupType;
-    } else if (circleGroupType) {
-        elementToHighlight = circleGroupType;
-    }
-    else if(lineGroupType) {
-        elementToHighlight = lineGroupType
-    }
-    else if (arrowGroupType) {
-        elementToHighlight = arrowGroupType;
-    }
-    else if (groupType) {
-      elementToHighlight = groupType;
-    }
-    else if (!["g", "path", "line", "image", "circle", "polygon"].includes(elementToHighlight.tagName)) {
-        elementToHighlight = null;
-        break;
-    }
-    if (elementToHighlight) {
-         if (!targetedElements.has(elementToHighlight)) {
-            targetedElements.add(elementToHighlight);
-            elementToHighlight.setAttribute("data-original-opacity", elementToHighlight.style.opacity || "1");
-            elementToHighlight.dataset.storedOpacity = elementToHighlight.getAttribute("data-original-opacity");
-            elementToHighlight.style.opacity = "0.5";
-        }
-        return;
-    }
-
-    elementToHighlight = elementToHighlight.parentNode;
+  if (!targetedElements.has(elementToHighlight)) {
+      targetedElements.add(elementToHighlight);
+      elementToHighlight.setAttribute("data-original-opacity", elementToHighlight.style.opacity || "1");
+      elementToHighlight.dataset.storedOpacity = elementToHighlight.getAttribute("data-original-opacity");
+      elementToHighlight.style.opacity = "0.3";
   }
-
-  removeHighlight();
 }
 
 function removeHighlight() {
@@ -72,16 +55,30 @@ function removeTargetedElements() {
         const deletionActions = [];
 
         elementsToRemove.forEach(element => {
-            if (element.parentNode === svg) {
-                const originalOpacity = element.dataset.storedOpacity || "1";
-                deletionActions.push({
-                    type: ACTION_DELETE,
-                    element: element,
-                    parent: element.parentNode,
-                    nextSibling: element.nextSibling,
-                    originalOpacity: originalOpacity,
-                });
+            const originalOpacity = element.dataset.storedOpacity || "1";
+            deletionActions.push({
+                type: ACTION_DELETE,
+                element: element,
+                parent: element.parentNode,
+                nextSibling: element.nextSibling,
+                originalOpacity: originalOpacity,
+            });
+
+            // Remove from DOM
+            if (element.parentNode) {
                 element.parentNode.removeChild(element);
+            }
+
+            // Also remove from the global shapes array
+            if (window.shapes) {
+                const idx = window.shapes.findIndex(s =>
+                    s.element === element ||
+                    s.group === element ||
+                    s.wrapper === element
+                );
+                if (idx !== -1) {
+                    window.shapes.splice(idx, 1);
+                }
             }
         });
 
@@ -115,6 +112,7 @@ svg.addEventListener("pointermove", (e) => {
 });
 
 svg.addEventListener("pointerup", () => {
+  if (!getIsErasing()) return;
   setIsErasing(false);
   removeTargetedElements();
   fadeOutEraserTrail();
@@ -122,6 +120,7 @@ svg.addEventListener("pointerup", () => {
 });
 
 svg.addEventListener("pointerleave", (e) => {
+  if (!getIsErasing()) return;
   setIsErasing(false);
   removeTargetedElements();
   fadeOutEraserTrail();

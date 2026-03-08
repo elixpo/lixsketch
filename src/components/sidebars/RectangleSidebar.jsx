@@ -116,7 +116,7 @@ export default function RectangleSidebar() {
               }`}
             >
               <svg width="28" height="4" viewBox="0 0 28 4">
-                <line x1="0" y1="2" x2="28" y2="2" stroke="currentColor" strokeWidth="2" strokeDasharray={s.d} strokeLinecap="round" />
+                <line x1="0" y1="2" x2="28" y2="2" stroke="#fff" strokeWidth="2" strokeDasharray={s.d} strokeLinecap="round" />
               </svg>
             </button>
           ))}

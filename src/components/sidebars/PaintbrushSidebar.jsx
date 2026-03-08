@@ -61,7 +61,7 @@ export default function PaintbrushSidebar() {
             <button key={s.v} onClick={() => setLineStyle(s.v)}
               className={`w-11 h-8 flex items-center justify-center rounded-lg transition-all duration-100 ${lineStyle === s.v ? 'bg-[#5B57D1]/20' : 'hover:bg-white/[0.06]'}`}
             >
-              <svg width="28" height="4" viewBox="0 0 28 4"><line x1="0" y1="2" x2="28" y2="2" stroke="currentColor" strokeWidth="2" strokeDasharray={s.d} strokeLinecap="round" /></svg>
+              <svg width="28" height="4" viewBox="0 0 28 4"><line x1="0" y1="2" x2="28" y2="2" stroke="#fff" strokeWidth="2" strokeDasharray={s.d} strokeLinecap="round" /></svg>
             </button>
           ))}
         </div>

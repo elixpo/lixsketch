@@ -86,43 +86,49 @@ export default function useKeyboardShortcuts() {
       }
     }
 
-    // Prevent browser zoom on Ctrl+scroll, route to canvas zoom
+    // Prevent browser zoom on Ctrl+scroll — engine's ZoomPan.js handles actual zoom
     function handleWheel(e) {
       if (e.ctrlKey || e.metaKey) {
         e.preventDefault()
-        const store = useSketchStore.getState()
-        const delta = e.deltaY > 0 ? -0.1 : 0.1
-        store.setZoom(store.zoom + delta)
+      }
+    }
 
-        // Update the SVG viewBox if the engine has set up the global
-        if (typeof window !== 'undefined' && window.currentZoom !== undefined) {
-          window.currentZoom = store.zoom + delta
-          const svgEl = document.getElementById('freehand-canvas')
-          if (svgEl) {
-            const w = window.innerWidth / window.currentZoom
-            const h = window.innerHeight / window.currentZoom
-            if (window.currentViewBox) {
-              window.currentViewBox.width = w
-              window.currentViewBox.height = h
-              svgEl.setAttribute(
-                'viewBox',
-                `${window.currentViewBox.x} ${window.currentViewBox.y} ${w} ${h}`
-              )
-            }
-          }
-          // Update zoom display if it exists
-          const zoomSpan = document.getElementById('zoomPercent')
-          if (zoomSpan) {
-            zoomSpan.innerText = Math.round(window.currentZoom * 100) + '%'
-          }
+    // Space held = temporary pan tool
+    let spaceHeld = false
+    let toolBeforeSpace = null
+
+    function handleKeyUp(e) {
+      if (e.code === 'Space' && spaceHeld) {
+        spaceHeld = false
+        if (toolBeforeSpace) {
+          useSketchStore.getState().setActiveTool(toolBeforeSpace)
+          toolBeforeSpace = null
+        }
+      }
+    }
+
+    function handleSpaceDown(e) {
+      if (e.code === 'Space' && !spaceHeld) {
+        const tag = e.target.tagName.toLowerCase()
+        if (tag === 'input' || tag === 'textarea' || e.target.isContentEditable) return
+        e.preventDefault()
+        spaceHeld = true
+        const store = useSketchStore.getState()
+        if (store.activeTool !== TOOLS.PAN) {
+          toolBeforeSpace = store.activeTool
+          store.setActiveTool(TOOLS.PAN)
         }
       }
     }
 
     document.addEventListener('keydown', handleKeyDown)
+    document.addEventListener('keydown', handleSpaceDown)
+    document.addEventListener('keyup', handleKeyUp)
     document.addEventListener('wheel', handleWheel, { passive: false })
     return () => {
       document.removeEventListener('keydown', handleKeyDown)
+      document.removeEventListener('keydown', handleSpaceDown)
+      document.removeEventListener('keyup', handleKeyUp)
       document.removeEventListener('wheel', handleWheel)
     }
   }, [])

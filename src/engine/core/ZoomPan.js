@@ -163,7 +163,20 @@ function resizeCanvas() {
 
 
 
+let isMiddleMousePanning = false;
+
 freehandCanvas.addEventListener("mousedown", function (e) {
+  // Middle mouse button panning
+  if (e.button === 1) {
+      e.preventDefault();
+      isMiddleMousePanning = true;
+      isPanning = true;
+      startCanvasX = e.clientX;
+      startCanvasY = e.clientY;
+      panStart = { x: e.clientX, y: e.clientY };
+      freehandCanvas.style.cursor = 'grabbing';
+      return;
+  }
   if (isPanningToolActive) {
       isPanning = true;
       startCanvasX = e.clientX;
@@ -192,22 +205,37 @@ freehandCanvas.addEventListener("mousemove", (e) => {
   panStart = { x: e.clientX, y: e.clientY };
 });
 
-freehandCanvas.addEventListener("mouseup", () => {
+freehandCanvas.addEventListener("mouseup", (e) => {
+  if (isMiddleMousePanning) {
+      isMiddleMousePanning = false;
+      isPanning = false;
+      freehandCanvas.style.cursor = '';
+      return;
+  }
   if(isPanningToolActive)
   {
       isPanning = false;
       freehandCanvas.style.cursor = 'grab';
   }
-  
 });
 
 freehandCanvas.addEventListener("mouseleave", () => {
+  if (isMiddleMousePanning) {
+      isMiddleMousePanning = false;
+      isPanning = false;
+      freehandCanvas.style.cursor = '';
+      return;
+  }
   if(isPanningToolActive)
   {
       isPanning = false;
       freehandCanvas.style.cursor = 'grab';
   }
+});
 
+// Prevent default middle-click auto-scroll behavior
+freehandCanvas.addEventListener("auxclick", (e) => {
+  if (e.button === 1) e.preventDefault();
 });
 
 

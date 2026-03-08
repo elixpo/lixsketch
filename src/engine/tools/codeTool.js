@@ -671,11 +671,8 @@ function renderCodeFromEditor(input, codeElement, deleteIfEmpty = false) {
 
     // After rendering code, switch to selection tool and auto-select
     if (gElement.parentNode) {
-        const pointerBtn = document.querySelector(".bxs-pointer");
-        if (pointerBtn) {
-            selectedTool = pointerBtn;
-            toolExtraPopup();
-        }
+        window.isSelectionToolActive = true;
+        toolExtraPopup();
         selectCodeBlock(gElement);
     }
 }
@@ -899,11 +896,8 @@ function renderCode(input, codeElement, deleteIfEmpty = false) {
 
     // After rendering code, switch to selection tool and auto-select
     if (gElement.parentNode) {
-        const pointerBtn = document.querySelector(".bxs-pointer");
-        if (pointerBtn) {
-            selectedTool = pointerBtn;
-            toolExtraPopup();
-        }
+        window.isSelectionToolActive = true;
+        toolExtraPopup();
         selectCodeBlock(gElement);
     }
 }
@@ -1053,7 +1047,7 @@ function createCodeSelectionFeedback(groupElement) {
         codeResizeHandles[handle.name] = handleRect;
 
         handleRect.addEventListener('mousedown', (e) => {
-            if (selectedTool && selectedTool.classList.contains("bxs-pointer")) {
+            if (window.isSelectionToolActive) {
                 e.stopPropagation();
                 startCodeResize(e, handle.name);
             }
@@ -1078,7 +1072,7 @@ function createCodeSelectionFeedback(groupElement) {
     codeResizeHandles.rotate = rotationAnchor;
 
     rotationAnchor.addEventListener('mousedown', (e) => {
-        if (selectedTool && selectedTool.classList.contains("bxs-pointer")) {
+        if (window.isSelectionToolActive) {
             e.stopPropagation();
             startCodeRotation(e);
         }

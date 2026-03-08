@@ -1,6 +1,8 @@
 /* eslint-disable */
-// Laser tool - copied from laserTool.js
-// Depends on globals: svg, currentZoom, selectedTool, lazerCursor
+// Laser tool - extracted from laserTool.js
+// Depends on globals: svg, currentZoom, isLaserToolActive
+
+const lazerCursor = `data:image/svg+xml;base64,${btoa('<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20"><circle cx="10" cy="10" r="4" fill="red" stroke="white" stroke-width="1.5"/></svg>')}`;
 
 let isDrawing = false;
 let lasers = []; 
@@ -207,7 +209,7 @@ function fadeLaserTrail(laser) {
 
 
 svg.addEventListener("mousedown", (e) => {
-    if (!selectedTool || !selectedTool.classList.contains("bxs-magic-wand")) return;
+    if (!isLaserToolActive) return;
 
     // Check if the click target is a UI element (like selection box or resize handle)
     if (e.target !== svg) {
@@ -245,7 +247,7 @@ svg.addEventListener("mousedown", (e) => {
 });
 
 svg.addEventListener("mousemove", (e) => {
-    if (selectedTool && selectedTool.classList.contains("bxs-magic-wand")) {
+    if (isLaserToolActive) {
         svg.style.cursor = `url(${lazerCursor}) 10 10, auto`;
     }
 
@@ -271,7 +273,7 @@ svg.addEventListener("mouseup", (e) => {
     lastMovePoint = null;
 
     // Restore cursor
-    if (selectedTool && selectedTool.classList.contains("bxs-magic-wand")) {
+    if (isLaserToolActive) {
        svg.style.cursor = `url(${lazerCursor}) 10 10, auto`;
     } else {
        svg.style.cursor = 'default';

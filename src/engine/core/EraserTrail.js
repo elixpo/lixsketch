@@ -7,7 +7,12 @@ let eraserPath = null;
 let eraserPoints = [];
 const MAX_TRAIL_LENGTH = 10;
 const FADE_DURATION = 150;
-let targetedElements = new Set(); // Changed to a Set for multiple elements
+let targetedElements = new Set();
+
+// Getter/setter for isErasing so eraserTool can share state
+function getIsErasing() { return isErasing; }
+function setIsErasing(val) { isErasing = val; }
+function getTargetedElements() { return targetedElements; }
 
 // --- Convert screen coordinates to SVG viewBox coordinates ---
 function screenToSVGEraser(clientX, clientY) {
@@ -53,7 +58,6 @@ function updateEraserTrail(x, y) {
     }
 
     updateEraserPath();
-    handleElementHighlight(x, y);
 }
 
 // --- Function to update the eraser path ---
@@ -100,4 +104,6 @@ function fadeOutEraserTrail() {
         }
     }, FADE_DURATION / MAX_TRAIL_LENGTH);
 }
+
+export { createEraserTrail, updateEraserTrail, fadeOutEraserTrail, getIsErasing, setIsErasing, getTargetedElements };
 

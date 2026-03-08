@@ -122,11 +122,8 @@ const handleMouseDown = (e) => {
 
             // Auto-select the new frame and switch to selection tool
             const placedFrame = currentFrame;
-            const selectBtn = document.querySelector('.bxs-pointer');
-            if (selectBtn) {
-                selectedTool = selectBtn;
-                toolExtraPopup();
-            }
+            window.isSelectionToolActive = true;
+            toolExtraPopup();
             currentShape = placedFrame;
             placedFrame.selectFrame();
         }

@@ -60,11 +60,8 @@ setTextReferences(selectedElement, updateSelectionFeedback, svg);
 
 
 function switchToSelectionTool() {
-    const pointerBtn = document.querySelector(".bxs-pointer");
-    if (pointerBtn) {
-        selectedTool = pointerBtn;
-        toolExtraPopup();
-    }
+    window.isSelectionToolActive = true;
+    toolExtraPopup();
 }
 
 
@@ -490,7 +487,7 @@ function createSelectionFeedback(groupElement) {
         resizeHandles[handle.name] = handleRect;
 
         handleRect.addEventListener('mousedown', (e) => {
-            if (selectedTool && selectedTool.classList.contains("bxs-pointer")) {
+            if (window.isSelectionToolActive) {
                 e.stopPropagation();
                 startResize(e, handle.name);
             }
@@ -514,7 +511,7 @@ function createSelectionFeedback(groupElement) {
     resizeHandles.rotate = rotationAnchor;
 
     rotationAnchor.addEventListener('mousedown', (e) => {
-        if (selectedTool && selectedTool.classList.contains("bxs-pointer")) {
+        if (window.isSelectionToolActive) {
             e.stopPropagation();
             startRotation(e);
         }
@@ -1231,11 +1228,8 @@ function enterEditMode(groupElement) {
     if (!textEl) return;
 
     // Switch to text tool with property panel
-    const textBtn = document.querySelector(".bx-text");
-    if (textBtn) {
-        selectedTool = textBtn;
-        toolExtraPopup();
-    }
+    window.isTextToolActive = true;
+    toolExtraPopup();
 
     // Deselect (removes selection feedback) then open editor
     deselectElement();

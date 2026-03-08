@@ -107,7 +107,6 @@ document.addEventListener("DOMContentLoaded", function() {
 
       case "reset":
         if (confirm("Are you sure you want to reset the canvas? All shapes will be deleted.")) {
-          // Remove all shape elements from SVG
           if (typeof shapes !== 'undefined') {
             shapes.forEach(shape => {
               if (shape.group && shape.group.parentNode) {
@@ -124,16 +123,12 @@ document.addEventListener("DOMContentLoaded", function() {
         }
         break;
 
-      case "export":
-        exportCanvasAsImage();
-        break;
-
       case "save":
-        saveCanvasAsSVG();
+        toggleSaveAsModal();
         break;
 
       case "github":
-        window.open("https://github.com/iamSt3el/LixSketch", "_blank");
+        window.open("https://github.com/elixpo/elixposketch", "_blank");
         break;
 
       case "help":
@@ -145,19 +140,15 @@ document.addEventListener("DOMContentLoaded", function() {
         break;
 
       case "open":
-        // Placeholder — no open implementation yet
-        break;
-
-      case "blog":
-        // Placeholder
+        // Placeholder — no open/load implementation yet
         break;
 
       case "report":
-        window.open("https://github.com/iamSt3el/LixSketch/issues", "_blank");
+        window.open("https://github.com/elixpo/elixposketch/issues", "_blank");
         break;
 
       case "follow":
-        // Placeholder
+        window.open("https://github.com/elixpo", "_blank");
         break;
     }
   });
@@ -192,11 +183,49 @@ document.addEventListener("DOMContentLoaded", function() {
       toggleShortcutsModal();
     });
   }
+
+  // --- Save As modal handlers ---
+  const saveModal = document.getElementById("saveAsModal");
+  if (saveModal) {
+    saveModal.querySelector(".save-modal-overlay").addEventListener("click", () => saveModal.classList.add("hidden"));
+    saveModal.querySelector(".save-modal-close").addEventListener("click", () => saveModal.classList.add("hidden"));
+
+    saveModal.querySelectorAll(".save-option:not(.disabled)").forEach(option => {
+      option.addEventListener("click", function() {
+        const format = this.dataset.format;
+        saveModal.classList.add("hidden");
+        const name = document.getElementById("workspaceNameInput").value || "LixSketch";
+
+        switch (format) {
+          case "png":
+            exportCanvasAsImage(name);
+            break;
+          case "svg":
+            saveCanvasAsSVG(name);
+            break;
+          case "pdf":
+            exportCanvasAsPDF(name);
+            break;
+        }
+      });
+    });
+  }
 });
 
+// --- Save As modal toggle ---
+function toggleSaveAsModal() {
+  const modal = document.getElementById("saveAsModal");
+  if (!modal) return;
+  modal.classList.toggle("hidden");
+}
+
 // --- Export canvas as PNG ---
-function exportCanvasAsImage() {
-  const svgData = new XMLSerializer().serializeToString(svg);
+function exportCanvasAsImage(name) {
+  const svgClone = svg.cloneNode(true);
+  // Remove any UI overlays (selection boxes, resize handles, etc.)
+  svgClone.querySelectorAll('.selection-box, .resize-handle, .multi-selection-rect').forEach(el => el.remove());
+
+  const svgData = new XMLSerializer().serializeToString(svgClone);
   const svgBlob = new Blob([svgData], { type: "image/svg+xml;charset=utf-8" });
   const url = URL.createObjectURL(svgBlob);
 
@@ -212,7 +241,7 @@ function exportCanvasAsImage() {
     URL.revokeObjectURL(url);
 
     const link = document.createElement("a");
-    link.download = (document.getElementById("workspaceNameInput").value || "LixSketch") + ".png";
+    link.download = name + ".png";
     link.href = canvas.toDataURL("image/png");
     link.click();
   };
@@ -220,14 +249,59 @@ function exportCanvasAsImage() {
 }
 
 // --- Save canvas as SVG ---
-function saveCanvasAsSVG() {
-  const svgData = new XMLSerializer().serializeToString(svg);
+function saveCanvasAsSVG(name) {
+  const svgClone = svg.cloneNode(true);
+  svgClone.querySelectorAll('.selection-box, .resize-handle, .multi-selection-rect').forEach(el => el.remove());
+
+  const svgData = new XMLSerializer().serializeToString(svgClone);
   const blob = new Blob([svgData], { type: "image/svg+xml;charset=utf-8" });
   const link = document.createElement("a");
-  link.download = (document.getElementById("workspaceNameInput").value || "LixSketch") + ".svg";
+  link.download = name + ".svg";
   link.href = URL.createObjectURL(blob);
   link.click();
   URL.revokeObjectURL(link.href);
+}
+
+// --- Export canvas as PDF ---
+function exportCanvasAsPDF(name) {
+  const svgClone = svg.cloneNode(true);
+  svgClone.querySelectorAll('.selection-box, .resize-handle, .multi-selection-rect').forEach(el => el.remove());
+
+  const svgData = new XMLSerializer().serializeToString(svgClone);
+  const svgBlob = new Blob([svgData], { type: "image/svg+xml;charset=utf-8" });
+  const url = URL.createObjectURL(svgBlob);
+
+  const img = new Image();
+  img.onload = function() {
+    const canvas = document.createElement("canvas");
+    const w = svg.viewBox.baseVal.width || svg.clientWidth;
+    const h = svg.viewBox.baseVal.height || svg.clientHeight;
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext("2d");
+    ctx.fillStyle = svg.style.background || "#000";
+    ctx.fillRect(0, 0, w, h);
+    ctx.drawImage(img, 0, 0);
+    URL.revokeObjectURL(url);
+
+    const imgData = canvas.toDataURL("image/png");
+
+    // Build a minimal PDF with the image embedded
+    const pdfWindow = window.open("", "_blank");
+    if (pdfWindow) {
+      pdfWindow.document.write(`
+        <html><head><title>${name}</title>
+        <style>
+          @page { size: ${w}px ${h}px; margin: 0; }
+          body { margin: 0; }
+          img { width: 100%; height: 100%; }
+        </style></head>
+        <body><img src="${imgData}" onload="window.print();" /></body></html>
+      `);
+      pdfWindow.document.close();
+    }
+  };
+  img.src = url;
 }
 
 
@@ -525,6 +599,13 @@ document.addEventListener('keydown', (e) => {
       return;
     }
 
+    // Save As: Ctrl+S
+    if (key === 's') {
+      e.preventDefault();
+      toggleSaveAsModal();
+      return;
+    }
+
     // Command palette / Shortcuts: Ctrl+/
     if (key === '/') {
       e.preventDefault();
@@ -544,11 +625,16 @@ document.addEventListener('keydown', (e) => {
       return;
     }
 
-    // Escape: close shortcuts modal if open, otherwise deselect all
+    // Escape: close any open modal, otherwise deselect all
     if (e.key === 'Escape') {
-      const modal = document.getElementById('shortcutsModal');
-      if (modal && !modal.classList.contains('hidden')) {
-        modal.classList.add('hidden');
+      const shortcutsModal = document.getElementById('shortcutsModal');
+      if (shortcutsModal && !shortcutsModal.classList.contains('hidden')) {
+        shortcutsModal.classList.add('hidden');
+        return;
+      }
+      const saveModal = document.getElementById('saveAsModal');
+      if (saveModal && !saveModal.classList.contains('hidden')) {
+        saveModal.classList.add('hidden');
         return;
       }
       if (typeof currentShape !== 'undefined' && currentShape && typeof currentShape.removeSelection === 'function') {

@@ -474,14 +474,6 @@
                 <div class="shortcut">Ctrl+S</div>
               </span>
 
-              <span data-action="export">
-                <div class="content">
-                    <i class='bx bxs-image-add' ></i>
-                  <p>Export Image</p>
-                </div>
-                <div class="shortcut">Ctrl+E</div>
-              </span>
-
               <span data-action="shortcuts">
                 <div class="content special">
                     <i class='bx bxs-terminal'></i>
@@ -598,6 +590,48 @@
     <script src="./JS/eraserTrail.js" defer></script>
     <script src="./JS/eraserTool.js" defer></script>
 
+    <!-- Save As Modal -->
+    <div id="saveAsModal" class="save-modal hidden">
+      <div class="save-modal-overlay"></div>
+      <div class="save-modal-content">
+        <div class="save-modal-header">
+          <h2>Save As</h2>
+          <i class='bx bx-x save-modal-close'></i>
+        </div>
+        <div class="save-modal-body">
+          <div class="save-option" data-format="png">
+            <div class="save-option-icon"><i class='bx bxs-image'></i></div>
+            <div class="save-option-info">
+              <p class="save-option-title">Image (PNG)</p>
+              <p class="save-option-desc">Export your canvas as a PNG image</p>
+            </div>
+          </div>
+          <div class="save-option" data-format="svg">
+            <div class="save-option-icon"><i class='bx bx-code-alt'></i></div>
+            <div class="save-option-info">
+              <p class="save-option-title">SVG File</p>
+              <p class="save-option-desc">Save as scalable vector graphics</p>
+            </div>
+          </div>
+          <div class="save-option" data-format="pdf">
+            <div class="save-option-icon"><i class='bx bxs-file-pdf'></i></div>
+            <div class="save-option-info">
+              <p class="save-option-title">PDF Document</p>
+              <p class="save-option-desc">Export as a PDF file</p>
+            </div>
+          </div>
+          <div class="save-option disabled" data-format="json">
+            <div class="save-option-icon"><i class='bx bx-braces'></i></div>
+            <div class="save-option-info">
+              <p class="save-option-title">Scene (.json)</p>
+              <p class="save-option-desc">Save the scene for re-editing later</p>
+            </div>
+            <span class="coming-soon-badge">Coming Soon</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Keyboard Shortcuts Modal -->
     <div id="shortcutsModal" class="shortcuts-modal hidden">
       <div class="shortcuts-overlay"></div>
@@ -631,6 +665,7 @@
             <div class="shortcut-row"><span class="shortcut-keys"><kbd>Ctrl</kbd>+<kbd>G</kbd></span><span>Group into Frame</span></div>
             <div class="shortcut-row"><span class="shortcut-keys"><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>G</kbd></span><span>Ungroup Frame</span></div>
             <div class="shortcut-row"><span class="shortcut-keys"><kbd>Ctrl</kbd>+<kbd>D</kbd></span><span>Duplicate</span></div>
+            <div class="shortcut-row"><span class="shortcut-keys"><kbd>Ctrl</kbd>+<kbd>S</kbd></span><span>Save As</span></div>
             <div class="shortcut-row"><span class="shortcut-keys"><kbd>Ctrl</kbd>+<kbd>C</kbd></span><span>Copy</span></div>
             <div class="shortcut-row"><span class="shortcut-keys"><kbd>Ctrl</kbd>+<kbd>V</kbd></span><span>Paste</span></div>
             <div class="shortcut-row"><span class="shortcut-keys"><kbd>Ctrl</kbd>+<kbd>Z</kbd></span><span>Undo</span></div>

@@ -276,9 +276,8 @@ export function renderAIDiagram(diagram) {
             } else if (node.type === 'diamond' && window.Rectangle) {
                 const sz = Math.max(nw, nh) * 0.7;
                 shape = new window.Rectangle(cx - sz / 2, cy - sz / 2, sz, sz, nodeOpts);
-                if (shape.element) {
-                    shape.element.setAttribute('transform', `rotate(45, ${sz / 2}, ${sz / 2})`);
-                }
+                shape.rotation = 45;
+                shape.draw();
             } else if (window.Rectangle) {
                 shape = new window.Rectangle(nx, ny, nw, nh, nodeOpts);
             }
@@ -289,8 +288,8 @@ export function renderAIDiagram(diagram) {
 
         if (!shape) continue;
 
-        // Apply rotation if specified
-        if (node.rotation && shape.rotation !== undefined) {
+        // Apply rotation if specified (skip for diamonds — they already have rotation=45)
+        if (node.rotation && shape.rotation !== undefined && node.type !== 'diamond') {
             shape.rotation = node.rotation;
         }
 

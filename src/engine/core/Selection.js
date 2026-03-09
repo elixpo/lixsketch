@@ -1344,17 +1344,29 @@ function handleMultiSelectionMouseDown(e) {
         return false; // Let individual shape handlers manage their own anchors
     }
 
-    // Check if clicking on any shape
+    // Check if clicking on any shape — prioritise non-frame shapes so that
+    // shapes inside frames (text, icons, etc.) can still be selected/interacted with.
     let clickedOnShape = false;
     let clickedShape = null;
     if (typeof shapes !== 'undefined') {
+        let fallbackFrame = null;
         for (let i = shapes.length - 1; i >= 0; i--) {
             const shape = shapes[i];
             if (shape.contains && shape.contains(x, y)) {
-                clickedOnShape = true;
-                clickedShape = shape;
-                break;
+                if (shape.shapeName === 'frame') {
+                    // Remember the frame but keep looking for a more specific shape
+                    if (!fallbackFrame) fallbackFrame = shape;
+                } else {
+                    clickedOnShape = true;
+                    clickedShape = shape;
+                    break;
+                }
             }
+        }
+        // If no non-frame shape was found, use the frame
+        if (!clickedOnShape && fallbackFrame) {
+            clickedOnShape = true;
+            clickedShape = fallbackFrame;
         }
     }
 

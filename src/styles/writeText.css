@@ -49,10 +49,17 @@
     display: none;
 }
 
-#freehand-canvas > g 
+#freehand-canvas > g
 {
     user-select: none;
- 
+}
+
+/* Prevent native browser text selection on SVG text elements during mouse drag */
+#freehand-canvas text,
+#freehand-canvas tspan {
+    user-select: none;
+    -webkit-user-select: none;
+    pointer-events: painted;
 }
 
 

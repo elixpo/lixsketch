@@ -60,8 +60,11 @@ setTextReferences(selectedElement, updateSelectionFeedback, svg);
 
 
 function switchToSelectionTool() {
-    window.isSelectionToolActive = true;
-    toolExtraPopup();
+    if (window.__sketchStoreApi) {
+        window.__sketchStoreApi.setActiveTool('select');
+    } else {
+        window.isSelectionToolActive = true;
+    }
 }
 
 

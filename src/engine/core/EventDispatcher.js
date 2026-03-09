@@ -15,6 +15,9 @@ import { handleMouseDownIcon, handleMouseMoveIcon, handleMouseUpIcon } from '../
 import { handleCodeMouseDown, handleCodeMouseMove, handleCodeMouseUp } from '../tools/codeTool.js';
 
 const handleMainMouseDown = (e) => {
+    // Safety: remove any stray selection rectangle from a previous interrupted drag
+    removeMultiSelectionRect();
+
     // For non-selection tools: deselect everything when clicking on empty canvas
     // (Selection tool handles its own deselection in handleMultiSelectionMouseDown)
     if (!isSelectionToolActive) {
@@ -299,10 +302,8 @@ const handleMainMouseLeave = (e) => {
     // Fire mouseUp for whichever tool is active to finalize/cancel the operation
     handleMainMouseUp(e);
 
-    // Selection tool: remove the selection rectangle if mid-drag
-    if (isSelectionToolActive) {
-        removeMultiSelectionRect();
-    }
+    // Always clean up any stray selection rectangle when pointer leaves canvas
+    removeMultiSelectionRect();
 
     // Eraser: stop erasing and clean up trail (globals from eraserTool.js / eraserTrail.js)
     if (typeof isErasing !== 'undefined' && isErasing) {

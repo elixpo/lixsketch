@@ -1514,7 +1514,10 @@ window.addEventListener('mouseup', () => {
 
 // Delete key support for multi-selection
 document.addEventListener('keydown', (e) => {
-    if (e.key === 'Delete' && multiSelection.selectedShapes.size > 0) {
+    if ((e.key === 'Delete' || e.key === 'Backspace') && multiSelection.selectedShapes.size > 0) {
+        // Don't delete if user is typing in an input
+        const tag = e.target.tagName.toLowerCase();
+        if (tag === 'input' || tag === 'textarea' || e.target.isContentEditable) return;
         e.preventDefault();
         deleteSelectedShapes();
     }

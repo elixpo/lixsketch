@@ -1763,4 +1763,25 @@ function updateCodeToggleForShape(shapeName) {
     }
 }
 
+// React sidebar bridge — update currently selected text/code shape
+window.updateSelectedTextStyle = function(changes) {
+    const el = selectedElement || (window.currentShape && window.currentShape.shapeName === 'text' ? window.currentShape.group : null);
+    if (!el) return;
+    const textElement = el.querySelector('text');
+    if (!textElement) return;
+
+    if (changes.color) {
+        textElement.setAttribute('fill', changes.color);
+        textColor = changes.color;
+    }
+    if (changes.font) {
+        textElement.setAttribute('font-family', changes.font);
+        textFont = changes.font;
+    }
+    if (changes.fontSize) {
+        textElement.setAttribute('font-size', changes.fontSize);
+        textSize = changes.fontSize;
+    }
+};
+
 export { handleTextMouseDown, handleTextMouseMove, handleTextMouseUp, updateCodeToggleForShape };

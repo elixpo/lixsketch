@@ -2,6 +2,8 @@
 // Frame shape class - extracted from frameHolder.js
 // Depends on globals: svg, shapes, currentShape, currentZoom
 
+import { cleanupAttachments } from '../tools/arrowTool.js';
+
 function getSVGCoordsFromMouse(e) {
     const viewBox = svg.viewBox.baseVal;
     const rect = svg.getBoundingClientRect();

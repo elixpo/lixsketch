@@ -1,12 +1,14 @@
 "use client"
 
 import useSketchStore, { TOOLS } from '@/store/useSketchStore'
+import useUIStore from '@/store/useUIStore'
 import ShapeSidebar, { ToolbarButton, Divider } from './ShapeSidebar'
 import { useState, useCallback, useEffect } from 'react'
 
 export default function FrameSidebar() {
   const activeTool = useSketchStore((s) => s.activeTool)
   const selectedShapeSidebar = useSketchStore((s) => s.selectedShapeSidebar)
+  const toggleAIModal = useUIStore((s) => s.toggleAIModal)
   const [frameName, setFrameName] = useState('Frame 1')
 
   // Sync name from the actual selected frame when sidebar opens
@@ -37,6 +39,15 @@ export default function FrameSidebar() {
     }
   }, [])
 
+  const handleAIEdit = useCallback(() => {
+    const shape = window.currentShape
+    if (shape && shape.shapeName === 'frame') {
+      // Store the frame reference so AIModal knows we're editing this frame
+      window.__aiEditTargetFrame = shape
+      toggleAIModal()
+    }
+  }, [toggleAIModal])
+
   return (
     <ShapeSidebar visible={activeTool === TOOLS.FRAME || selectedShapeSidebar === 'frame'}>
       <ToolbarButton icon="bxs-rename" tooltip="Frame name">
@@ -58,6 +69,19 @@ export default function FrameSidebar() {
           Resize to Fit
         </button>
       </ToolbarButton>
+
+      <Divider />
+
+      {/* AI Edit — opens AI modal pre-seeded for editing this frame's diagram */}
+      <button
+        onClick={handleAIEdit}
+        title="AI Edit"
+        className="h-9 flex items-center gap-1.5 px-3 rounded-lg text-text-muted hover:text-[#FFD700] hover:bg-white/[0.06] transition-all duration-100"
+      >
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="none">
+          <path d="M12 2l2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8L12 2z" />
+        </svg>
+      </button>
     </ShapeSidebar>
   )
 }

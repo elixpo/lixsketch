@@ -9,15 +9,17 @@ You MUST respond with ONLY a valid JSON object — no markdown fences, no explan
 
 {
   "title": "string — concise diagram title (2-5 words)",
+  "direction": "TD | LR | RL | BT  (optional, default TD)",
   "nodes": [ ...NodeObject ],
-  "edges": [ ...EdgeObject ]
+  "edges": [ ...EdgeObject ],
+  "subgraphs": [ ...SubgraphObject ]   (optional)
 }
 
 ─── NodeObject ───────────────────────────
 
 {
   "id":     "string — unique id (e.g. 'n1', 'login', 'db')",
-  "type":   "rectangle | circle | diamond",
+  "type":   "rectangle | circle | diamond | icon",
   "label":  "string — display text (1-5 words)",
 
   // Position & size (pixels)
@@ -34,7 +36,10 @@ You MUST respond with ONLY a valid JSON object — no markdown fences, no explan
   "roughness":       "number — hand-drawn wobbliness, 0 = clean, 3 = very rough (default 1)",
   "opacity":         "number — 0-1 (default 1)",
   "rotation":        "number — degrees (default 0)",
-  "strokeDasharray": "string — dash pattern e.g. '5 3' for dashed (default '' = solid)"
+  "strokeDasharray": "string — dash pattern e.g. '5 3' for dashed (default '' = solid)",
+
+  // Icon-specific (only when type = "icon")
+  "iconKeyword": "string — search keyword to find an icon (e.g. 'database', 'cloud', 'lock', 'server', 'user', 'email', 'settings', 'code', 'shield', 'chart')"
 }
 
 ─── EdgeObject ───────────────────────────
@@ -50,6 +55,19 @@ You MUST respond with ONLY a valid JSON object — no markdown fences, no explan
   "strokeWidth":     "number — edge thickness (default 1.5)",
   "lineStyle":       "string — 'solid' | 'dashed' | 'dotted' (default 'solid')"
 }
+
+─── SubgraphObject ───────────────────────
+
+{
+  "id":    "string — unique subgraph id",
+  "label": "string — subgraph title / group name",
+  "nodes": ["string — node IDs that belong to this subgraph"],
+  "stroke": "string — subgraph border color (optional, default '#555')"
+}
+
+Subgraphs create visual grouping frames around a set of nodes.
+Nodes inside a subgraph keep their own positions; the subgraph frame
+auto-sizes to contain them with padding.
 
 NOTE: The rendering engine automatically chooses the best edge routing:
   • Straight lines for vertically/horizontally aligned nodes
@@ -73,6 +91,38 @@ You do NOT need to specify curve amounts — the engine handles this.
 "diamond"
   Use for: decisions, conditions, branching logic, yes/no gates,
            validations, guards, checks, forks.
+
+"icon"
+  Use for: visual emphasis — databases, servers, clouds, users, locks,
+           devices, tools. Pair with a label below/beside the icon.
+  Common iconKeyword values:
+    Tech:     "server", "database", "cloud", "code", "terminal", "api",
+              "docker", "kubernetes", "github", "git", "linux", "windows"
+    Security: "lock", "shield", "key", "fingerprint", "firewall"
+    Users:    "user", "users", "person", "team", "admin"
+    Data:     "chart", "analytics", "storage", "file", "folder", "upload"
+    Comms:    "email", "notification", "chat", "message", "bell"
+    UI:       "settings", "search", "home", "bookmark", "star"
+    Infra:    "network", "globe", "wifi", "bluetooth", "monitor"
+    Business: "money", "payment", "cart", "calendar", "clock"
+  Use icons sparingly — 2-5 per diagram max. They enhance, not replace shapes.
+
+═══════════════════════════════════════════
+ LAYOUT DIRECTIONS
+═══════════════════════════════════════════
+
+"TD" or "TB" — Top-to-bottom (default for flowcharts, processes)
+"LR" — Left-to-right (pipelines, timelines, architectures)
+"RL" — Right-to-left (reverse flows, Arabic/Hebrew reading order)
+"BT" — Bottom-to-top (reverse flowcharts, dependency trees)
+
+Choose direction based on the diagram type:
+  • Flowcharts / processes → TD
+  • Pipelines / CI-CD / data flows → LR
+  • System architectures → LR
+  • Dependency graphs → BT
+  • Timelines → LR
+  • Org charts → TD
 
 ═══════════════════════════════════════════
  EDGE DIRECTION GUIDELINES
@@ -117,32 +167,50 @@ Stroke dash patterns:
   • "10 5 2 5" — dash-dot
 
 ═══════════════════════════════════════════
+ SUBGRAPH / GROUPING GUIDELINES
+═══════════════════════════════════════════
+
+Use subgraphs to visually group related nodes:
+  • Backend services in one group, frontend in another
+  • Each microservice as a subgraph
+  • Logical layers (presentation, business logic, data access)
+  • Environments (dev, staging, production)
+
+Keep subgraphs to 2-4 per diagram. Too many defeats the purpose.
+Nodes can only belong to ONE subgraph.
+Edges can cross subgraph boundaries freely.
+
+═══════════════════════════════════════════
  LAYOUT RULES
 ═══════════════════════════════════════════
 
-1. Top-to-bottom flow (default for flowcharts, processes):
+1. Top-to-bottom flow (TD, default):
    • Start nodes at y=0, increment y by ~140-180 per layer.
    • Branch horizontally: left branch at x-200, right at x+200.
 
-2. Left-to-right flow (for timelines, pipelines, architectures):
+2. Left-to-right flow (LR):
    • Start at x=0, increment x by ~220-260 per step.
    • Stack vertically for parallel paths.
 
-3. Grid layout (for entity relationships, class diagrams):
-   • Arrange in rows/columns with ~200px horizontal and ~140px vertical spacing.
+3. Right-to-left flow (RL):
+   • Same as LR but mirrored — start at max x, decrement.
 
-4. Spacing:
+4. Bottom-to-top flow (BT):
+   • Same as TD but reversed — start at max y, decrement.
+
+5. Spacing:
    • Minimum 120px vertical spacing between layers.
    • Minimum 200px horizontal spacing between siblings.
    • No overlapping nodes — ever.
 
-5. Node sizing:
+6. Node sizing:
    • Standard: 160×60
    • Wide labels: increase width to 200-240
    • Important nodes: slightly larger (180×70)
    • Terminal circles: 80×60 or 100×60
+   • Icon nodes: 60×60 or 80×80
 
-6. Balance:
+7. Balance:
    • Center branching paths around the main flow axis.
    • Keep the diagram roughly symmetric when possible.
    • Group related nodes close together.
@@ -167,8 +235,13 @@ When given Mermaid syntax:
 • Parse the graph structure faithfully.
 • Map shapes: [text]→rectangle, (text)→circle, {text}→diamond, ((text))→circle
 • Preserve all labels and edge text.
-• Compute logical x,y positions based on flow direction (TD, LR, etc.).
+• Compute logical x,y positions based on flow direction (TD, LR, RL, BT).
 • Use "directed": true for --> arrows, "directed": false for --- lines.
+• Parse subgraph blocks:
+    subgraph ID ["Label"]
+      ...nodes and edges...
+    end
+  Convert each to a SubgraphObject with the contained node IDs.
 
 ═══════════════════════════════════════════
  EDITING AN EXISTING DIAGRAM
@@ -182,17 +255,13 @@ When modifying a previous diagram:
 • Return the COMPLETE updated diagram (all nodes and edges), not a diff.
 `;
 
-// ============================================================
-// USER PROMPT TEMPLATES
-// ============================================================
-
 export const USER_PROMPT_TEXT = (prompt) =>
-  `Generate a professional diagram for the following description. Analyse the subject matter and choose appropriate node types, colours, layout direction, and level of detail. Use styling (colour, fill, dash patterns) to make the diagram clear and visually informative.
+  `Generate a professional diagram for the following description. Analyse the subject matter and choose appropriate node types, colours, layout direction, and level of detail. Use styling (colour, fill, dash patterns) to make the diagram clear and visually informative. Use subgraphs to group related nodes when appropriate. Include icon nodes for key infrastructure or concepts when it adds clarity.
 
 Description: ${prompt}`;
 
 export const USER_PROMPT_MERMAID = (prompt) =>
-  `Convert the following Mermaid diagram syntax into the JSON format. Preserve all nodes, edges, labels, and logical structure exactly as defined in the Mermaid source. Apply appropriate styling colours based on node roles.
+  `Convert the following Mermaid diagram syntax into the JSON format. Preserve all nodes, edges, labels, subgraphs, and logical structure exactly as defined in the Mermaid source. Apply appropriate styling colours based on node roles.
 
 Mermaid syntax:
 ${prompt}`;

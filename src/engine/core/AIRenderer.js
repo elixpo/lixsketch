@@ -63,9 +63,31 @@ export function parseMermaid(src) {
         return id;
     }
 
+    // Parse subgraphs
+    const subgraphs = [];
+    let currentSubgraph = null;
+
     for (let i = startIdx; i < lines.length; i++) {
         const line = lines[i].replace(/;$/, '').trim();
         if (!line) continue;
+
+        // Subgraph start: subgraph ID ["Label"]
+        const sgMatch = line.match(/^subgraph\s+(\w+)(?:\s*\[?"?(.+?)"?\]?)?$/i);
+        if (sgMatch) {
+            currentSubgraph = {
+                id: sgMatch[1],
+                label: sgMatch[2] || sgMatch[1],
+                nodeIds: [],
+            };
+            continue;
+        }
+
+        // Subgraph end
+        if (line.toLowerCase() === 'end' && currentSubgraph) {
+            subgraphs.push(currentSubgraph);
+            currentSubgraph = null;
+            continue;
+        }
 
         // Labeled edge: A -- text --> B
         let match = line.match(/^(.+?)\s*--\s*(.+?)\s*-->\s*(.+)$/);
@@ -73,6 +95,10 @@ export function parseMermaid(src) {
             const fromId = parseNodeRef(match[1].trim());
             const toId = parseNodeRef(match[3].trim());
             if (fromId && toId) edges.push({ from: fromId, to: toId, label: match[2].trim(), directed: true });
+            if (currentSubgraph) {
+                if (fromId && !currentSubgraph.nodeIds.includes(fromId)) currentSubgraph.nodeIds.push(fromId);
+                if (toId && !currentSubgraph.nodeIds.includes(toId)) currentSubgraph.nodeIds.push(toId);
+            }
             continue;
         }
 
@@ -83,6 +109,10 @@ export function parseMermaid(src) {
             const toId = parseNodeRef(match[4].trim());
             const edgeLabel = match[3] ? match[3].trim() : undefined;
             if (fromId && toId) edges.push({ from: fromId, to: toId, label: edgeLabel, directed: false });
+            if (currentSubgraph) {
+                if (fromId && !currentSubgraph.nodeIds.includes(fromId)) currentSubgraph.nodeIds.push(fromId);
+                if (toId && !currentSubgraph.nodeIds.includes(toId)) currentSubgraph.nodeIds.push(toId);
+            }
             continue;
         }
 
@@ -93,10 +123,18 @@ export function parseMermaid(src) {
             const toId = parseNodeRef(match[4].trim());
             const edgeLabel = match[3] ? match[3].trim() : undefined;
             if (fromId && toId) edges.push({ from: fromId, to: toId, label: edgeLabel, directed: true });
+            if (currentSubgraph) {
+                if (fromId && !currentSubgraph.nodeIds.includes(fromId)) currentSubgraph.nodeIds.push(fromId);
+                if (toId && !currentSubgraph.nodeIds.includes(toId)) currentSubgraph.nodeIds.push(toId);
+            }
             continue;
         }
 
-        parseNodeRef(line);
+        // Plain node reference
+        const nodeId = parseNodeRef(line);
+        if (nodeId && currentSubgraph) {
+            if (!currentSubgraph.nodeIds.includes(nodeId)) currentSubgraph.nodeIds.push(nodeId);
+        }
     }
 
     if (nodesMap.size === 0) return null;
@@ -146,11 +184,15 @@ export function parseMermaid(src) {
 
     return {
         title: 'Mermaid Diagram',
+        direction,
         nodes,
         edges: edges.map(e => ({
             from: e.from, to: e.to, label: e.label,
-            directed: e.directed !== false, // default directed
+            directed: e.directed !== false,
         })),
+        subgraphs: subgraphs.length > 0 ? subgraphs.map(sg => ({
+            id: sg.id, label: sg.label, nodes: sg.nodeIds,
+        })) : undefined,
     };
 }
 
@@ -221,7 +263,15 @@ export function renderAIDiagram(diagram) {
         };
 
         try {
-            if (node.type === 'circle' && window.Circle) {
+            if (node.type === 'icon' && node.iconKeyword) {
+                // Icon nodes are placed asynchronously — create a placeholder rectangle
+                // and kick off icon fetch in the background
+                shape = new window.Rectangle(nx, ny, nw, nh, {
+                    ...nodeOpts, stroke: nodeOpts.stroke, strokeDasharray: '4 3',
+                });
+                // Async fetch & replace with actual icon
+                fetchAndPlaceIcon(node.iconKeyword, nx, ny, nw, nh, shape, frame);
+            } else if (node.type === 'circle' && window.Circle) {
                 shape = new window.Circle(cx, cy, nw / 2, nh / 2, nodeOpts);
             } else if (node.type === 'diamond' && window.Rectangle) {
                 const sz = Math.max(nw, nh) * 0.7;
@@ -381,12 +431,60 @@ export function renderAIDiagram(diagram) {
         }
     }
 
+    // --- SUBGRAPHS ---
+    const subgraphs = diagram.subgraphs || [];
+    for (const sg of subgraphs) {
+        if (!sg.nodes || sg.nodes.length === 0) continue;
+
+        // Compute bounds of all nodes in this subgraph
+        let sgMinX = Infinity, sgMinY = Infinity, sgMaxX = -Infinity, sgMaxY = -Infinity;
+        let hasNodes = false;
+        for (const nid of sg.nodes) {
+            const n = nodeMap.get(nid);
+            if (!n) continue;
+            hasNodes = true;
+            sgMinX = Math.min(sgMinX, n.x);
+            sgMinY = Math.min(sgMinY, n.y);
+            sgMaxX = Math.max(sgMaxX, n.x + n.width);
+            sgMaxY = Math.max(sgMaxY, n.y + n.height);
+        }
+        if (!hasNodes) continue;
+
+        const sgPad = 30;
+        try {
+            const subFrame = new window.Frame(
+                sgMinX - sgPad, sgMinY - sgPad - 20,
+                (sgMaxX - sgMinX) + sgPad * 2, (sgMaxY - sgMinY) + sgPad * 2 + 20,
+                {
+                    stroke: sg.stroke || '#555',
+                    strokeWidth: 1,
+                    fill: 'transparent',
+                    opacity: 0.6,
+                    frameName: sg.label || sg.id,
+                }
+            );
+            window.shapes.push(subFrame);
+            if (window.pushCreateAction) window.pushCreateAction(subFrame);
+            if (frame.addShapeToFrame) frame.addShapeToFrame(subFrame);
+
+            // Add nodes to the sub-frame
+            for (const nid of sg.nodes) {
+                const n = nodeMap.get(nid);
+                if (n && n.shape && subFrame.addShapeToFrame) {
+                    subFrame.addShapeToFrame(n.shape);
+                }
+            }
+        } catch (err) {
+            console.warn('[AIRenderer] Subgraph frame failed:', sg.id, err);
+        }
+    }
+
     // Auto-select the frame and show its sidebar
     window.currentShape = frame;
     if (frame.selectFrame) frame.selectFrame();
     if (window.__sketchStoreApi) window.__sketchStoreApi.setSelectedShapeSidebar('frame');
 
-    console.log(`[AIRenderer] Done: ${nodes.length} nodes, ${edges.length} edges → "${title}"`);
+    console.log(`[AIRenderer] Done: ${nodes.length} nodes, ${edges.length} edges, ${subgraphs.length} subgraphs → "${title}"`);
     return true;
 }
 
@@ -576,6 +674,101 @@ function autoAttach(arrow, shape, isStart, contactPoint) {
     } catch (err) {
         // Attachment is optional — don't fail the render
         console.warn('[AIRenderer] Auto-attach failed:', err);
+    }
+}
+
+// ============================================================
+// ICON FETCHING
+// ============================================================
+
+/**
+ * Fetch an icon by keyword from the icon API and replace the placeholder shape.
+ * Runs asynchronously so it doesn't block diagram rendering.
+ */
+async function fetchAndPlaceIcon(keyword, x, y, w, h, placeholderShape, frame) {
+    try {
+        const res = await fetch(`/api/icons/search?q=${encodeURIComponent(keyword)}&inline=1`);
+        if (!res.ok) return;
+        const data = await res.json();
+        const results = data.results;
+        if (!results || results.length === 0 || !results[0].svg) return;
+
+        const svgContent = results[0].svg;
+
+        // Use the engine's icon placement bridge if available
+        if (window.svg && window.IconShape) {
+            const svg = window.svg;
+
+            // Parse SVG to extract paths
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(svgContent, 'image/svg+xml');
+            const svgEl = doc.querySelector('svg');
+            if (!svgEl) return;
+
+            const vbWidth = parseFloat(svgEl.getAttribute('width') || svgEl.viewBox?.baseVal?.width || 24);
+            const vbHeight = parseFloat(svgEl.getAttribute('height') || svgEl.viewBox?.baseVal?.height || 24);
+            const scale = Math.min(w / vbWidth, h / vbHeight);
+
+            // Create icon group
+            const g = document.createElementNS(NS, 'g');
+            g.setAttribute('type', 'icon');
+            g.setAttribute('x', x);
+            g.setAttribute('y', y);
+            g.setAttribute('width', w);
+            g.setAttribute('height', h);
+            g.setAttribute('data-shape-x', x);
+            g.setAttribute('data-shape-y', y);
+            g.setAttribute('data-shape-width', w);
+            g.setAttribute('data-shape-height', h);
+            g.setAttribute('data-shape-rotation', '0');
+            g.setAttribute('data-viewbox-width', vbWidth);
+            g.setAttribute('data-viewbox-height', vbHeight);
+            g.setAttribute('transform', `translate(${x}, ${y}) scale(${scale})`);
+
+            // Copy SVG content into group, apply white fill
+            const children = svgEl.querySelectorAll('path, circle, rect, polygon, polyline, line, ellipse');
+            children.forEach(child => {
+                const clone = child.cloneNode(true);
+                // Make visible on dark canvas
+                if (!clone.getAttribute('fill') || clone.getAttribute('fill') === 'none' || clone.getAttribute('fill') === 'black' || clone.getAttribute('fill') === '#000' || clone.getAttribute('fill') === '#000000') {
+                    clone.setAttribute('fill', '#ffffff');
+                }
+                if (clone.getAttribute('stroke') === 'black' || clone.getAttribute('stroke') === '#000' || clone.getAttribute('stroke') === '#000000') {
+                    clone.setAttribute('stroke', '#ffffff');
+                }
+                g.appendChild(clone);
+            });
+
+            // Add hit detection rect
+            const hitRect = document.createElementNS(NS, 'rect');
+            hitRect.setAttribute('x', '0');
+            hitRect.setAttribute('y', '0');
+            hitRect.setAttribute('width', vbWidth);
+            hitRect.setAttribute('height', vbHeight);
+            hitRect.setAttribute('fill', 'transparent');
+            hitRect.setAttribute('stroke', 'none');
+            g.insertBefore(hitRect, g.firstChild);
+
+            svg.appendChild(g);
+
+            // Wrap as IconShape
+            const iconShape = new window.IconShape(g);
+            window.shapes.push(iconShape);
+            if (window.pushCreateAction) window.pushCreateAction(iconShape);
+            if (frame?.addShapeToFrame) frame.addShapeToFrame(iconShape);
+
+            // Remove placeholder
+            if (placeholderShape) {
+                const idx = window.shapes.indexOf(placeholderShape);
+                if (idx !== -1) window.shapes.splice(idx, 1);
+                if (placeholderShape.group && placeholderShape.group.parentNode) {
+                    placeholderShape.group.parentNode.removeChild(placeholderShape.group);
+                }
+            }
+        }
+    } catch (err) {
+        console.warn('[AIRenderer] Icon fetch failed for keyword:', keyword, err);
+        // Placeholder rectangle remains visible as fallback
     }
 }
 

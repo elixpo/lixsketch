@@ -515,6 +515,11 @@ startLabelEdit(labelElement) {
     }
 
     _showSidebar() {
+        // React sidebar bridge
+        if (window.__showSidebarForShape) {
+            window.__showSidebarForShape('frame');
+        }
+
         const sidebar = document.getElementById('frameSideBar');
         const renameInput = document.getElementById('frameRenameInput');
         const resizeBtn = document.getElementById('frameResizeToFit');

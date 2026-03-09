@@ -12,11 +12,11 @@
  * Every shape is individually editable and selectable.
  */
 
-const PADDING = 60;
+const PADDING = 80;
 const NODE_W = 160;
 const NODE_H = 60;
-const H_SPACING = 220;
-const V_SPACING = 140;
+const H_SPACING = 260;
+const V_SPACING = 180;
 const NS = 'http://www.w3.org/2000/svg';
 
 // ============================================================
@@ -227,8 +227,15 @@ export function renderAIDiagram(diagram) {
         const from = nodeMap.get(edge.from), to = nodeMap.get(edge.to);
         if (!from || !to) continue;
 
-        const sp = getConnectionPoint(from, to);
-        const ep = getConnectionPoint(to, from, true);
+        const spRaw = getEdgePoint(from, to);
+        const epRaw = getEdgePoint(to, from);
+
+        // Nudge start/end points slightly away from node boundary for cleaner arrows
+        const adx = epRaw.x - spRaw.x, ady = epRaw.y - spRaw.y;
+        const alen = Math.sqrt(adx * adx + ady * ady) || 1;
+        const nudge = 4;
+        const sp = { x: spRaw.x + (adx / alen) * nudge, y: spRaw.y + (ady / alen) * nudge };
+        const ep = { x: epRaw.x - (adx / alen) * nudge, y: epRaw.y - (ady / alen) * nudge };
 
         if (window.Arrow) {
             try {
@@ -297,21 +304,26 @@ function createLabel(text, x, y, fontSize, fill, frame) {
     }
 }
 
-function getConnectionPoint(fromNode, toNode, isTarget = false) {
-    const dx = toNode.centerX - fromNode.centerX;
-    const dy = toNode.centerY - fromNode.centerY;
-    const hw = fromNode.width / 2, hh = fromNode.height / 2;
+/**
+ * Get the connection point on a node's boundary toward another node.
+ * Uses the angle between centers to pick the closest edge (top/bottom/left/right).
+ */
+function getEdgePoint(node, targetNode) {
+    const dx = targetNode.centerX - node.centerX;
+    const dy = targetNode.centerY - node.centerY;
+    const hw = node.width / 2;
+    const hh = node.height / 2;
 
-    if (isTarget) {
-        if (Math.abs(dy) * hw > Math.abs(dx) * hh) {
-            return dy < 0 ? { x: fromNode.centerX, y: fromNode.y + fromNode.height } : { x: fromNode.centerX, y: fromNode.y };
-        }
-        return dx < 0 ? { x: fromNode.x + fromNode.width, y: fromNode.centerY } : { x: fromNode.x, y: fromNode.centerY };
+    // Compare slope to decide horizontal vs vertical exit
+    // abs(dy)/abs(dx) > hh/hw  → exit top or bottom
+    if (Math.abs(dx) < 0.001 || Math.abs(dy) * hw > Math.abs(dx) * hh) {
+        // Exit from top or bottom
+        if (dy > 0) return { x: node.centerX, y: node.y + node.height }; // bottom
+        return { x: node.centerX, y: node.y }; // top
     }
-    if (Math.abs(dy) * hw > Math.abs(dx) * hh) {
-        return dy > 0 ? { x: fromNode.centerX, y: fromNode.y + fromNode.height } : { x: fromNode.centerX, y: fromNode.y };
-    }
-    return dx > 0 ? { x: fromNode.x + fromNode.width, y: fromNode.centerY } : { x: fromNode.x, y: fromNode.centerY };
+    // Exit from left or right
+    if (dx > 0) return { x: node.x + node.width, y: node.centerY }; // right
+    return { x: node.x, y: node.centerY }; // left
 }
 
 export function initAIRenderer() {

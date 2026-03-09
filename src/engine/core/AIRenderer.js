@@ -299,16 +299,24 @@ export function renderAIDiagram(diagram) {
 
         nodeMap.set(node.id, { shape, x: nx, y: ny, width: nw, height: nh, centerX: cx, centerY: cy });
 
-        // Node label — ensure readable contrast on dark canvas
+        // Node label — use embedded label for rect/circle, separate TextShape for icons
         if (node.label) {
             let labelColor = node.stroke || '#e0e0e0';
-            // If stroke is too dark to read on the dark canvas, lighten it
             if (isColorTooDark(labelColor)) {
                 labelColor = '#e0e0e0';
             }
-            // Icon nodes: place label below the icon, not centered on it
-            const labelY = node.type === 'icon' ? cy + nh / 2 + 18 : cy;
-            createLabel(node.label, cx, labelY, 14, labelColor, frame);
+
+            if (node.type === 'icon') {
+                // Icons: place label below the icon as a separate TextShape
+                const labelY = cy + nh / 2 + 18;
+                createLabel(node.label, cx, labelY, 14, labelColor, frame);
+            } else if (shape && typeof shape.setLabel === 'function') {
+                // Rectangles, circles, diamonds: use embedded label
+                shape.setLabel(node.label, labelColor, 14);
+            } else {
+                // Fallback: separate TextShape
+                createLabel(node.label, cx, cy, 14, labelColor, frame);
+            }
         }
     }
 
@@ -1030,21 +1038,41 @@ export function generateFramePreviewSVG(frame, width = 500, height = 350) {
                 const stroke = shape.options?.stroke || '#e0e0e0';
                 const fill = shape.options?.fill || 'transparent';
                 if (shape.rotation === 45) {
-                    // Diamond
                     const sz = Math.min(sw, sh) * 0.7;
-                    const cx = sx + sw / 2, cy = sy + sh / 2;
-                    svgContent += `<rect x="${cx - sz / 2}" y="${cy - sz / 2}" width="${sz}" height="${sz}" fill="${fill}" stroke="${stroke}" stroke-width="1.5" transform="rotate(45, ${cx}, ${cy})" />`;
+                    const rcx = sx + sw / 2, rcy = sy + sh / 2;
+                    svgContent += `<rect x="${rcx - sz / 2}" y="${rcy - sz / 2}" width="${sz}" height="${sz}" fill="${fill}" stroke="${stroke}" stroke-width="1.5" transform="rotate(45, ${rcx}, ${rcy})" />`;
+                    // Embedded label for diamond
+                    if (shape.label) {
+                        let lf = shape.labelColor || stroke;
+                        if (isColorTooDark(lf)) lf = '#d0d0d0';
+                        const fs = Math.max(8, (shape.labelFontSize || 14) * scale);
+                        svgContent += `<text x="${rcx}" y="${rcy}" text-anchor="middle" dominant-baseline="central" fill="${lf}" font-size="${fs}" font-family="lixFont, sans-serif">${escapeXml(shape.label)}</text>`;
+                    }
                 } else {
                     svgContent += `<rect x="${sx}" y="${sy}" width="${sw}" height="${sh}" rx="4" fill="${fill}" stroke="${stroke}" stroke-width="1.5" />`;
+                    // Embedded label
+                    if (shape.label) {
+                        let lf = shape.labelColor || stroke;
+                        if (isColorTooDark(lf)) lf = '#d0d0d0';
+                        const fs = Math.max(8, (shape.labelFontSize || 14) * scale);
+                        svgContent += `<text x="${sx + sw / 2}" y="${sy + sh / 2}" text-anchor="middle" dominant-baseline="central" fill="${lf}" font-size="${fs}" font-family="lixFont, sans-serif">${escapeXml(shape.label)}</text>`;
+                    }
                 }
             } else if (shape.shapeName === 'circle') {
-                const cx = shape.x * scale + offX;
-                const cy = shape.y * scale + offY;
-                const rx = (shape.rx || 30) * scale;
-                const ry = (shape.ry || 30) * scale;
+                const ccx = shape.x * scale + offX;
+                const ccy = shape.y * scale + offY;
+                const crx = (shape.rx || 30) * scale;
+                const cry = (shape.ry || 30) * scale;
                 const stroke = shape.options?.stroke || '#e0e0e0';
                 const fill = shape.options?.fill || 'transparent';
-                svgContent += `<ellipse cx="${cx}" cy="${cy}" rx="${rx}" ry="${ry}" fill="${fill}" stroke="${stroke}" stroke-width="1.5" />`;
+                svgContent += `<ellipse cx="${ccx}" cy="${ccy}" rx="${crx}" ry="${cry}" fill="${fill}" stroke="${stroke}" stroke-width="1.5" />`;
+                // Embedded label
+                if (shape.label) {
+                    let lf = shape.labelColor || stroke;
+                    if (isColorTooDark(lf)) lf = '#d0d0d0';
+                    const fs = Math.max(8, (shape.labelFontSize || 14) * scale);
+                    svgContent += `<text x="${ccx}" y="${ccy}" text-anchor="middle" dominant-baseline="central" fill="${lf}" font-size="${fs}" font-family="lixFont, sans-serif">${escapeXml(shape.label)}</text>`;
+                }
             } else if (shape.shapeName === 'text') {
                 const textEl = shape.group?.querySelector('text');
                 if (textEl) {
@@ -1074,8 +1102,31 @@ export function generateFramePreviewSVG(frame, width = 500, height = 350) {
                 const iy = parseFloat(shape.group?.getAttribute('data-shape-y') || '0');
                 const iw = parseFloat(shape.group?.getAttribute('data-shape-width') || '40');
                 const ih = parseFloat(shape.group?.getAttribute('data-shape-height') || '40');
-                svgContent += `<rect x="${ix * scale + offX}" y="${iy * scale + offY}" width="${iw * scale}" height="${ih * scale}" rx="4" fill="transparent" stroke="#9090c0" stroke-width="1" stroke-dasharray="3 2" />`;
-                svgContent += `<text x="${(ix + iw / 2) * scale + offX}" y="${(iy + ih / 2) * scale + offY}" text-anchor="middle" dominant-baseline="central" fill="#9090c0" font-size="9" font-family="lixFont">icon</text>`;
+                const pix = ix * scale + offX;
+                const piy = iy * scale + offY;
+                const piw = iw * scale;
+                const pih = ih * scale;
+
+                // Try to extract actual icon SVG paths from the shape's group
+                const iconPaths = shape.group?.querySelectorAll('path, circle, rect, polygon, polyline, line, ellipse');
+                if (iconPaths && iconPaths.length > 0) {
+                    // Get viewbox dimensions for proper scaling
+                    const vbW = parseFloat(shape.group?.getAttribute('data-viewbox-width') || iw);
+                    const vbH = parseFloat(shape.group?.getAttribute('data-viewbox-height') || ih);
+                    const iconScale = Math.min(piw / vbW, pih / vbH);
+                    svgContent += `<g transform="translate(${pix}, ${piy}) scale(${iconScale})">`;
+                    iconPaths.forEach(p => {
+                        // Skip hit-detection rects (transparent fill, no stroke)
+                        if (p.tagName === 'rect' && p.getAttribute('fill') === 'transparent' && p.getAttribute('stroke') === 'none') return;
+                        const clone = p.cloneNode(true);
+                        svgContent += clone.outerHTML;
+                    });
+                    svgContent += `</g>`;
+                } else {
+                    // Fallback: dashed bounding box with "icon" text
+                    svgContent += `<rect x="${pix}" y="${piy}" width="${piw}" height="${pih}" rx="4" fill="transparent" stroke="#9090c0" stroke-width="1" stroke-dasharray="3 2" />`;
+                    svgContent += `<text x="${pix + piw / 2}" y="${piy + pih / 2}" text-anchor="middle" dominant-baseline="central" fill="#9090c0" font-size="9" font-family="lixFont">icon</text>`;
+                }
             } else if (shape.shapeName === 'frame') {
                 // Sub-frame
                 const sx = shape.x * scale + offX;

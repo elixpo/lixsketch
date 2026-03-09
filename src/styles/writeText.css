@@ -62,7 +62,12 @@
     pointer-events: painted;
 }
 
-
+/* Embedded shape labels */
+.shape-label {
+    user-select: none;
+    -webkit-user-select: none;
+    pointer-events: none;
+}
 
 .syntax-highlight-overlay {
     font-family: 'lixCode', 'Courier New', monospace !important;

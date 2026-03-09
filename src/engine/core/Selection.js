@@ -1354,8 +1354,16 @@ function handleMultiSelectionMouseDown(e) {
             const shape = shapes[i];
             if (shape.contains && shape.contains(x, y)) {
                 if (shape.shapeName === 'frame') {
-                    // Remember the frame but keep looking for a more specific shape
-                    if (!fallbackFrame) fallbackFrame = shape;
+                    // Pick the smallest (most specific/innermost) frame
+                    if (!fallbackFrame) {
+                        fallbackFrame = shape;
+                    } else {
+                        const area = (shape.width || 0) * (shape.height || 0);
+                        const existingArea = (fallbackFrame.width || 0) * (fallbackFrame.height || 0);
+                        if (area < existingArea) {
+                            fallbackFrame = shape;
+                        }
+                    }
                 } else {
                     clickedOnShape = true;
                     clickedShape = shape;
@@ -1363,7 +1371,7 @@ function handleMultiSelectionMouseDown(e) {
                 }
             }
         }
-        // If no non-frame shape was found, use the frame
+        // If no non-frame shape was found, use the smallest frame
         if (!clickedOnShape && fallbackFrame) {
             clickedOnShape = true;
             clickedShape = fallbackFrame;

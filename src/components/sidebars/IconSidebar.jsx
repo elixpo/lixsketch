@@ -82,15 +82,21 @@ export default function IconSidebar() {
   }, [query, visible, category, fetchIcons])
 
   const handleIconClick = useCallback((icon) => {
-    if (typeof window !== 'undefined') {
-      if (icon.svg) {
-        window.iconToPlace = icon.svg
+    if (typeof window === 'undefined') return
+    const place = (svgContent) => {
+      if (window.prepareIconPlacement) {
+        window.prepareIconPlacement(svgContent)
       } else {
-        fetch(`/icons/${encodeURIComponent(icon.filename)}`)
-          .then((r) => r.text())
-          .then((svgText) => { window.iconToPlace = svgText })
-          .catch(() => {})
+        window.iconToPlace = svgContent
       }
+    }
+    if (icon.svg) {
+      place(icon.svg)
+    } else {
+      fetch(`/icons/${encodeURIComponent(icon.filename)}`)
+        .then((r) => r.text())
+        .then(place)
+        .catch(() => {})
     }
   }, [])
 

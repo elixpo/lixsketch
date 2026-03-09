@@ -24,14 +24,15 @@ export default function SVGCanvas() {
     return () => window.removeEventListener('resize', onResize)
   }, [])
 
-  // Close icon sidebar when clicking on canvas
+  // Close icon sidebar when clicking on canvas without an icon ready to place
   useEffect(() => {
     const svg = svgRef.current
     if (!svg) return
 
     const handleCanvasClick = () => {
       const activeTool = useSketchStore.getState().activeTool
-      if (activeTool === TOOLS.ICON) {
+      // If icon tool is active but no icon is queued for placement, close the sidebar
+      if (activeTool === TOOLS.ICON && !window.isIconToolActive) {
         useSketchStore.getState().setActiveTool(TOOLS.SELECT)
       }
     }

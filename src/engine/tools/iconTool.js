@@ -372,10 +372,16 @@ const handleMouseDownIcon = async (e) => {
     }
 
     // Auto-select placed icon and switch to selection tool
-    // requestAnimationFrame ensures the icon is painted before addSelectionOutline runs
     if (placedIconShape) {
-        const selectBtn = document.querySelector(".bxs-pointer");
-        if (selectBtn) selectBtn.click();
+        // Switch to select tool via Zustand store bridge
+        if (window.__sketchStoreApi) {
+            window.__sketchStoreApi.setActiveTool('select');
+        } else {
+            const selectBtn = document.querySelector(".bxs-pointer");
+            if (selectBtn) selectBtn.click();
+        }
+        window.isSelectionToolActive = true;
+        window.isIconToolActive = false;
         currentShape = placedIconShape;
         currentShape.isSelected = true;
         requestAnimationFrame(() => {
@@ -552,7 +558,15 @@ function selectIcon(event) {
         originalWidth = parseFloat(selectedIcon.getAttribute('width')) || placedIconSize;
         originalHeight = parseFloat(selectedIcon.getAttribute('height')) || placedIconSize;
 
-        console.log('Icon selected with dimensions:', { originalX, originalY, originalWidth, originalHeight });
+        // Set currentShape so EventDispatcher routes subsequent events to icon handler
+        const iconShape = (typeof shapes !== 'undefined' && Array.isArray(shapes))
+            ? shapes.find(s => s.shapeName === 'icon' && s.element === selectedIcon)
+            : null;
+        if (iconShape) {
+            currentShape = iconShape;
+            currentShape.isSelected = true;
+            if (window.__showSidebarForShape) window.__showSidebarForShape('icon');
+        }
     }
 }
 
@@ -1339,5 +1353,19 @@ function handleIconClick(event, filename) {
 
 
 
-renderIconsFromServer()
+// Bridge for React sidebar to trigger icon placement
+window.prepareIconPlacement = function(svgContent) {
+    iconToPlace = svgContent;
+    isDraggingIcon = true;
+    window.isIconToolActive = true;
+    document.body.style.cursor = 'crosshair';
+};
+
+// Bridge for IconShape to call selectIcon and removeSelection
+window.__iconToolSelectIcon = selectIcon;
+window.__iconToolRemoveSelection = removeSelection;
+
+// Try to render legacy icons but don't fail if elements missing
+try { renderIconsFromServer(); } catch(e) { /* React handles icon UI */ }
+
 export { handleMouseDownIcon, handleMouseMoveIcon, handleMouseUpIcon, startDrag, stopDrag}

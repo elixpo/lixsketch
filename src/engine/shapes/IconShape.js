@@ -1,14 +1,18 @@
 /* eslint-disable */
 // IconShape class - extracted from icons.js
 // Depends on globals: svg, shapes
-import { updateAttachedArrows as updateArrowsForShape } from '../tools/arrowTool.js';
+import { updateAttachedArrows as updateArrowsForShape, cleanupAttachments } from '../tools/arrowTool.js';
 
 function getSVGElement() {
     return document.getElementById('freehand-canvas');
 }
 
-// Stub — icon selection is handled by iconTool.js
-function selectIcon() {}
+// Delegate to iconTool's selectIcon via window bridge
+function selectIcon(event) {
+    if (window.__iconToolSelectIcon) {
+        window.__iconToolSelectIcon(event);
+    }
+}
 
 class IconShape {
     constructor(element) {
@@ -173,7 +177,9 @@ class IconShape {
     }
 
     removeSelection(params) {
-        removeSelection();
+        if (window.__iconToolRemoveSelection) {
+            window.__iconToolRemoveSelection();
+        }
         this.isSelected = false;
     }
 

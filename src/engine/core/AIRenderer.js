@@ -4,112 +4,86 @@
  *
  * Two entry points:
  * 1. renderAIDiagram(diagram) - from AI text-to-diagram response
- * 2. renderMermaidDiagram(mermaidSrc) - direct algorithmic Mermaid parser
+ * 2. window.__mermaidRenderer(src) - direct algorithmic Mermaid parser
+ *
+ * All created shapes (nodes, labels, arrows) belong to a Frame.
+ * Node labels are TextShape objects placed at the center of each node.
+ * Edge labels are TextShape objects placed above the arrow midpoint.
+ * Every shape is individually editable and selectable.
  */
 
-const PADDING = 40;
+const PADDING = 60;
 const NODE_W = 160;
 const NODE_H = 60;
-const H_SPACING = 200;
-const V_SPACING = 120;
+const H_SPACING = 220;
+const V_SPACING = 140;
+const NS = 'http://www.w3.org/2000/svg';
 
 // ============================================================
-// MERMAID PARSER - No AI needed, direct algorithmic conversion
+// MERMAID PARSER
 // ============================================================
 
-/**
- * Parse Mermaid graph syntax into the diagram JSON format.
- * Supports: graph TD/TB/LR/RL, node shapes [], (), {}, (())
- */
 export function parseMermaid(src) {
     const lines = src.trim().split('\n').map(l => l.trim()).filter(l => l && !l.startsWith('%%'));
     if (lines.length === 0) return null;
 
-    // Detect direction from first line
     const headerMatch = lines[0].match(/^(graph|flowchart)\s+(TD|TB|LR|RL|BT)/i);
     const direction = headerMatch ? headerMatch[2].toUpperCase() : 'TD';
     const isHorizontal = direction === 'LR' || direction === 'RL';
     const startIdx = headerMatch ? 1 : 0;
 
-    const nodesMap = new Map(); // id -> { id, type, label }
+    const nodesMap = new Map();
     const edges = [];
 
-    // Parse node definition: A[text], A(text), A{text}, A((text))
     function parseNodeRef(raw) {
         raw = raw.trim();
         if (!raw) return null;
-
         let id, label, type;
 
-        // ((text)) -> circle
         let m = raw.match(/^(\w+)\(\((.+?)\)\)$/);
         if (m) { id = m[1]; label = m[2]; type = 'circle'; }
-
-        // {text} -> diamond
         if (!m) { m = raw.match(/^(\w+)\{(.+?)\}$/); if (m) { id = m[1]; label = m[2]; type = 'diamond'; } }
-
-        // (text) -> circle
         if (!m) { m = raw.match(/^(\w+)\((.+?)\)$/); if (m) { id = m[1]; label = m[2]; type = 'circle'; } }
-
-        // [text] -> rectangle
         if (!m) { m = raw.match(/^(\w+)\[(.+?)\]$/); if (m) { id = m[1]; label = m[2]; type = 'rectangle'; } }
-
-        // bare id
         if (!m) { id = raw; label = raw; type = 'rectangle'; }
 
         if (!nodesMap.has(id)) {
             nodesMap.set(id, { id, type, label });
         } else if (label !== id) {
-            // Update label if we got a better one
             nodesMap.get(id).label = label;
             nodesMap.get(id).type = type;
         }
-
         return id;
     }
 
-    // Parse each line for edges: A --> B, A -->|label| B, A -- text --> B
     for (let i = startIdx; i < lines.length; i++) {
         const line = lines[i].replace(/;$/, '').trim();
         if (!line) continue;
 
-        // Try edge patterns
-        // A -->|label| B  or  A -- label --> B  or  A --> B
-        const edgeRegex = /^(.+?)\s*(-{1,2}>|={1,2}>|-.->|-->)\s*(?:\|([^|]*)\|)?\s*(.+)$/;
-        const edgeRegex2 = /^(.+?)\s*--\s*(.+?)\s*-->\s*(.+)$/;
-
-        let match = line.match(edgeRegex2);
+        let match = line.match(/^(.+?)\s*--\s*(.+?)\s*-->\s*(.+)$/);
         if (match) {
             const fromId = parseNodeRef(match[1].trim());
             const toId = parseNodeRef(match[3].trim());
-            if (fromId && toId) {
-                edges.push({ from: fromId, to: toId, label: match[2].trim() });
-            }
+            if (fromId && toId) edges.push({ from: fromId, to: toId, label: match[2].trim() });
             continue;
         }
 
-        match = line.match(edgeRegex);
+        match = line.match(/^(.+?)\s*(-{1,2}>|={1,2}>|-.->|-->)\s*(?:\|([^|]*)\|)?\s*(.+)$/);
         if (match) {
             const fromId = parseNodeRef(match[1].trim());
             const toId = parseNodeRef(match[4].trim());
             const edgeLabel = match[3] ? match[3].trim() : undefined;
-            if (fromId && toId) {
-                edges.push({ from: fromId, to: toId, label: edgeLabel });
-            }
+            if (fromId && toId) edges.push({ from: fromId, to: toId, label: edgeLabel });
             continue;
         }
 
-        // Standalone node definition
         parseNodeRef(line);
     }
 
     if (nodesMap.size === 0) return null;
 
-    // Layout: assign x,y positions using topological layers
-    const nodes = [];
+    // Topological BFS layering
     const nodeIds = Array.from(nodesMap.keys());
-
-    // Build adjacency for layer assignment
     const children = new Map();
     const parents = new Map();
     nodeIds.forEach(id => { children.set(id, []); parents.set(id, []); });
@@ -118,96 +92,48 @@ export function parseMermaid(src) {
         if (parents.has(e.to)) parents.get(e.to).push(e.from);
     });
 
-    // Assign layers via BFS from roots (nodes with no parents)
     const layers = new Map();
     const roots = nodeIds.filter(id => parents.get(id).length === 0);
-    if (roots.length === 0) roots.push(nodeIds[0]); // fallback: first node
+    if (roots.length === 0) roots.push(nodeIds[0]);
 
     const queue = roots.map(id => ({ id, layer: 0 }));
     const visited = new Set();
-
     while (queue.length > 0) {
         const { id, layer } = queue.shift();
-        if (visited.has(id)) {
-            // Update to deeper layer if needed
-            if (layer > (layers.get(id) || 0)) layers.set(id, layer);
-            continue;
-        }
+        if (visited.has(id)) { if (layer > (layers.get(id) || 0)) layers.set(id, layer); continue; }
         visited.add(id);
         layers.set(id, Math.max(layer, layers.get(id) || 0));
-
-        for (const child of children.get(id) || []) {
-            queue.push({ id: child, layer: layer + 1 });
-        }
+        for (const child of children.get(id) || []) queue.push({ id: child, layer: layer + 1 });
     }
+    nodeIds.forEach(id => { if (!visited.has(id)) layers.set(id, 0); });
 
-    // Handle unvisited nodes
-    nodeIds.forEach(id => {
-        if (!visited.has(id)) {
-            layers.set(id, 0);
-        }
-    });
-
-    // Group by layer
     const layerGroups = new Map();
     layers.forEach((layer, id) => {
         if (!layerGroups.has(layer)) layerGroups.set(layer, []);
         layerGroups.get(layer).push(id);
     });
 
-    // Position nodes
-    const sortedLayers = Array.from(layerGroups.keys()).sort((a, b) => a - b);
-    sortedLayers.forEach((layerIdx, li) => {
+    const nodes = [];
+    Array.from(layerGroups.keys()).sort((a, b) => a - b).forEach((layerIdx, li) => {
         const group = layerGroups.get(layerIdx);
-        const groupWidth = group.length * H_SPACING;
-        const startOffset = -groupWidth / 2 + H_SPACING / 2;
-
+        const startOffset = -(group.length * H_SPACING) / 2 + H_SPACING / 2;
         group.forEach((id, gi) => {
-            const nodeData = nodesMap.get(id);
-            let x, y;
-            if (isHorizontal) {
-                x = li * H_SPACING;
-                y = startOffset + gi * V_SPACING;
-            } else {
-                x = startOffset + gi * H_SPACING;
-                y = li * V_SPACING;
-            }
-            nodes.push({
-                id: nodeData.id,
-                type: nodeData.type,
-                label: nodeData.label,
-                x, y,
-                width: NODE_W,
-                height: NODE_H,
-            });
+            const nd = nodesMap.get(id);
+            const x = isHorizontal ? li * H_SPACING : startOffset + gi * H_SPACING;
+            const y = isHorizontal ? startOffset + gi * V_SPACING : li * V_SPACING;
+            nodes.push({ id: nd.id, type: nd.type, label: nd.label, x, y, width: NODE_W, height: NODE_H });
         });
     });
 
-    return {
-        title: 'Mermaid Diagram',
-        nodes,
-        edges: edges.map(e => ({
-            from: e.from,
-            to: e.to,
-            label: e.label,
-        })),
-    };
+    return { title: 'Mermaid Diagram', nodes, edges: edges.map(e => ({ from: e.from, to: e.to, label: e.label })) };
 }
 
 // ============================================================
-// RENDER DIAGRAM JSON → Shapes on canvas
+// RENDER
 // ============================================================
 
-/**
- * Render diagram JSON onto the canvas inside a Frame.
- * @param {Object} diagram - { title, nodes[], edges[] }
- * @returns {boolean} true if rendering succeeded
- */
 export function renderAIDiagram(diagram) {
-    if (!diagram || !diagram.nodes || !Array.isArray(diagram.nodes) || diagram.nodes.length === 0) {
-        console.error('[AIRenderer] Invalid or empty diagram data');
-        return false;
-    }
+    if (!diagram?.nodes?.length) { console.error('[AIRenderer] Invalid diagram'); return false; }
 
     const nodes = diagram.nodes;
     const edges = diagram.edges || [];
@@ -218,261 +144,181 @@ export function renderAIDiagram(diagram) {
         return false;
     }
 
-    // Calculate canvas center based on current viewport
+    // Viewport center
     const vb = window.currentViewBox || { x: 0, y: 0, width: window.innerWidth, height: window.innerHeight };
-    const viewCenterX = vb.x + vb.width / 2;
-    const viewCenterY = vb.y + vb.height / 2;
+    const vcx = vb.x + vb.width / 2;
+    const vcy = vb.y + vb.height / 2;
 
-    // Calculate diagram bounds
+    // Diagram bounds
     let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-    nodes.forEach(node => {
-        const w = node.width || NODE_W;
-        const h = node.height || NODE_H;
-        if (node.x < minX) minX = node.x;
-        if (node.y < minY) minY = node.y;
-        if (node.x + w > maxX) maxX = node.x + w;
-        if (node.y + h > maxY) maxY = node.y + h;
+    nodes.forEach(n => {
+        minX = Math.min(minX, n.x);
+        minY = Math.min(minY, n.y);
+        maxX = Math.max(maxX, n.x + (n.width || NODE_W));
+        maxY = Math.max(maxY, n.y + (n.height || NODE_H));
     });
 
-    const diagramWidth = maxX - minX;
-    const diagramHeight = maxY - minY;
+    const dw = maxX - minX, dh = maxY - minY;
+    const ox = vcx - dw / 2 - minX;
+    const oy = vcy - dh / 2 - minY;
 
-    // Offset to center diagram in viewport
-    const offsetX = viewCenterX - diagramWidth / 2 - minX;
-    const offsetY = viewCenterY - diagramHeight / 2 - minY;
-
-    // Frame dimensions
-    const frameX = viewCenterX - diagramWidth / 2 - PADDING;
-    const frameY = viewCenterY - diagramHeight / 2 - PADDING;
-    const frameW = diagramWidth + PADDING * 2;
-    const frameH = diagramHeight + PADDING * 2;
-
-    // Create frame with same options as frameTool.js defaults
-    let frame = null;
+    // Create frame
+    let frame;
     try {
-        frame = new window.Frame(frameX, frameY, frameW, frameH, {
-            stroke: '#888',
-            strokeWidth: 2,
-            fill: 'transparent',
-            opacity: 1,
-            frameName: title,
+        frame = new window.Frame(vcx - dw / 2 - PADDING, vcy - dh / 2 - PADDING, dw + PADDING * 2, dh + PADDING * 2, {
+            stroke: '#888', strokeWidth: 2, fill: 'transparent', opacity: 1, frameName: title,
         });
         window.shapes.push(frame);
-        if (typeof window.pushCreateAction === 'function') window.pushCreateAction(frame);
+        if (window.pushCreateAction) window.pushCreateAction(frame);
     } catch (err) {
-        console.error('[AIRenderer] Failed to create frame:', err);
+        console.error('[AIRenderer] Frame creation failed:', err);
         return false;
     }
 
     const nodeMap = new Map();
 
-    // Create nodes
+    // --- NODES ---
     for (const node of nodes) {
-        const nx = node.x + offsetX;
-        const ny = node.y + offsetY;
-        const nw = node.width || NODE_W;
-        const nh = node.height || NODE_H;
-
+        const nx = node.x + ox, ny = node.y + oy;
+        const nw = node.width || NODE_W, nh = node.height || NODE_H;
+        const cx = nx + nw / 2, cy = ny + nh / 2;
         let shape = null;
 
         try {
             if (node.type === 'circle' && window.Circle) {
-                const rx = nw / 2;
-                const ry = nh / 2;
-                shape = new window.Circle(nx + rx, ny + ry, rx, ry, {
-                    stroke: '#e0e0e0',
-                    strokeWidth: 1.5,
-                    fill: 'transparent',
-                    roughness: 1,
+                shape = new window.Circle(cx, cy, nw / 2, nh / 2, {
+                    stroke: '#e0e0e0', strokeWidth: 1.5, fill: 'transparent', roughness: 1,
                 });
             } else if (node.type === 'diamond' && window.Rectangle) {
-                const size = Math.max(nw, nh) * 0.7;
-                shape = new window.Rectangle(
-                    nx + nw / 2 - size / 2,
-                    ny + nh / 2 - size / 2,
-                    size, size, {
-                        stroke: '#e0e0e0',
-                        strokeWidth: 1.5,
-                        fill: 'transparent',
-                        roughness: 1,
-                    }
-                );
+                const sz = Math.max(nw, nh) * 0.7;
+                shape = new window.Rectangle(cx - sz / 2, cy - sz / 2, sz, sz, {
+                    stroke: '#e0e0e0', strokeWidth: 1.5, fill: 'transparent', roughness: 1,
+                });
+                // Rotate the rough element 45deg around its center (local coords)
                 if (shape.element) {
-                    shape.element.setAttribute('transform', `rotate(45, ${nx + nw / 2}, ${ny + nh / 2})`);
+                    shape.element.setAttribute('transform', `rotate(45, ${sz / 2}, ${sz / 2})`);
                 }
             } else if (window.Rectangle) {
                 shape = new window.Rectangle(nx, ny, nw, nh, {
-                    stroke: '#e0e0e0',
-                    strokeWidth: 1.5,
-                    fill: 'transparent',
-                    roughness: 1,
+                    stroke: '#e0e0e0', strokeWidth: 1.5, fill: 'transparent', roughness: 1,
                 });
             }
         } catch (err) {
-            console.warn('[AIRenderer] Failed to create node:', node.id, err);
+            console.warn('[AIRenderer] Node creation failed:', node.id, err);
             continue;
         }
 
-        if (shape) {
-            window.shapes.push(shape);
-            if (typeof window.pushCreateAction === 'function') window.pushCreateAction(shape);
+        if (!shape) continue;
 
-            if (typeof frame.addShapeToFrame === 'function') {
-                frame.addShapeToFrame(shape);
-            }
+        window.shapes.push(shape);
+        if (window.pushCreateAction) window.pushCreateAction(shape);
+        if (frame.addShapeToFrame) frame.addShapeToFrame(shape);
 
-            nodeMap.set(node.id, {
-                shape,
-                x: nx, y: ny,
-                width: nw, height: nh,
-                centerX: nx + nw / 2,
-                centerY: ny + nh / 2,
-            });
-        }
+        nodeMap.set(node.id, { shape, x: nx, y: ny, width: nw, height: nh, centerX: cx, centerY: cy });
 
-        // Add label as text
-        if (node.label && window.TextShape) {
-            addTextLabel(node.label, nx + nw / 2, ny + nh / 2, frame);
+        // Node label — TextShape centered on the node, belongs to frame
+        if (node.label) {
+            createLabel(node.label, cx, cy, 13, '#e0e0e0', frame);
         }
     }
 
-    // Create edges as arrows
+    // --- EDGES ---
     for (const edge of edges) {
-        const fromNode = nodeMap.get(edge.from);
-        const toNode = nodeMap.get(edge.to);
-        if (!fromNode || !toNode) continue;
+        const from = nodeMap.get(edge.from), to = nodeMap.get(edge.to);
+        if (!from || !to) continue;
 
-        const startPoint = getConnectionPoint(fromNode, toNode);
-        const endPoint = getConnectionPoint(toNode, fromNode, true);
+        const sp = getConnectionPoint(from, to);
+        const ep = getConnectionPoint(to, from, true);
 
         if (window.Arrow) {
             try {
-                const arrow = new window.Arrow(startPoint, endPoint, {
-                    stroke: '#e0e0e0',
-                    strokeWidth: 1.5,
-                    roughness: 1,
+                const arrow = new window.Arrow(sp, ep, {
+                    stroke: '#e0e0e0', strokeWidth: 1.5, roughness: 1,
                 });
-
                 window.shapes.push(arrow);
-                if (typeof window.pushCreateAction === 'function') window.pushCreateAction(arrow);
-
-                if (typeof frame.addShapeToFrame === 'function') {
-                    frame.addShapeToFrame(arrow);
-                }
-
-                if (fromNode.shape && arrow.setStartAttachment) {
-                    arrow.setStartAttachment(fromNode.shape);
-                }
-                if (toNode.shape && arrow.setEndAttachment) {
-                    arrow.setEndAttachment(toNode.shape);
-                }
+                if (window.pushCreateAction) window.pushCreateAction(arrow);
+                if (frame.addShapeToFrame) frame.addShapeToFrame(arrow);
             } catch (err) {
-                console.warn('[AIRenderer] Failed to create arrow:', edge, err);
+                console.warn('[AIRenderer] Arrow creation failed:', edge, err);
             }
         }
 
-        // Add edge label
-        if (edge.label && window.TextShape) {
-            const midX = (startPoint.x + endPoint.x) / 2;
-            const midY = (startPoint.y + endPoint.y) / 2;
-            addTextLabel(edge.label, midX, midY - 10, frame, 10);
+        // Edge label — above arrow midpoint
+        if (edge.label) {
+            const mx = (sp.x + ep.x) / 2;
+            const my = (sp.y + ep.y) / 2 - 18;
+            createLabel(edge.label, mx, my, 11, '#a0a0b0', frame);
         }
     }
 
-    // Auto-select the frame after rendering
+    // Auto-select the frame and show its sidebar
     window.currentShape = frame;
-    if (typeof frame.selectFrame === 'function') {
-        frame.selectFrame();
-    }
-    if (window.__sketchStoreApi) {
-        window.__sketchStoreApi.setSelectedShapeSidebar('frame');
-    }
+    if (frame.selectFrame) frame.selectFrame();
+    if (window.__sketchStoreApi) window.__sketchStoreApi.setSelectedShapeSidebar('frame');
 
-    console.log(`[AIRenderer] Rendered ${nodes.length} nodes, ${edges.length} edges in frame "${title}"`);
+    console.log(`[AIRenderer] Done: ${nodes.length} nodes, ${edges.length} edges → "${title}"`);
     return true;
 }
 
-/**
- * Calculate connection point on a node's edge facing another node.
- */
-function getConnectionPoint(fromNode, toNode, isTarget = false) {
-    const dx = toNode.centerX - fromNode.centerX;
-    const dy = toNode.centerY - fromNode.centerY;
-    const hw = fromNode.width / 2;
-    const hh = fromNode.height / 2;
-
-    if (isTarget) {
-        if (Math.abs(dy) * hw > Math.abs(dx) * hh) {
-            return dy < 0
-                ? { x: fromNode.centerX, y: fromNode.y + fromNode.height }
-                : { x: fromNode.centerX, y: fromNode.y };
-        } else {
-            return dx < 0
-                ? { x: fromNode.x + fromNode.width, y: fromNode.centerY }
-                : { x: fromNode.x, y: fromNode.centerY };
-        }
-    } else {
-        if (Math.abs(dy) * hw > Math.abs(dx) * hh) {
-            return dy > 0
-                ? { x: fromNode.centerX, y: fromNode.y + fromNode.height }
-                : { x: fromNode.centerX, y: fromNode.y };
-        } else {
-            return dx > 0
-                ? { x: fromNode.x + fromNode.width, y: fromNode.centerY }
-                : { x: fromNode.x, y: fromNode.centerY };
-        }
-    }
-}
+// ============================================================
+// HELPERS
+// ============================================================
 
 /**
- * Add a text label at position.
+ * Create a TextShape label at (x, y) and add it to the frame.
+ * Each label is a proper shape — selectable, editable, moves with the frame.
  */
-function addTextLabel(text, x, y, frame, fontSize = 14) {
-    const ns = 'http://www.w3.org/2000/svg';
+function createLabel(text, x, y, fontSize, fill, frame) {
     const svg = window.svg;
-    if (!svg) return null;
+    if (!svg || !window.TextShape) return null;
 
     try {
-        const group = document.createElementNS(ns, 'g');
-        const textEl = document.createElementNS(ns, 'text');
-        textEl.setAttribute('x', x);
-        textEl.setAttribute('y', y);
-        textEl.setAttribute('text-anchor', 'middle');
-        textEl.setAttribute('dominant-baseline', 'central');
-        textEl.setAttribute('fill', '#e0e0e0');
-        textEl.setAttribute('font-size', fontSize);
-        textEl.setAttribute('font-family', 'lixFont, sans-serif');
-        textEl.textContent = text;
+        const g = document.createElementNS(NS, 'g');
+        const t = document.createElementNS(NS, 'text');
+        t.setAttribute('x', x);
+        t.setAttribute('y', y);
+        t.setAttribute('text-anchor', 'middle');
+        t.setAttribute('dominant-baseline', 'central');
+        t.setAttribute('fill', fill);
+        t.setAttribute('font-size', fontSize);
+        t.setAttribute('font-family', 'lixFont, sans-serif');
+        t.textContent = text;
+        g.appendChild(t);
+        svg.appendChild(g);
 
-        group.appendChild(textEl);
-        svg.appendChild(group);
-
-        const textShape = new window.TextShape(group);
-        window.shapes.push(textShape);
-        if (typeof window.pushCreateAction === 'function') window.pushCreateAction(textShape);
-
-        if (frame && typeof frame.addShapeToFrame === 'function') {
-            frame.addShapeToFrame(textShape);
-        }
-
-        return textShape;
+        const shape = new window.TextShape(g);
+        window.shapes.push(shape);
+        if (window.pushCreateAction) window.pushCreateAction(shape);
+        if (frame?.addShapeToFrame) frame.addShapeToFrame(shape);
+        return shape;
     } catch (err) {
-        console.warn('[AIRenderer] Failed to create text label:', err);
+        console.warn('[AIRenderer] Label creation failed:', err);
         return null;
     }
 }
 
-/**
- * Initialize the AI renderer bridge.
- */
+function getConnectionPoint(fromNode, toNode, isTarget = false) {
+    const dx = toNode.centerX - fromNode.centerX;
+    const dy = toNode.centerY - fromNode.centerY;
+    const hw = fromNode.width / 2, hh = fromNode.height / 2;
+
+    if (isTarget) {
+        if (Math.abs(dy) * hw > Math.abs(dx) * hh) {
+            return dy < 0 ? { x: fromNode.centerX, y: fromNode.y + fromNode.height } : { x: fromNode.centerX, y: fromNode.y };
+        }
+        return dx < 0 ? { x: fromNode.x + fromNode.width, y: fromNode.centerY } : { x: fromNode.x, y: fromNode.centerY };
+    }
+    if (Math.abs(dy) * hw > Math.abs(dx) * hh) {
+        return dy > 0 ? { x: fromNode.centerX, y: fromNode.y + fromNode.height } : { x: fromNode.centerX, y: fromNode.y };
+    }
+    return dx > 0 ? { x: fromNode.x + fromNode.width, y: fromNode.centerY } : { x: fromNode.x, y: fromNode.centerY };
+}
+
 export function initAIRenderer() {
     window.__aiRenderer = renderAIDiagram;
     window.__mermaidRenderer = (src) => {
         const diagram = parseMermaid(src);
-        if (!diagram) {
-            console.error('[AIRenderer] Failed to parse Mermaid syntax');
-            return false;
-        }
+        if (!diagram) { console.error('[AIRenderer] Mermaid parse failed'); return false; }
         return renderAIDiagram(diagram);
     };
 }

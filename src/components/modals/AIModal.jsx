@@ -65,20 +65,35 @@ export default function AIModal() {
     if (!prompt.trim()) return
 
     const currentPrompt = prompt.trim()
-    const currentMode = mode === 'describe' ? 'text' : 'mermaid'
+    const isMermaid = mode === 'mermaid'
 
     // Close modal immediately so user can keep working
     setPrompt('')
     toggleAIModal()
 
-    // Show loading toast
+    // MERMAID: parse locally, no AI needed
+    if (isMermaid) {
+      if (window.__mermaidRenderer) {
+        const success = window.__mermaidRenderer(currentPrompt)
+        if (success) {
+          setToast({ status: 'success', message: '' })
+        } else {
+          setToast({ status: 'error', message: 'Invalid Mermaid syntax. Check your input.' })
+        }
+      } else {
+        setToast({ status: 'error', message: 'Mermaid renderer not ready' })
+      }
+      return
+    }
+
+    // TEXT-TO-DIAGRAM: call AI in background
     setToast({ status: 'loading', message: '' })
 
     try {
       const res = await fetch('/api/ai/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt: currentPrompt, mode: currentMode }),
+        body: JSON.stringify({ prompt: currentPrompt, mode: 'text' }),
       })
 
       let data

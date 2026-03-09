@@ -299,10 +299,16 @@ export function renderAIDiagram(diagram) {
 
         nodeMap.set(node.id, { shape, x: nx, y: ny, width: nw, height: nh, centerX: cx, centerY: cy });
 
-        // Node label — use the node's stroke color for readable contrast
+        // Node label — ensure readable contrast on dark canvas
         if (node.label) {
-            const labelColor = node.stroke || '#e0e0e0';
-            createLabel(node.label, cx, cy, 14, labelColor, frame);
+            let labelColor = node.stroke || '#e0e0e0';
+            // If stroke is too dark to read on the dark canvas, lighten it
+            if (isColorTooDark(labelColor)) {
+                labelColor = '#e0e0e0';
+            }
+            // Icon nodes: place label below the icon, not centered on it
+            const labelY = node.type === 'icon' ? cy + nh / 2 + 18 : cy;
+            createLabel(node.label, cx, labelY, 14, labelColor, frame);
         }
     }
 
@@ -948,11 +954,14 @@ export function generatePreviewSVG(diagram, width = 500, height = 350) {
             svgContent += `<rect x="${d.x}" y="${d.y}" width="${d.w}" height="${d.h}" rx="4" fill="${nFill}" stroke="${nStroke}" stroke-width="1.5"${nDash} />`;
         }
 
-        // Label — use node stroke color for matching text
+        // Label — ensure readable color
         if (n.label) {
             const fontSize = Math.max(8, Math.min(12, 11 * scale));
-            const labelFill = nStroke === '#9090c0' ? '#d0d0d0' : nStroke;
-            svgContent += `<text x="${d.cx}" y="${d.cy}" text-anchor="middle" dominant-baseline="central" fill="${labelFill}" font-size="${fontSize}" font-family="lixFont, sans-serif">${escapeXml(n.label)}</text>`;
+            let labelFill = nStroke === '#9090c0' ? '#d0d0d0' : nStroke;
+            if (isColorTooDark(labelFill)) labelFill = '#d0d0d0';
+            // Icon nodes: label below the icon
+            const labelY = n.type === 'icon' ? d.cy + d.h / 2 + 12 * scale : d.cy;
+            svgContent += `<text x="${d.cx}" y="${labelY}" text-anchor="middle" dominant-baseline="central" fill="${labelFill}" font-size="${fontSize}" font-family="lixFont, sans-serif">${escapeXml(n.label)}</text>`;
         }
     });
 
@@ -966,6 +975,127 @@ function escapeXml(str) {
     return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
+/**
+ * Check if a hex color is too dark to read on a dark canvas (#1a1a2e).
+ * Returns true if perceived luminance is below threshold.
+ */
+function isColorTooDark(hex) {
+    if (!hex || hex === 'transparent' || hex === 'none') return false;
+    const c = hex.replace('#', '');
+    if (c.length < 6) return false;
+    const r = parseInt(c.substring(0, 2), 16);
+    const g = parseInt(c.substring(2, 4), 16);
+    const b = parseInt(c.substring(4, 6), 16);
+    // Relative luminance (perceived brightness)
+    const lum = (0.299 * r + 0.587 * g + 0.114 * b);
+    return lum < 80; // Below ~31% brightness — unreadable on dark bg
+}
+
+/**
+ * Generate a preview SVG from an existing Frame's DOM contents.
+ * Used when the user opens the AI edit dialog for a frame —
+ * shows the current state of the frame as an SVG preview.
+ */
+export function generateFramePreviewSVG(frame, width = 500, height = 350) {
+    if (!frame || !frame.clipGroup) return '';
+
+    const fx = frame.x, fy = frame.y, fw = frame.width, fh = frame.height;
+    if (fw <= 0 || fh <= 0) return '';
+
+    const pad = 30;
+    const scale = Math.min((width - pad * 2) / fw, (height - pad * 2) / fh, 1.5);
+    const offX = (width - fw * scale) / 2 - fx * scale;
+    const offY = (height - fh * scale) / 2 - fy * scale;
+
+    let svgContent = '';
+
+    // Frame border
+    svgContent += `<rect x="${fx * scale + offX}" y="${fy * scale + offY}" width="${fw * scale}" height="${fh * scale}" rx="6" fill="transparent" stroke="#555" stroke-width="1.5" stroke-dasharray="6 3" />`;
+
+    // Frame label
+    if (frame.frameName) {
+        svgContent += `<text x="${fx * scale + offX + 10}" y="${fy * scale + offY + 16}" fill="#888" font-size="11" font-family="lixFont, sans-serif">${escapeXml(frame.frameName)}</text>`;
+    }
+
+    // Render contained shapes
+    if (frame.containedShapes) {
+        frame.containedShapes.forEach(shape => {
+            if (!shape) return;
+
+            if (shape.shapeName === 'rectangle') {
+                const sx = shape.x * scale + offX;
+                const sy = shape.y * scale + offY;
+                const sw = shape.width * scale;
+                const sh = shape.height * scale;
+                const stroke = shape.options?.stroke || '#e0e0e0';
+                const fill = shape.options?.fill || 'transparent';
+                if (shape.rotation === 45) {
+                    // Diamond
+                    const sz = Math.min(sw, sh) * 0.7;
+                    const cx = sx + sw / 2, cy = sy + sh / 2;
+                    svgContent += `<rect x="${cx - sz / 2}" y="${cy - sz / 2}" width="${sz}" height="${sz}" fill="${fill}" stroke="${stroke}" stroke-width="1.5" transform="rotate(45, ${cx}, ${cy})" />`;
+                } else {
+                    svgContent += `<rect x="${sx}" y="${sy}" width="${sw}" height="${sh}" rx="4" fill="${fill}" stroke="${stroke}" stroke-width="1.5" />`;
+                }
+            } else if (shape.shapeName === 'circle') {
+                const cx = shape.x * scale + offX;
+                const cy = shape.y * scale + offY;
+                const rx = (shape.rx || 30) * scale;
+                const ry = (shape.ry || 30) * scale;
+                const stroke = shape.options?.stroke || '#e0e0e0';
+                const fill = shape.options?.fill || 'transparent';
+                svgContent += `<ellipse cx="${cx}" cy="${cy}" rx="${rx}" ry="${ry}" fill="${fill}" stroke="${stroke}" stroke-width="1.5" />`;
+            } else if (shape.shapeName === 'text') {
+                const textEl = shape.group?.querySelector('text');
+                if (textEl) {
+                    const tx = parseFloat(shape.group.getAttribute('data-x') || '0');
+                    const ty = parseFloat(shape.group.getAttribute('data-y') || '0');
+                    const fill = textEl.getAttribute('fill') || '#e0e0e0';
+                    const fontSize = Math.max(8, (parseFloat(textEl.getAttribute('font-size')) || 14) * scale);
+                    const text = textEl.textContent || '';
+                    let labelFill = fill;
+                    if (isColorTooDark(labelFill)) labelFill = '#d0d0d0';
+                    svgContent += `<text x="${tx * scale + offX}" y="${ty * scale + offY}" text-anchor="middle" dominant-baseline="central" fill="${labelFill}" font-size="${fontSize}" font-family="lixFont, sans-serif">${escapeXml(text)}</text>`;
+                }
+            } else if (shape.shapeName === 'arrow') {
+                const sp = shape.startPoint, ep = shape.endPoint;
+                if (sp && ep) {
+                    const stroke = shape.options?.stroke || '#e0e0e0';
+                    svgContent += `<line x1="${sp.x * scale + offX}" y1="${sp.y * scale + offY}" x2="${ep.x * scale + offX}" y2="${ep.y * scale + offY}" stroke="${stroke}" stroke-width="1.5" marker-end="url(#frame-preview-arrow)" />`;
+                }
+            } else if (shape.shapeName === 'line') {
+                const sp = shape.startPoint, ep = shape.endPoint;
+                if (sp && ep) {
+                    const stroke = shape.options?.stroke || '#e0e0e0';
+                    svgContent += `<line x1="${sp.x * scale + offX}" y1="${sp.y * scale + offY}" x2="${ep.x * scale + offX}" y2="${ep.y * scale + offY}" stroke="${stroke}" stroke-width="1.5" />`;
+                }
+            } else if (shape.shapeName === 'icon') {
+                const ix = parseFloat(shape.group?.getAttribute('data-shape-x') || '0');
+                const iy = parseFloat(shape.group?.getAttribute('data-shape-y') || '0');
+                const iw = parseFloat(shape.group?.getAttribute('data-shape-width') || '40');
+                const ih = parseFloat(shape.group?.getAttribute('data-shape-height') || '40');
+                svgContent += `<rect x="${ix * scale + offX}" y="${iy * scale + offY}" width="${iw * scale}" height="${ih * scale}" rx="4" fill="transparent" stroke="#9090c0" stroke-width="1" stroke-dasharray="3 2" />`;
+                svgContent += `<text x="${(ix + iw / 2) * scale + offX}" y="${(iy + ih / 2) * scale + offY}" text-anchor="middle" dominant-baseline="central" fill="#9090c0" font-size="9" font-family="lixFont">icon</text>`;
+            } else if (shape.shapeName === 'frame') {
+                // Sub-frame
+                const sx = shape.x * scale + offX;
+                const sy = shape.y * scale + offY;
+                const sw = shape.width * scale;
+                const sh = shape.height * scale;
+                svgContent += `<rect x="${sx}" y="${sy}" width="${sw}" height="${sh}" rx="4" fill="transparent" stroke="${shape.options?.stroke || '#555'}" stroke-width="1" stroke-dasharray="4 2" opacity="0.6" />`;
+                if (shape.frameName) {
+                    svgContent += `<text x="${sx + 6}" y="${sy + 12}" fill="#888" font-size="9" font-family="lixFont">${escapeXml(shape.frameName)}</text>`;
+                }
+            }
+        });
+    }
+
+    return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
+  <defs><marker id="frame-preview-arrow" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6" fill="none" stroke="#e0e0e0" stroke-width="1" /></marker></defs>
+  ${svgContent}
+</svg>`;
+}
+
 // ============================================================
 // INIT
 // ============================================================
@@ -973,6 +1103,7 @@ function escapeXml(str) {
 export function initAIRenderer() {
     window.__aiRenderer = renderAIDiagram;
     window.__aiPreview = generatePreviewSVG;
+    window.__aiFramePreview = generateFramePreviewSVG;
     window.__mermaidRenderer = (src) => {
         const diagram = parseMermaid(src);
         if (!diagram) { console.error('[AIRenderer] Mermaid parse failed'); return false; }

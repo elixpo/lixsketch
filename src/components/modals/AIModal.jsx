@@ -147,7 +147,7 @@ export default function AIModal() {
     }
   }, [toast.status])
 
-  // Check if opened for frame editing
+  // Check if opened for frame editing — show current frame as preview
   useEffect(() => {
     if (aiModalOpen && window.__aiEditTargetFrame) {
       const frame = window.__aiEditTargetFrame
@@ -155,9 +155,18 @@ export default function AIModal() {
       setEditingFrame(frame)
       setMode('describe')
       setPrompt('')
-      setPreviewDiagram(null)
-      setPreviewSVG('')
       setChatHistory([])
+
+      // Generate preview from existing frame contents
+      if (window.__aiFramePreview) {
+        const frameSvg = window.__aiFramePreview(frame)
+        setPreviewSVG(frameSvg)
+        // Set a minimal "diagram" object so the preview section renders
+        setPreviewDiagram({ nodes: [{ id: '_existing' }], edges: [], _fromFrame: true })
+      } else {
+        setPreviewDiagram(null)
+        setPreviewSVG('')
+      }
     }
   }, [aiModalOpen])
 
@@ -308,14 +317,28 @@ export default function AIModal() {
 
   // Place the previewed diagram on the canvas
   const handlePlace = useCallback(() => {
-    if (!previewDiagram) return
+    if (!previewDiagram || previewDiagram._fromFrame) return
 
-    // If editing an existing frame, delete it first
+    // If editing an existing frame, delete it and all its children
     if (editingFrame) {
       try {
+        // Save contained shapes before destroy() clears the list
+        const contained = editingFrame.containedShapes ? [...editingFrame.containedShapes] : []
+
+        // destroy() releases children back to SVG root, removes frame DOM + clip
         if (typeof editingFrame.destroy === 'function') {
           editingFrame.destroy()
         }
+
+        // Now remove the released children from shapes array and DOM
+        contained.forEach(s => {
+          if (!s) return
+          const idx = window.shapes?.indexOf(s)
+          if (idx !== -1) window.shapes.splice(idx, 1)
+          if (s.group?.parentNode) s.group.parentNode.removeChild(s.group)
+        })
+
+        // Remove the frame itself from shapes array (destroy may have done this already)
         const idx = window.shapes?.indexOf(editingFrame)
         if (idx !== -1) window.shapes.splice(idx, 1)
       } catch (err) {
@@ -460,11 +483,15 @@ export default function AIModal() {
               <>
                 <div className="mb-4">
                   <div className="flex items-center justify-between mb-2">
-                    <p className="text-text-muted text-xs uppercase tracking-wider">Preview</p>
-                    <p className="text-text-dim text-xs">
-                      {previewDiagram.nodes?.length || 0} nodes, {previewDiagram.edges?.length || 0} edges
-                      {previewDiagram.subgraphs?.length ? `, ${previewDiagram.subgraphs.length} groups` : ''}
+                    <p className="text-text-muted text-xs uppercase tracking-wider">
+                      {previewDiagram?._fromFrame ? 'Current Frame' : 'Preview'}
                     </p>
+                    {!previewDiagram?._fromFrame && (
+                      <p className="text-text-dim text-xs">
+                        {previewDiagram.nodes?.length || 0} nodes, {previewDiagram.edges?.length || 0} edges
+                        {previewDiagram.subgraphs?.length ? `, ${previewDiagram.subgraphs.length} groups` : ''}
+                      </p>
+                    )}
                   </div>
                   <DiagramPreview svgMarkup={previewSVG} />
                   <p className="text-text-dim text-[10px] mt-1">Scroll to zoom, drag to pan</p>
@@ -520,18 +547,22 @@ export default function AIModal() {
 
                 {/* Actions */}
                 <div className="flex items-center justify-between">
-                  <span className="text-text-dim text-xs">Ctrl + Enter to place</span>
+                  <span className="text-text-dim text-xs">
+                    {previewDiagram?._fromFrame ? 'Send an edit to generate a new diagram' : 'Ctrl + Enter to place'}
+                  </span>
                   <div className="flex gap-2">
                     <button onClick={resetPreview} className="px-4 py-2.5 rounded-xl text-sm text-text-muted hover:text-text-primary hover:bg-surface-hover transition-all duration-200">
-                      Discard
+                      {previewDiagram?._fromFrame ? 'Cancel' : 'Discard'}
                     </button>
-                    <button
-                      onClick={handlePlace}
-                      className="px-6 py-2.5 rounded-xl text-sm font-medium bg-accent-blue text-white hover:bg-accent-blue/80 transition-all duration-200 flex items-center gap-2"
-                    >
-                      <i className="bx bx-check text-base" />
-                      {isFrameEdit ? 'Replace Frame' : 'Place on Canvas'}
-                    </button>
+                    {!previewDiagram?._fromFrame && (
+                      <button
+                        onClick={handlePlace}
+                        className="px-6 py-2.5 rounded-xl text-sm font-medium bg-accent-blue text-white hover:bg-accent-blue/80 transition-all duration-200 flex items-center gap-2"
+                      >
+                        <i className="bx bx-check text-base" />
+                        {isFrameEdit ? 'Replace Frame' : 'Place on Canvas'}
+                      </button>
+                    )}
                   </div>
                 </div>
               </>

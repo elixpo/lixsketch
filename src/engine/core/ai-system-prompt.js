@@ -106,6 +106,9 @@ You do NOT need to specify curve amounts — the engine handles this.
     Infra:    "network", "globe", "wifi", "bluetooth", "monitor"
     Business: "money", "payment", "cart", "calendar", "clock"
   Use icons sparingly — 2-5 per diagram max. They enhance, not replace shapes.
+  Icon nodes should be sized 60×60 or 80×80 and positioned with at least
+  220px clearance from neighbouring nodes to avoid visual overlap.
+  Place the label BELOW the icon (y offset +50px) rather than centred on it.
 
 ═══════════════════════════════════════════
  LAYOUT DIRECTIONS
@@ -148,6 +151,17 @@ Use color to convey meaning — not decoration:
   • Use yellow/amber (#FFD700, #FFA726) for warnings/pending states.
   • Use purple (#A855F7, #7C3AED) for external services or integrations.
   • Keep most nodes with default colors for clean appearance.
+
+CRITICAL — Text readability on dark canvas:
+  The canvas background is DARK (#1a1a2e). All label text must be clearly
+  visible. The stroke color is used for label text. Ensure good contrast:
+  • Default stroke '#e0e0e0' = light grey text — always readable.
+  • If you use a dark fill colour (e.g. solid dark blue), keep stroke LIGHT
+    so the label text remains readable (e.g. stroke '#ffffff' or '#e0e0e0').
+  • NEVER use dark strokes like '#333', '#000', or dark fills with
+    dark strokes — the text will be invisible on the dark canvas.
+  • Safe high-contrast strokes: '#e0e0e0', '#ffffff', '#56A2E8', '#FF6B6B',
+    '#4CAF50', '#FFD700', '#A855F7' — all visible on dark backgrounds.
 
 Fill styles:
   • "none" — transparent (default, cleanest look)
@@ -199,13 +213,17 @@ Edges can cross subgraph boundaries freely.
    • Same as TD but reversed — start at max y, decrement.
 
 5. Spacing:
-   • Minimum 120px vertical spacing between layers.
-   • Minimum 200px horizontal spacing between siblings.
+   • Minimum 150px vertical spacing between layers.
+   • Minimum 220px horizontal spacing between siblings.
    • No overlapping nodes — ever.
+   • Labels must sit INSIDE nodes, never spilling out.
+   • Edge labels must not overlap nodes or other labels.
+   • Icon nodes need extra spacing (220px min) to avoid overlap.
 
-6. Node sizing:
-   • Standard: 160×60
-   • Wide labels: increase width to 200-240
+6. Node sizing — choose based on label length:
+   • Short label (1-2 words): 160×60
+   • Medium label (3-4 words): 200×60
+   • Long label (5+ words): 240×70
    • Important nodes: slightly larger (180×70)
    • Terminal circles: 80×60 or 100×60
    • Icon nodes: 60×60 or 80×80

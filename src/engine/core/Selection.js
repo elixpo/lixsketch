@@ -1415,6 +1415,11 @@ function handleMultiSelectionMouseDown(e) {
         } else if (typeof clickedShape.createSelection === 'function') {
             clickedShape.createSelection();
             clickedShape.isSelected = true;
+        } else if (typeof clickedShape.selectShape === 'function') {
+            clickedShape.selectShape();
+            clickedShape.isSelected = true;
+        } else if (typeof clickedShape.selectFrame === 'function') {
+            clickedShape.selectFrame();
         }
 
         // Update sidebar if function exists
@@ -1422,7 +1427,7 @@ function handleMultiSelectionMouseDown(e) {
             clickedShape.updateSidebar();
         }
 
-        return false; // Return false so individual handlers can also process the event
+        return false; // Let individual handlers also process for drag setup
     }
 
     // If not clicking on a shape, deselect everything and start multi-selection

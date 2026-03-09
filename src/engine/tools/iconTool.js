@@ -111,9 +111,11 @@ const handleMouseMoveIcon = (e) => {
                 if (frame.isShapeInFrame(tempIconBounds)) {
                     frame.highlightFrame();
                     hoveredFrameIcon = frame;
+                    if (window.__iconShapeState) window.__iconShapeState.hoveredFrameIcon = frame;
                 } else if (hoveredFrameIcon === frame) {
                     frame.removeHighlight();
                     hoveredFrameIcon = null;
+                    if (window.__iconShapeState) window.__iconShapeState.hoveredFrameIcon = null;
                 }
             }
         });
@@ -313,6 +315,26 @@ const handleMouseDownIcon = async (e) => {
         const allChildren = originalSvgElement.children;
         for (let i = 0; i < allChildren.length; i++) {
             const clonedChild = allChildren[i].cloneNode(true);
+
+            // Apply white fill/stroke so icons are visible on dark canvas
+            const applyWhiteStyle = (element) => {
+                if (element.nodeType === 1) {
+                    const fill = element.getAttribute('fill');
+                    const stroke = element.getAttribute('stroke');
+                    // Replace black/dark fills with white; leave 'none'/'transparent' alone
+                    if (!fill || fill === '#000' || fill === '#000000' || fill === 'black' || fill === 'currentColor') {
+                        element.setAttribute('fill', '#ffffff');
+                    }
+                    if (stroke === '#000' || stroke === '#000000' || stroke === 'black' || stroke === 'currentColor') {
+                        element.setAttribute('stroke', '#ffffff');
+                    }
+                    for (let j = 0; j < element.children.length; j++) {
+                        applyWhiteStyle(element.children[j]);
+                    }
+                }
+            };
+            applyWhiteStyle(clonedChild);
+
             finalIconGroup.appendChild(clonedChild);
         }
 
@@ -355,6 +377,7 @@ const handleMouseDownIcon = async (e) => {
         if (hoveredFrameIcon) {
             hoveredFrameIcon.removeHighlight();
             hoveredFrameIcon = null;
+            if (window.__iconShapeState) window.__iconShapeState.hoveredFrameIcon = null;
         }
 
         console.log('Icon placed successfully:', finalIconGroup);
@@ -479,6 +502,7 @@ function startDrag(event) {
     if (!isSelectionToolActive || !selectedIcon) return;
     
     isDragging = true;
+    if (window.__iconShapeState) window.__iconShapeState.isDragging = true;
 
     let iconShape = null;
     if (typeof shapes !== 'undefined' && Array.isArray(shapes)) {
@@ -826,7 +850,8 @@ function stopDrag(event) {
     
     console.log("stop dragging icon");
     isDragging = false;
-    
+    if (window.__iconShapeState) window.__iconShapeState.isDragging = false;
+
     document.removeEventListener('mousemove', dragIcon);
     document.removeEventListener('mouseup', stopDrag);
     window.removeEventListener('mouseup', stopDrag);
@@ -1003,9 +1028,11 @@ function stopInteracting() {
     if (hoveredFrameIcon) {
         hoveredFrameIcon.removeHighlight();
         hoveredFrameIcon = null;
+        if (window.__iconShapeState) window.__iconShapeState.hoveredFrameIcon = null;
     }
 
     isDragging = false;
+    if (window.__iconShapeState) window.__iconShapeState.isDragging = false;
     isRotatingIcon = false;
 
     const svg = getSVGElement();

@@ -3,6 +3,18 @@
 // Depends on globals: svg, shapes
 import { updateAttachedArrows as updateArrowsForShape, cleanupAttachments } from '../tools/arrowTool.js';
 
+// Module-level state shared with iconTool via window bridge
+let isDragging = false;
+let hoveredFrameIcon = null;
+
+// Expose setters so iconTool.js can sync these values
+window.__iconShapeState = {
+    set isDragging(v) { isDragging = v; },
+    get isDragging() { return isDragging; },
+    set hoveredFrameIcon(v) { hoveredFrameIcon = v; },
+    get hoveredFrameIcon() { return hoveredFrameIcon; },
+};
+
 function getSVGElement() {
     return document.getElementById('freehand-canvas');
 }

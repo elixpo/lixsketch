@@ -210,23 +210,27 @@ export function renderAIDiagram(diagram) {
         const cx = nx + nw / 2, cy = ny + nh / 2;
         let shape = null;
 
+        // Build style options from AI-specified properties (with defaults)
+        const nodeOpts = {
+            stroke: node.stroke || '#e0e0e0',
+            strokeWidth: node.strokeWidth ?? 1.5,
+            fill: node.fill || 'transparent',
+            fillStyle: node.fillStyle || 'none',
+            roughness: node.roughness ?? 1,
+            strokeDasharray: node.strokeDasharray || '',
+        };
+
         try {
             if (node.type === 'circle' && window.Circle) {
-                shape = new window.Circle(cx, cy, nw / 2, nh / 2, {
-                    stroke: '#e0e0e0', strokeWidth: 1.5, fill: 'transparent', roughness: 1,
-                });
+                shape = new window.Circle(cx, cy, nw / 2, nh / 2, nodeOpts);
             } else if (node.type === 'diamond' && window.Rectangle) {
                 const sz = Math.max(nw, nh) * 0.7;
-                shape = new window.Rectangle(cx - sz / 2, cy - sz / 2, sz, sz, {
-                    stroke: '#e0e0e0', strokeWidth: 1.5, fill: 'transparent', roughness: 1,
-                });
+                shape = new window.Rectangle(cx - sz / 2, cy - sz / 2, sz, sz, nodeOpts);
                 if (shape.element) {
                     shape.element.setAttribute('transform', `rotate(45, ${sz / 2}, ${sz / 2})`);
                 }
             } else if (window.Rectangle) {
-                shape = new window.Rectangle(nx, ny, nw, nh, {
-                    stroke: '#e0e0e0', strokeWidth: 1.5, fill: 'transparent', roughness: 1,
-                });
+                shape = new window.Rectangle(nx, ny, nw, nh, nodeOpts);
             }
         } catch (err) {
             console.warn('[AIRenderer] Node creation failed:', node.id, err);
@@ -235,15 +239,21 @@ export function renderAIDiagram(diagram) {
 
         if (!shape) continue;
 
+        // Apply rotation if specified
+        if (node.rotation && shape.rotation !== undefined) {
+            shape.rotation = node.rotation;
+        }
+
         window.shapes.push(shape);
         if (window.pushCreateAction) window.pushCreateAction(shape);
         if (frame.addShapeToFrame) frame.addShapeToFrame(shape);
 
         nodeMap.set(node.id, { shape, x: nx, y: ny, width: nw, height: nh, centerX: cx, centerY: cy });
 
-        // Node label as a proper interactive TextShape
+        // Node label — use the node's stroke color for readable contrast
         if (node.label) {
-            createLabel(node.label, cx, cy, 14, '#e0e0e0', frame);
+            const labelColor = node.stroke || '#e0e0e0';
+            createLabel(node.label, cx, cy, 14, labelColor, frame);
         }
     }
 
@@ -286,11 +296,21 @@ export function renderAIDiagram(diagram) {
 
         let connector = null;
 
+        // Edge style from AI (with defaults)
+        const edgeStroke = edge.stroke || '#e0e0e0';
+        const edgeStrokeWidth = edge.strokeWidth ?? 1.5;
+        const edgeLineStyle = edge.lineStyle || 'solid';
+
+        // Map lineStyle to arrowOutlineStyle / strokeDasharray
+        const dashMap = { solid: '', dashed: '5 3', dotted: '2 2' };
+        const dashValue = dashMap[edgeLineStyle] || '';
+
         if (isDirected && window.Arrow) {
             // Use Arrow for directed edges
             try {
                 const opts = {
-                    stroke: '#e0e0e0', strokeWidth: 1.5, roughness: 1,
+                    stroke: edgeStroke, strokeWidth: edgeStrokeWidth, roughness: 1,
+                    arrowOutlineStyle: edgeLineStyle,
                 };
 
                 if (edgeStyle.type === 'curved') {
@@ -316,7 +336,8 @@ export function renderAIDiagram(diagram) {
             // Use Line for undirected edges
             try {
                 const opts = {
-                    stroke: '#e0e0e0', strokeWidth: 1.5, roughness: 1,
+                    stroke: edgeStroke, strokeWidth: edgeStrokeWidth, roughness: 1,
+                    strokeDasharray: dashValue,
                 };
 
                 connector = new window.Line(spN, epN, opts);
@@ -340,7 +361,7 @@ export function renderAIDiagram(diagram) {
             // Fallback: use Arrow if Line not available
             try {
                 connector = new window.Arrow(spN, epN, {
-                    stroke: '#e0e0e0', strokeWidth: 1.5, roughness: 1,
+                    stroke: edgeStroke, strokeWidth: edgeStrokeWidth, roughness: 1,
                 });
                 window.shapes.push(connector);
                 if (window.pushCreateAction) window.pushCreateAction(connector);
@@ -354,7 +375,9 @@ export function renderAIDiagram(diagram) {
         if (edge.label) {
             const mx = (spN.x + epN.x) / 2;
             const my = (spN.y + epN.y) / 2 - 18;
-            createLabel(edge.label, mx, my, 11, '#a0a0b0', frame);
+            // Use a muted version of edge color, or default label color
+            const edgeLabelColor = edgeStroke === '#e0e0e0' ? '#a0a0b0' : edgeStroke;
+            createLabel(edge.label, mx, my, 11, edgeLabelColor, frame);
         }
     }
 
@@ -697,14 +720,21 @@ export function generatePreviewSVG(diagram, width = 500, height = 350) {
         if (!f || !t) return;
 
         const directed = e.directed !== false;
-        const markerId = directed ? 'url(#preview-arrow)' : '';
+        const eColor = e.stroke || '#666';
+        const markerId = directed ? `url(#preview-arrow-${eColor.replace('#', '')})` : '';
 
-        svgContent += `<line x1="${f.cx}" y1="${f.cy}" x2="${t.cx}" y2="${t.cy}" stroke="#666" stroke-width="1.5" marker-end="${markerId}" />`;
+        // Add a per-color marker if needed
+        if (directed && !svgContent.includes(`id="preview-arrow-${eColor.replace('#', '')}"`)) {
+            svgContent = `<marker id="preview-arrow-${eColor.replace('#', '')}" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6" fill="none" stroke="${eColor}" stroke-width="1" /></marker>` + svgContent;
+        }
+
+        const eDash = e.lineStyle === 'dashed' ? ' stroke-dasharray="5 3"' : e.lineStyle === 'dotted' ? ' stroke-dasharray="2 2"' : '';
+        svgContent += `<line x1="${f.cx}" y1="${f.cy}" x2="${t.cx}" y2="${t.cy}" stroke="${eColor}" stroke-width="1.5"${eDash} marker-end="${markerId}" />`;
 
         if (e.label) {
             const mx = (f.cx + t.cx) / 2;
             const my = (f.cy + t.cy) / 2 - 8;
-            svgContent += `<text x="${mx}" y="${my}" text-anchor="middle" fill="#888" font-size="9" font-family="lixFont, sans-serif">${escapeXml(e.label)}</text>`;
+            svgContent += `<text x="${mx}" y="${my}" text-anchor="middle" fill="${eColor === '#666' ? '#888' : eColor}" font-size="9" font-family="lixFont, sans-serif">${escapeXml(e.label)}</text>`;
         }
     });
 
@@ -713,29 +743,30 @@ export function generatePreviewSVG(diagram, width = 500, height = 350) {
         const d = nodeById.get(n.id);
         if (!d) return;
 
+        const nStroke = n.stroke || '#9090c0';
+        const nFill = n.fill || 'transparent';
+        const nDash = n.strokeDasharray ? ` stroke-dasharray="${n.strokeDasharray}"` : '';
+
         if (n.type === 'circle') {
-            svgContent += `<ellipse cx="${d.cx}" cy="${d.cy}" rx="${d.w / 2}" ry="${d.h / 2}" fill="transparent" stroke="#9090c0" stroke-width="1.5" />`;
+            svgContent += `<ellipse cx="${d.cx}" cy="${d.cy}" rx="${d.w / 2}" ry="${d.h / 2}" fill="${nFill}" stroke="${nStroke}" stroke-width="1.5"${nDash} />`;
         } else if (n.type === 'diamond') {
             const sz = Math.min(d.w, d.h) * 0.7;
-            svgContent += `<rect x="${d.cx - sz / 2}" y="${d.cy - sz / 2}" width="${sz}" height="${sz}" fill="transparent" stroke="#9090c0" stroke-width="1.5" transform="rotate(45, ${d.cx}, ${d.cy})" />`;
+            svgContent += `<rect x="${d.cx - sz / 2}" y="${d.cy - sz / 2}" width="${sz}" height="${sz}" fill="${nFill}" stroke="${nStroke}" stroke-width="1.5"${nDash} transform="rotate(45, ${d.cx}, ${d.cy})" />`;
         } else {
-            svgContent += `<rect x="${d.x}" y="${d.y}" width="${d.w}" height="${d.h}" rx="4" fill="transparent" stroke="#9090c0" stroke-width="1.5" />`;
+            svgContent += `<rect x="${d.x}" y="${d.y}" width="${d.w}" height="${d.h}" rx="4" fill="${nFill}" stroke="${nStroke}" stroke-width="1.5"${nDash} />`;
         }
 
-        // Label
+        // Label — use node stroke color for matching text
         if (n.label) {
             const fontSize = Math.max(8, Math.min(12, 11 * scale));
-            svgContent += `<text x="${d.cx}" y="${d.cy}" text-anchor="middle" dominant-baseline="central" fill="#d0d0d0" font-size="${fontSize}" font-family="lixFont, sans-serif">${escapeXml(n.label)}</text>`;
+            const labelFill = nStroke === '#9090c0' ? '#d0d0d0' : nStroke;
+            svgContent += `<text x="${d.cx}" y="${d.cy}" text-anchor="middle" dominant-baseline="central" fill="${labelFill}" font-size="${fontSize}" font-family="lixFont, sans-serif">${escapeXml(n.label)}</text>`;
         }
     });
 
     return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
-  <defs>
-    <marker id="preview-arrow" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
-      <path d="M0,0 L8,3 L0,6" fill="none" stroke="#666" stroke-width="1" />
-    </marker>
-  </defs>
-  ${svgContent}
+  <defs>${svgContent.match(/<marker[^]*?<\/marker>/g)?.join('') || ''}</defs>
+  ${svgContent.replace(/<marker[^]*?<\/marker>/g, '')}
 </svg>`;
 }
 

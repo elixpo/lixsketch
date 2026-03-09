@@ -271,6 +271,9 @@ class SketchEngine {
             if (selection.multiSelection) window.multiSelection = selection.multiSelection;
             if (selection.clearAllSelections) window.clearAllSelections = selection.clearAllSelections;
 
+            // Initialize centralized copy/paste system
+            if (copyPaste.initCopyPaste) copyPaste.initCopyPaste();
+
             this._initialized = true;
             console.log('[SketchEngine] Initialized successfully');
         } catch (err) {

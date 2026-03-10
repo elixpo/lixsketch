@@ -402,17 +402,11 @@ class Arrow {
         this._labelBg.setAttribute('height', bgH);
         this._labelBg.setAttribute('rx', 2);
 
-        // Ensure bg is before text in DOM order
-        if (this._labelBg.parentNode !== this.group) {
-            this.group.appendChild(this._labelBg);
-        }
-        if (this.labelElement.parentNode !== this.group) {
-            this.group.appendChild(this.labelElement);
-        }
-        // Make sure bg is right before text
-        if (this._labelBg.nextSibling !== this.labelElement) {
-            this.group.insertBefore(this._labelBg, this.labelElement);
-        }
+        // Re-append bg then text at end so they render ON TOP of the arrow path
+        if (this._labelBg.parentNode === this.group) this.group.removeChild(this._labelBg);
+        if (this.labelElement.parentNode === this.group) this.group.removeChild(this.labelElement);
+        this.group.appendChild(this._labelBg);
+        this.group.appendChild(this.labelElement);
     }
 
     _setupLabelDblClick() {
@@ -429,6 +423,9 @@ class Arrow {
 
         if (this.labelElement) {
             this.labelElement.setAttribute('visibility', 'hidden');
+        }
+        if (this._labelBg) {
+            this._labelBg.setAttribute('visibility', 'hidden');
         }
 
         // Get midpoint in screen coords via CTM
@@ -490,7 +487,8 @@ class Arrow {
             this.label = newText;
             this._isEditingLabel = false;
             if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
-            if (this.labelElement) this.labelElement.setAttribute('visibility', 'visible');
+            if (this.labelElement) this.labelElement.removeAttribute('visibility');
+            if (this._labelBg) this._labelBg.removeAttribute('visibility');
             this.draw();
         };
 
@@ -555,7 +553,9 @@ class Arrow {
         let anchorPositions = [this.startPoint, this.endPoint];
 
         if (this.arrowCurved === "curved" && this.controlPoint1 && this.controlPoint2) {
-            anchorPositions.push(this.controlPoint1, this.controlPoint2);
+            // Show a single on-curve anchor at t=0.5 for intuitive dragging
+            const midOnCurve = this.getCubicBezierPoint(0.5);
+            anchorPositions.push(midOnCurve);
         } else if (this.arrowCurved === "elbow") {
             const elbowXVal = this.elbowX !== null ? this.elbowX : (this.startPoint.x + this.endPoint.x) / 2;
             const midY = (this.startPoint.y + this.endPoint.y) / 2;
@@ -1632,12 +1632,34 @@ updateFrameContainment() {
             this.endPoint.y = newViewBoxY;
         } else if (anchorIndex === 2 && this.arrowCurved === "elbow") {
             this.elbowX = newViewBoxX;
-        } else if (anchorIndex === 2 && this.controlPoint1) {
-            this.controlPoint1.x = newViewBoxX;
-            this.controlPoint1.y = newViewBoxY;
-        } else if (anchorIndex === 3 && this.controlPoint2) {
-            this.controlPoint2.x = newViewBoxX;
-            this.controlPoint2.y = newViewBoxY;
+        } else if (anchorIndex === 2 && this.arrowCurved === "curved" && this.controlPoint1 && this.controlPoint2) {
+            // On-curve midpoint anchor dragged — inversely compute control points
+            // B(0.5) = 0.125*P0 + 0.375*CP1 + 0.375*CP2 + 0.125*P3
+            // Keep curve symmetric: offset both control points equally from the line
+            const dx = this.endPoint.x - this.startPoint.x;
+            const dy = this.endPoint.y - this.startPoint.y;
+            const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+            const perpX = -dy / dist;
+            const perpY = dx / dist;
+
+            // Desired midpoint offset from line midpoint
+            const lineMidX = (this.startPoint.x + this.endPoint.x) / 2;
+            const lineMidY = (this.startPoint.y + this.endPoint.y) / 2;
+            const offsetX = newViewBoxX - lineMidX;
+            const offsetY = newViewBoxY - lineMidY;
+            // Project offset onto perpendicular to get curve amount
+            const curveAmount = offsetX * perpX + offsetY * perpY;
+
+            // Recompute control points with this curve amount
+            const t1 = 0.33, t2 = 0.67;
+            this.controlPoint1 = {
+                x: this.startPoint.x + t1 * dx + perpX * curveAmount * (4 / 3),
+                y: this.startPoint.y + t1 * dy + perpY * curveAmount * (4 / 3)
+            };
+            this.controlPoint2 = {
+                x: this.startPoint.x + t2 * dx + perpX * curveAmount * (4 / 3),
+                y: this.startPoint.y + t2 * dy + perpY * curveAmount * (4 / 3)
+            };
         }
         this.draw();
     }

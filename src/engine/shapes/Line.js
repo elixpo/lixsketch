@@ -248,17 +248,11 @@ class Line {
         this._labelBg.setAttribute('height', bgH);
         this._labelBg.setAttribute('rx', 2);
 
-        // Ensure bg is before text in DOM order
-        if (this._labelBg.parentNode !== this.group) {
-            this.group.appendChild(this._labelBg);
-        }
-        if (this.labelElement.parentNode !== this.group) {
-            this.group.appendChild(this.labelElement);
-        }
-        // Make sure bg is right before text
-        if (this._labelBg.nextSibling !== this.labelElement) {
-            this.group.insertBefore(this._labelBg, this.labelElement);
-        }
+        // Re-append bg then text at end so they render ON TOP of the line path
+        if (this._labelBg.parentNode === this.group) this.group.removeChild(this._labelBg);
+        if (this.labelElement.parentNode === this.group) this.group.removeChild(this.labelElement);
+        this.group.appendChild(this._labelBg);
+        this.group.appendChild(this.labelElement);
     }
 
     _setupLabelDblClick() {
@@ -275,6 +269,9 @@ class Line {
 
         if (this.labelElement) {
             this.labelElement.setAttribute('visibility', 'hidden');
+        }
+        if (this._labelBg) {
+            this._labelBg.setAttribute('visibility', 'hidden');
         }
 
         // Get midpoint in screen coords via CTM
@@ -336,7 +333,8 @@ class Line {
             this.label = newText;
             this._isEditingLabel = false;
             if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
-            if (this.labelElement) this.labelElement.setAttribute('visibility', 'visible');
+            if (this.labelElement) this.labelElement.removeAttribute('visibility');
+            if (this._labelBg) this._labelBg.removeAttribute('visibility');
             this.draw();
         };
 
@@ -498,9 +496,21 @@ removeSelection() {
             };
         }
         
-        // Only redraw the line, not the entire structure
+        // Redraw line, hit area, and label
         this.updateLineElement();
         this.updateAnchorPositions();
+
+        // Update hit area path
+        if (this._hitArea) {
+            if (this.isCurved && this.controlPoint) {
+                this._hitArea.setAttribute('d', `M ${this.startPoint.x} ${this.startPoint.y} Q ${this.controlPoint.x} ${this.controlPoint.y} ${this.endPoint.x} ${this.endPoint.y}`);
+            } else {
+                this._hitArea.setAttribute('d', `M ${this.startPoint.x} ${this.startPoint.y} L ${this.endPoint.x} ${this.endPoint.y}`);
+            }
+        }
+
+        // Update label position at new midpoint
+        this._updateLabelElement();
     }
 
     updateLineElement() {

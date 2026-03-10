@@ -1208,13 +1208,75 @@ export function generateFramePreviewSVG(frame, width = 500, height = 350) {
 // ============================================================
 
 export function initAIRenderer() {
+    // Lazy-load sequence renderer
+    let _seqParser = null;
+    let _seqPreview = null;
+    let _seqCanvas = null;
+
+    async function loadSequenceRenderer() {
+        if (_seqParser) return;
+        const mod = await import('./MermaidSequenceParser.js');
+        const rend = await import('./MermaidSequenceRenderer.js');
+        _seqParser = mod.parseSequenceDiagram;
+        _seqPreview = rend.renderSequencePreviewSVG;
+        _seqCanvas = rend.renderSequenceOnCanvas;
+    }
+
+    // Detect if source is a sequence diagram
+    function isSequenceDiagram(src) {
+        return src.trim().split('\n')[0].trim().toLowerCase() === 'sequencediagram';
+    }
+
     window.__aiRenderer = renderAIDiagram;
     window.__aiPreview = generatePreviewSVG;
     window.__aiFramePreview = generateFramePreviewSVG;
-    window.__mermaidRenderer = (src) => {
+
+    // Unified mermaid parser: supports graph/flowchart + sequenceDiagram
+    window.__mermaidParser = (src) => {
+        if (isSequenceDiagram(src)) {
+            // Synchronous parse — renderer loaded lazily on first use
+            // Import synchronously since parseMermaid is sync and we need to match
+            try {
+                // Dynamic import for the parser module
+                const lines = src.trim().split('\n').map(l => l.trim()).filter(l => l && !l.startsWith('%%'));
+                // Use the eager-loaded parser if available, otherwise trigger load
+                if (_seqParser) return _seqParser(src);
+                // Fallback: trigger async load and return a marker
+                loadSequenceRenderer();
+                return { _pendingSequence: true, src };
+            } catch {
+                return null;
+            }
+        }
+        return parseMermaid(src);
+    };
+
+    // Unified mermaid preview: returns SVG for both flowchart and sequence
+    window.__mermaidPreview = async (src) => {
+        if (isSequenceDiagram(src)) {
+            await loadSequenceRenderer();
+            const diagram = _seqParser(src);
+            if (!diagram) return '';
+            return _seqPreview(diagram);
+        }
+        const diagram = parseMermaid(src);
+        if (!diagram) return '';
+        return generatePreviewSVG(diagram);
+    };
+
+    // Unified mermaid renderer: places on canvas
+    window.__mermaidRenderer = async (src) => {
+        if (isSequenceDiagram(src)) {
+            await loadSequenceRenderer();
+            const diagram = _seqParser(src);
+            if (!diagram) { console.error('[AIRenderer] Sequence parse failed'); return false; }
+            return _seqCanvas(diagram);
+        }
         const diagram = parseMermaid(src);
         if (!diagram) { console.error('[AIRenderer] Mermaid parse failed'); return false; }
         return renderAIDiagram(diagram);
     };
-    window.__mermaidParser = parseMermaid;
+
+    // Pre-load sequence renderer so it's ready for sync parsing
+    loadSequenceRenderer();
 }

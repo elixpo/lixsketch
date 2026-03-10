@@ -227,16 +227,34 @@ export default function AIModal() {
     const isMermaid = mode === 'mermaid'
 
     if (isMermaid) {
-      if (window.__mermaidParser) {
-        const diagram = window.__mermaidParser(currentPrompt)
-        if (diagram) {
-          setPreviewDiagram(diagram)
-          if (window.__aiPreview) setPreviewSVG(window.__aiPreview(diagram))
-          setChatHistory([{ role: 'user', content: currentPrompt }])
-        } else {
-          setToast({ status: 'error', message: 'Invalid Mermaid syntax.' })
+      setIsGenerating(true)
+      try {
+        // Use unified mermaid preview (handles both flowchart + sequence)
+        if (window.__mermaidPreview) {
+          const svg = await window.__mermaidPreview(currentPrompt)
+          if (svg) {
+            // Store the raw source so we can re-render on canvas
+            setPreviewDiagram({ _mermaidSrc: currentPrompt, _svgPreview: true })
+            setPreviewSVG(svg)
+            setChatHistory([{ role: 'user', content: currentPrompt }])
+          } else {
+            setToast({ status: 'error', message: 'Invalid Mermaid syntax.' })
+          }
+        } else if (window.__mermaidParser) {
+          // Fallback: old sync path for flowcharts
+          const diagram = window.__mermaidParser(currentPrompt)
+          if (diagram) {
+            setPreviewDiagram(diagram)
+            if (window.__aiPreview) setPreviewSVG(window.__aiPreview(diagram))
+            setChatHistory([{ role: 'user', content: currentPrompt }])
+          } else {
+            setToast({ status: 'error', message: 'Invalid Mermaid syntax.' })
+          }
         }
+      } catch {
+        setToast({ status: 'error', message: 'Failed to parse Mermaid syntax.' })
       }
+      setIsGenerating(false)
       return
     }
 
@@ -319,7 +337,7 @@ export default function AIModal() {
   }, [editPrompt, previewDiagram, chatHistory])
 
   // --- Place diagram ---
-  const handlePlace = useCallback(() => {
+  const handlePlace = useCallback(async () => {
     if (!previewDiagram || previewDiagram._fromFrame) return
 
     if (editingFrame) {
@@ -338,7 +356,20 @@ export default function AIModal() {
     }
 
     handleClose()
-    if (window.__aiRenderer) {
+
+    // Mermaid source-based diagram (sequence or flowchart via unified renderer)
+    if (previewDiagram._mermaidSrc && window.__mermaidRenderer) {
+      try {
+        const success = await window.__mermaidRenderer(previewDiagram._mermaidSrc)
+        if (!success) {
+          setToast({ status: 'error', message: 'Failed to render diagram' })
+          return
+        }
+      } catch {
+        setToast({ status: 'error', message: 'Failed to render diagram' })
+        return
+      }
+    } else if (window.__aiRenderer) {
       const success = window.__aiRenderer(previewDiagram)
       if (success === false) {
         setToast({ status: 'error', message: 'Failed to render diagram' })
@@ -681,52 +712,60 @@ export default function AIModal() {
                     <p className="text-text-muted text-xs uppercase tracking-wider">
                       {previewDiagram?._fromFrame ? 'Current Frame' : 'Preview'}
                     </p>
-                    {!previewDiagram?._fromFrame && (
+                    {!previewDiagram?._fromFrame && !previewDiagram?._mermaidSrc && (
                       <p className="text-text-dim text-xs">
                         {previewDiagram.nodes?.length || 0} nodes, {previewDiagram.edges?.length || 0} edges
                         {previewDiagram.subgraphs?.length ? `, ${previewDiagram.subgraphs.length} groups` : ''}
                       </p>
+                    )}
+                    {previewDiagram?._mermaidSrc && (
+                      <p className="text-text-dim text-xs">Mermaid Diagram</p>
                     )}
                   </div>
                   <DiagramPreview svgMarkup={previewSVG} className="flex-1 min-h-[200px]" />
                   <p className="text-text-dim text-[10px] mt-1 shrink-0">Scroll to zoom, drag to pan</p>
                 </div>
 
-                <div className="mb-4 shrink-0">
-                  <p className="text-text-muted text-xs uppercase tracking-wider mb-2">Suggest Edits</p>
-                  <div className="flex gap-2">
-                    <input
-                      ref={editInputRef}
-                      type="text"
-                      value={editPrompt}
-                      onChange={(e) => setEditPrompt(e.target.value)}
-                      onKeyDown={handleEditKeyDown}
-                      placeholder='e.g. "Add an error handling step" or "Make it left-to-right"'
-                      className="flex-1 bg-surface-dark border border-border rounded-xl px-4 py-2.5 text-text-primary text-sm focus:outline-none focus:border-accent-blue placeholder:text-text-dim"
-                      disabled={isGenerating}
-                    />
-                    <button
-                      onClick={() => handleEdit()}
-                      disabled={!editPrompt.trim() || isGenerating}
-                      className={`px-4 py-2.5 rounded-xl text-sm transition-all duration-200 ${
-                        !editPrompt.trim() || isGenerating ? 'bg-surface-hover text-text-dim cursor-not-allowed' : 'bg-surface-active text-text-primary hover:bg-white/[0.12]'
-                      }`}
-                    >
-                      {isGenerating ? (
-                        <div className="relative w-4 h-4"><div className="absolute inset-0 rounded-full border-2 border-transparent border-t-white animate-spin" /></div>
-                      ) : <i className="bx bx-refresh text-base" />}
-                    </button>
-                  </div>
-                </div>
+                {/* AI Edit controls — only for AI-generated diagrams, not raw mermaid */}
+                {!previewDiagram?._mermaidSrc && (
+                  <>
+                    <div className="mb-4 shrink-0">
+                      <p className="text-text-muted text-xs uppercase tracking-wider mb-2">Suggest Edits</p>
+                      <div className="flex gap-2">
+                        <input
+                          ref={editInputRef}
+                          type="text"
+                          value={editPrompt}
+                          onChange={(e) => setEditPrompt(e.target.value)}
+                          onKeyDown={handleEditKeyDown}
+                          placeholder='e.g. "Add an error handling step" or "Make it left-to-right"'
+                          className="flex-1 bg-surface-dark border border-border rounded-xl px-4 py-2.5 text-text-primary text-sm focus:outline-none focus:border-accent-blue placeholder:text-text-dim"
+                          disabled={isGenerating}
+                        />
+                        <button
+                          onClick={() => handleEdit()}
+                          disabled={!editPrompt.trim() || isGenerating}
+                          className={`px-4 py-2.5 rounded-xl text-sm transition-all duration-200 ${
+                            !editPrompt.trim() || isGenerating ? 'bg-surface-hover text-text-dim cursor-not-allowed' : 'bg-surface-active text-text-primary hover:bg-white/[0.12]'
+                          }`}
+                        >
+                          {isGenerating ? (
+                            <div className="relative w-4 h-4"><div className="absolute inset-0 rounded-full border-2 border-transparent border-t-white animate-spin" /></div>
+                          ) : <i className="bx bx-refresh text-base" />}
+                        </button>
+                      </div>
+                    </div>
 
-                <div className="flex flex-wrap gap-1.5 mb-5 shrink-0">
-                  {['Add more detail', 'Simplify it', 'Use left-to-right layout', 'Add error handling', 'Add icons', 'Group into subgraphs'].map((s) => (
-                    <button
-                      key={s} onClick={() => handleEdit(s)} disabled={isGenerating}
-                      className="px-3 py-1 rounded-lg text-[11px] text-text-dim border border-white/[0.06] hover:border-white/[0.15] hover:text-text-secondary transition-all duration-150"
-                    >{s}</button>
-                  ))}
-                </div>
+                    <div className="flex flex-wrap gap-1.5 mb-5 shrink-0">
+                      {['Add more detail', 'Simplify it', 'Use left-to-right layout', 'Add error handling', 'Add icons', 'Group into subgraphs'].map((s) => (
+                        <button
+                          key={s} onClick={() => handleEdit(s)} disabled={isGenerating}
+                          className="px-3 py-1 rounded-lg text-[11px] text-text-dim border border-white/[0.06] hover:border-white/[0.15] hover:text-text-secondary transition-all duration-150"
+                        >{s}</button>
+                      ))}
+                    </div>
+                  </>
+                )}
 
                 <div className="flex items-center justify-between shrink-0">
                   <span className="text-text-dim text-xs">

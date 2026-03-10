@@ -214,7 +214,6 @@ const handleMouseMove = (e) => {
         currentShape.move(dx, dy);
         startX = x;
         startY = y;
-        currentShape.draw();
         svg.style.cursor = 'grabbing';
     } else if (isSelectionToolActive && currentShape && currentShape.isSelected) {
         // Provide visual feedback when hovering over anchors or the arrow
@@ -264,12 +263,10 @@ if (isDrawingArrow && currentArrow) {
 
         if (startAttachment) {
             currentArrow.attachToShape(true, startAttachment.shape, startAttachment.attachment);
-            console.log(`Arrow start attached to ${startAttachment.shape.shapeName}`);
         }
 
         if (endAttachment) {
             currentArrow.attachToShape(false, endAttachment.shape, endAttachment.attachment);
-            console.log(`Arrow end attached to ${endAttachment.shape.shapeName}`);
         }
 
         // Check for frame containment and track attachment
@@ -467,7 +464,6 @@ function detachSelectedArrow() {
             currentShape.draw();
 
             // Add to undo/redo if needed
-            console.log("Arrow detached from shapes");
         }
     }
 }

@@ -342,6 +342,80 @@ class Arrow {
         }
     }
 
+    _buildFullPathData() {
+        let pathData;
+        const elbowX = this.elbowX !== null ? this.elbowX : (this.startPoint.x + this.endPoint.x) / 2;
+
+        if (this.arrowCurved === "curved" && this.controlPoint1 && this.controlPoint2) {
+            if (isNaN(this.controlPoint1.x) || isNaN(this.controlPoint1.y) ||
+                isNaN(this.controlPoint2.x) || isNaN(this.controlPoint2.y)) {
+                this.initializeCurveControlPoints();
+            }
+            pathData = `M ${this.startPoint.x} ${this.startPoint.y} ` +
+                      `C ${this.controlPoint1.x} ${this.controlPoint1.y}, ` +
+                      `${this.controlPoint2.x} ${this.controlPoint2.y}, ` +
+                      `${this.endPoint.x} ${this.endPoint.y}`;
+
+            if (this.arrowHeadStyle === "default") {
+                const t = 0.95;
+                const tangent = this.getCubicBezierTangent(t);
+                const angle = Math.atan2(tangent.y, tangent.x);
+                const arrowEndPoint = {
+                    x: this.endPoint.x - (this.arrowHeadLength * 0.3) * Math.cos(angle),
+                    y: this.endPoint.y - (this.arrowHeadLength * 0.3) * Math.sin(angle)
+                };
+                pathData = `M ${this.startPoint.x} ${this.startPoint.y} ` +
+                          `C ${this.controlPoint1.x} ${this.controlPoint1.y}, ` +
+                          `${this.controlPoint2.x} ${this.controlPoint2.y}, ` +
+                          `${arrowEndPoint.x} ${arrowEndPoint.y}`;
+            }
+        } else if (this.arrowCurved === "elbow") {
+            pathData = this._buildElbowPath(elbowX, false);
+        } else {
+            pathData = `M ${this.startPoint.x} ${this.startPoint.y} L ${this.endPoint.x} ${this.endPoint.y}`;
+        }
+
+        if (this.arrowHeadStyle === "default") {
+            let angle;
+            if (this.arrowCurved === "curved" && this.controlPoint1 && this.controlPoint2) {
+                const tangent = this.getCubicBezierTangent(1.0);
+                angle = Math.atan2(tangent.y, tangent.x);
+            } else if (this.arrowCurved === "elbow") {
+                angle = Math.atan2(0, this.endPoint.x - elbowX);
+            } else {
+                const dx = this.endPoint.x - this.startPoint.x;
+                const dy = this.endPoint.y - this.startPoint.y;
+                angle = Math.atan2(dy, dx);
+            }
+            const arrowHeadAngleRad = (this.arrowHeadAngleDeg * Math.PI) / 180;
+            const x3 = this.endPoint.x - this.arrowHeadLength * Math.cos(angle - arrowHeadAngleRad);
+            const y3 = this.endPoint.y - this.arrowHeadLength * Math.sin(angle - arrowHeadAngleRad);
+            const x4 = this.endPoint.x - this.arrowHeadLength * Math.cos(angle + arrowHeadAngleRad);
+            const y4 = this.endPoint.y - this.arrowHeadLength * Math.sin(angle + arrowHeadAngleRad);
+            pathData += ` M ${x3} ${y3} L ${this.endPoint.x} ${this.endPoint.y} L ${x4} ${y4}`;
+        }
+        return pathData;
+    }
+
+    _updatePathElement() {
+        if (!this.element) return;
+        this.element.setAttribute("d", this._buildFullPathData());
+    }
+
+    _updateHitArea() {
+        if (!this._hitArea) return;
+        let hitPathData;
+        if (this.arrowCurved === "curved" && this.controlPoint1 && this.controlPoint2) {
+            hitPathData = `M ${this.startPoint.x} ${this.startPoint.y} C ${this.controlPoint1.x} ${this.controlPoint1.y}, ${this.controlPoint2.x} ${this.controlPoint2.y}, ${this.endPoint.x} ${this.endPoint.y}`;
+        } else if (this.arrowCurved === "elbow") {
+            const ex = this.elbowX !== null ? this.elbowX : (this.startPoint.x + this.endPoint.x) / 2;
+            hitPathData = `M ${this.startPoint.x} ${this.startPoint.y} L ${ex} ${this.startPoint.y} L ${ex} ${this.endPoint.y} L ${this.endPoint.x} ${this.endPoint.y}`;
+        } else {
+            hitPathData = `M ${this.startPoint.x} ${this.startPoint.y} L ${this.endPoint.x} ${this.endPoint.y}`;
+        }
+        this._hitArea.setAttribute('d', hitPathData);
+    }
+
     _getMidpoint() {
         if (this.arrowCurved === "curved" && this.controlPoint1 && this.controlPoint2) {
             const p = this.getCubicBezierPoint(0.5);
@@ -1446,14 +1520,17 @@ static getFrameAttachmentPoint(point, frame, tolerance = 20) {
         this.controlPoint2.x += dx;
         this.controlPoint2.y += dy;
     }
-    
+
+    // Lightweight update — rebuild the path element without full draw/anchor rebuild
+    this._updatePathElement();
+    this._updateHitArea();
+    this._updateLabelElement();
+
     // Only update frame containment if we're actively dragging the shape itself
     // and not being moved by a parent frame
     if (isDragging && !this.isBeingMovedByFrame) {
         this.updateFrameContainment();
     }
-
-    this.draw();
 }
 
 updateFrameContainment() {
@@ -1567,12 +1644,10 @@ updateFrameContainment() {
                         this.detachFromShape(true);
                     }
                     this.attachToShape(true, startAttachment.shape, startAttachment.attachment);
-                    console.log(`Arrow start attached to ${startAttachment.shape.shapeName}`);
                 } else {
                     // Detach if moved away from shape
                     if (this.attachedToStart) {
                         this.detachFromShape(true);
-                        console.log("Arrow start detached from shape");
                     }
                 }
             } else if (index === 1) {
@@ -1584,12 +1659,10 @@ updateFrameContainment() {
                         this.detachFromShape(false);
                     }
                     this.attachToShape(false, endAttachment.shape, endAttachment.attachment);
-                    console.log(`Arrow end attached to ${endAttachment.shape.shapeName}`);
                 } else {
                     // Detach if moved away from shape
                     if (this.attachedToEnd) {
                         this.detachFromShape(false);
-                        console.log("Arrow end detached from shape");
                     }
                 }
             }

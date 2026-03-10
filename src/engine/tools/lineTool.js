@@ -86,7 +86,6 @@ const handleMouseDown = (e) => {
         // Check if clicking on current selected line
         if (currentShape && currentShape.shapeName === 'line' && currentShape.isSelected) {
             const anchorInfo = currentShape.isNearAnchor(x, y);
-            console.log('Anchor info:', anchorInfo); // Debug log
             
             if (anchorInfo && anchorInfo.type === 'anchor') {
                 clickedOnShape = true;
@@ -100,7 +99,6 @@ const handleMouseDown = (e) => {
                 };
                 
                 const anchorIndex = anchorInfo.index;
-                console.log('Dragging anchor index:', anchorIndex); // Debug log
                 
                 const onPointerMove = (event) => {
                     const { x: newX, y: newY } = getSVGCoordsFromMouse(event);
@@ -108,7 +106,6 @@ const handleMouseDown = (e) => {
                 };
                 
                 const onPointerUp = () => {
-                    console.log('Anchor drag ended'); // Debug log
                     if (dragOldPosLine) {
                         const newPos = {
                             startPoint: { x: currentShape.startPoint.x, y: currentShape.startPoint.y },
@@ -133,7 +130,6 @@ const handleMouseDown = (e) => {
                 
             } else if (currentShape.contains(x, y)) {
                 // Dragging the line itself (not anchors)
-                console.log('Dragging line body'); // Debug log
                 isDraggingLine = true;
                 dragOldPosLine = {
                     startPoint: { x: currentShape.startPoint.x, y: currentShape.startPoint.y },
@@ -176,7 +172,6 @@ const handleMouseDown = (e) => {
             if (shapeToSelect) {
                 currentShape = shapeToSelect;
                 currentShape.selectLine();
-                console.log('Selected new line, anchors count:', currentShape.anchors.length); // Debug log
                 clickedOnShape = true;
             }
         }
@@ -231,7 +226,6 @@ const handleMouseMove = (e) => {
         currentShape.move(dx, dy);
         startX = x;
         startY = y;
-        currentShape.draw();
     }
 };
 

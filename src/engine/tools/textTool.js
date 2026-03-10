@@ -660,7 +660,7 @@ function selectElement(groupElement) {
     updateCodeToggleForShape('text');
 
     // Show text property panel when text is selected
-    textSideBar.classList.remove("hidden");
+    if (window.__showSidebarForShape) window.__showSidebarForShape('text');
 }
 
 function deselectElement() {

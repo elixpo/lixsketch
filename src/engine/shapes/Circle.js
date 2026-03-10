@@ -89,14 +89,11 @@ class Circle {
             }
         }
         childrenToRemove.forEach(child => this.group.removeChild(child));
-        if (this.element && this.element.parentNode === this.group) {
-            this.group.removeChild(this.element);
-            this.element = null;
-        }
         const optionsString = JSON.stringify(this.options);
         const isInitialDraw = this.element === null;
+        const sizeChanged = this.rx !== this._lastDrawn.rx || this.ry !== this._lastDrawn.ry;
         const optionsChanged = optionsString !== this._lastDrawn.options;
-        if (isInitialDraw || optionsChanged) {
+        if (isInitialDraw || optionsChanged || sizeChanged) {
             if (this.element && this.element.parentNode === this.group) {
                 this.group.removeChild(this.element);
             }
@@ -138,15 +135,17 @@ class Circle {
     move(dx, dy) {
         this.x += dx;
         this.y += dy;
+
+        // Fast path: just update the transform — no need to rebuild RoughJS element
+        this.group.setAttribute('transform', `translate(${this.x}, ${this.y}) rotate(${this.rotation}, 0, 0)`);
+
         this.updateAttachedArrows();
-        
+
         // Only update frame containment if we're actively dragging the shape itself
         // and not being moved by a parent frame
         if (isDraggingShapeCircle && !this.isBeingMovedByFrame) {
             this.updateFrameContainment();
         }
-
-        this.draw();
     }
 
     updateFrameContainment() {

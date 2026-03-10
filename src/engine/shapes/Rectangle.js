@@ -506,15 +506,19 @@ class Rectangle {
 move(dx, dy) {
     this.x += dx;
     this.y += dy;
+
+    // Fast path: just update the transform — no need to rebuild RoughJS element
+    const rotateCenterX = this.width / 2;
+    const rotateCenterY = this.height / 2;
+    this.group.setAttribute('transform', `translate(${this.x}, ${this.y}) rotate(${this.rotation}, ${rotateCenterX}, ${rotateCenterY})`);
+
     this.updateAttachedArrows();
-    
+
     // Only update frame containment if we're actively dragging the shape itself
     // and not being moved by a parent frame
     if (isDraggingShapeSquare && !this.isBeingMovedByFrame) {
         this.updateFrameContainment();
     }
-
-    this.draw();
 }
 
 updateFrameContainment() {

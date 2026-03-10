@@ -58,6 +58,7 @@ class Arrow {
         this.labelFontSize = options.labelFontSize || 12;
         this._isEditingLabel = false;
         this._hitArea = null;
+        this._labelBg = null;
 
         // Initialize control points if curved
         if (this.arrowCurved === "curved" && !this.controlPoint1 && !this.controlPoint2) {
@@ -224,7 +225,7 @@ class Arrow {
         const childrenToRemove = [];
         for (let i = 0; i < this.group.children.length; i++) {
             const child = this.group.children[i];
-            if (child !== this.labelElement && child !== this._hitArea) {
+            if (child !== this.labelElement && child !== this._hitArea && child !== this._labelBg) {
                 childrenToRemove.push(child);
             }
         }
@@ -360,6 +361,10 @@ class Arrow {
                 this.group.removeChild(this.labelElement);
                 this.labelElement = null;
             }
+            if (this._labelBg && this._labelBg.parentNode === this.group) {
+                this.group.removeChild(this._labelBg);
+                this._labelBg = null;
+            }
             return;
         }
 
@@ -379,8 +384,32 @@ class Arrow {
         this.labelElement.setAttribute('font-family', 'lixFont, sans-serif');
         this.labelElement.textContent = this.label;
 
+        // Background knockout rect - hides the arrow behind the text
+        if (!this._labelBg) {
+            this._labelBg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            this._labelBg.setAttribute('fill', '#121212');
+            this._labelBg.setAttribute('pointer-events', 'none');
+        }
+        const padding = 4;
+        const charWidth = this.labelFontSize * 0.6;
+        const bgW = this.label.length * charWidth + padding * 2;
+        const bgH = this.labelFontSize + padding * 2;
+        this._labelBg.setAttribute('x', mid.x - bgW / 2);
+        this._labelBg.setAttribute('y', mid.y - bgH / 2);
+        this._labelBg.setAttribute('width', bgW);
+        this._labelBg.setAttribute('height', bgH);
+        this._labelBg.setAttribute('rx', 2);
+
+        // Ensure bg is before text in DOM order
+        if (this._labelBg.parentNode !== this.group) {
+            this.group.appendChild(this._labelBg);
+        }
         if (this.labelElement.parentNode !== this.group) {
             this.group.appendChild(this.labelElement);
+        }
+        // Make sure bg is right before text
+        if (this._labelBg.nextSibling !== this.labelElement) {
+            this.group.insertBefore(this._labelBg, this.labelElement);
         }
     }
 

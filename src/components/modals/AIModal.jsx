@@ -415,10 +415,6 @@ export default function AIModal() {
 
   const isFrameEdit = !!editingFrame
   const isGraphMode = mode === 'graph'
-  const headerTitle = isFrameEdit
-    ? (editingFrame._frameType === 'graph' ? 'Edit Graph' : `Edit: ${editingFrame.frameName || 'Frame'}`)
-    : isGraphMode ? 'Graph Editor' : 'AI Diagram Generator'
-
   const hasValidEquations = equations.some(eq => eq.expression && eq.expression.trim())
 
   return (
@@ -430,41 +426,59 @@ export default function AIModal() {
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
 
           <div
-            className={`relative bg-surface-card border border-border-light rounded-2xl p-5 sm:p-6 mx-3 overflow-y-auto no-scrollbar transition-all duration-300 ${
-              isGraphMode
-                ? 'w-[92vw] max-w-[1200px] h-[88vh] max-h-[88vh]'
-                : previewDiagram
-                ? 'w-[90vw] max-w-[900px] max-h-[90vh]'
-                : 'w-full max-w-[580px] max-h-[90vh]'
-            }`}
+            className="relative bg-surface-card border border-border-light rounded-2xl p-5 sm:p-6 mx-3 overflow-y-auto no-scrollbar transition-all duration-300 w-[92vw] max-w-[1200px] h-[88vh] max-h-[88vh]"
             style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(255,255,255,0.1) transparent' }}
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Header */}
+            {/* Header with breadcrumb */}
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-text-primary text-lg font-medium flex items-center gap-2.5">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={isGraphMode ? 'text-[#4A90D9]' : isFrameEdit ? 'text-[#FFD700]' : 'text-accent'}>
-                  {isGraphMode ? (
-                    <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
-                  ) : (
-                    <>
-                      <path d="M12 3l1.5 4.5L18 9l-4.5 1.5L12 15l-1.5-4.5L6 9l4.5-1.5L12 3z" />
-                      <path d="M18 14l1 3 3 1-3 1-1 3-1-3-3-1 3-1 1-3z" />
-                    </>
-                  )}
-                </svg>
-                {headerTitle}
-              </h2>
               <div className="flex items-center gap-2">
-                {(previewDiagram || (isGraphMode && hasValidEquations)) && (
-                  <button onClick={isGraphMode ? resetGraph : resetPreview} className="px-3 py-1.5 rounded-lg text-text-muted text-xs hover:text-text-primary hover:bg-surface-hover transition-all duration-200">
-                    Start Over
+                {/* Back button - shown in preview/edit mode or graph edit mode */}
+                {(previewDiagram || (isFrameEdit && isGraphMode)) && (
+                  <button
+                    onClick={isGraphMode ? resetGraph : resetPreview}
+                    className="w-8 h-8 flex items-center justify-center rounded-lg text-text-muted hover:text-text-primary hover:bg-surface-hover transition-all duration-200"
+                    title="Back"
+                  >
+                    <i className="bx bx-arrow-back text-lg" />
                   </button>
                 )}
-                <button onClick={handleClose} className="w-8 h-8 flex items-center justify-center rounded-lg text-text-muted hover:text-text-primary hover:bg-surface-hover transition-all duration-200">
-                  <i className="bx bx-x text-2xl" />
-                </button>
+
+                {/* Breadcrumb path */}
+                <div className="flex items-center gap-1.5 text-sm">
+                  {isFrameEdit ? (
+                    <>
+                      <span className="text-text-dim">frame</span>
+                      <span className="text-text-dim">/</span>
+                      <span className="text-accent-blue font-[lixCode] text-xs">{editingFrame?.shapeID || editingFrame?.frameName || 'unknown'}</span>
+                    </>
+                  ) : previewDiagram ? (
+                    <>
+                      <span className="text-text-dim">diagram</span>
+                      <span className="text-text-dim">/</span>
+                      <span className="text-text-muted">preview</span>
+                    </>
+                  ) : (
+                    <h2 className="text-text-primary text-lg font-medium flex items-center gap-2.5">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={isGraphMode ? 'text-[#4A90D9]' : 'text-accent'}>
+                        {isGraphMode ? (
+                          <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+                        ) : (
+                          <>
+                            <path d="M12 3l1.5 4.5L18 9l-4.5 1.5L12 15l-1.5-4.5L6 9l4.5-1.5L12 3z" />
+                            <path d="M18 14l1 3 3 1-3 1-1 3-1-3-3-1 3-1 1-3z" />
+                          </>
+                        )}
+                      </svg>
+                      {isGraphMode ? 'Graph Editor' : 'AI Diagram Generator'}
+                    </h2>
+                  )}
+                </div>
               </div>
+
+              <button onClick={handleClose} className="w-8 h-8 flex items-center justify-center rounded-lg text-text-muted hover:text-text-primary hover:bg-surface-hover transition-all duration-200">
+                <i className="bx bx-x text-2xl" />
+              </button>
             </div>
 
             {/* Mode Tabs */}
@@ -623,7 +637,7 @@ export default function AIModal() {
 
             ) : !previewDiagram ? (
               /* ============ INITIAL PROMPT ============ */
-              <>
+              <div className="flex flex-col h-[calc(100%-100px)]">
                 <textarea
                   value={prompt}
                   onChange={(e) => setPrompt(e.target.value)}
@@ -635,13 +649,13 @@ export default function AIModal() {
                       ? 'Describe a diagram...\n\ne.g. "User authentication flow with login, 2FA verification, and dashboard redirect"'
                       : 'Paste Mermaid syntax...\n\ngraph TD\n  A[Start] --> B{Decision}\n  B -->|Yes| C[Action]\n  B -->|No| D[End]'
                   }
-                  className={`w-full bg-surface-dark border border-border rounded-xl px-4 sm:px-5 py-3 sm:py-4 text-text-primary text-sm leading-relaxed resize-none focus:outline-none focus:border-accent-blue placeholder:text-text-dim ${
-                    mode === 'mermaid' && !isFrameEdit ? 'h-[clamp(140px,25vh,224px)] font-mono' : 'h-[clamp(100px,20vh,160px)]'
+                  className={`w-full flex-1 bg-surface-dark border border-border rounded-xl px-4 sm:px-5 py-3 sm:py-4 text-text-primary text-sm leading-relaxed resize-none focus:outline-none focus:border-accent-blue placeholder:text-text-dim ${
+                    mode === 'mermaid' ? 'font-mono' : ''
                   }`}
                   autoFocus
                   disabled={isGenerating}
                 />
-                <div className="flex items-center justify-between mt-5">
+                <div className="flex items-center justify-between mt-5 shrink-0">
                   <span className="text-text-dim text-xs">Ctrl + Enter to generate</span>
                   <button
                     onClick={handleGenerate}
@@ -658,12 +672,12 @@ export default function AIModal() {
                     {isGenerating ? 'Generating...' : 'Preview Diagram'}
                   </button>
                 </div>
-              </>
+              </div>
             ) : (
               /* ============ PREVIEW MODE ============ */
-              <>
-                <div className="mb-4">
-                  <div className="flex items-center justify-between mb-2">
+              <div className="flex flex-col h-[calc(100%-100px)]">
+                <div className="flex-1 flex flex-col min-h-0 mb-4">
+                  <div className="flex items-center justify-between mb-2 shrink-0">
                     <p className="text-text-muted text-xs uppercase tracking-wider">
                       {previewDiagram?._fromFrame ? 'Current Frame' : 'Preview'}
                     </p>
@@ -674,11 +688,11 @@ export default function AIModal() {
                       </p>
                     )}
                   </div>
-                  <DiagramPreview svgMarkup={previewSVG} />
-                  <p className="text-text-dim text-[10px] mt-1">Scroll to zoom, drag to pan</p>
+                  <DiagramPreview svgMarkup={previewSVG} className="flex-1 min-h-[200px]" />
+                  <p className="text-text-dim text-[10px] mt-1 shrink-0">Scroll to zoom, drag to pan</p>
                 </div>
 
-                <div className="mb-4">
+                <div className="mb-4 shrink-0">
                   <p className="text-text-muted text-xs uppercase tracking-wider mb-2">Suggest Edits</p>
                   <div className="flex gap-2">
                     <input
@@ -705,7 +719,7 @@ export default function AIModal() {
                   </div>
                 </div>
 
-                <div className="flex flex-wrap gap-1.5 mb-5">
+                <div className="flex flex-wrap gap-1.5 mb-5 shrink-0">
                   {['Add more detail', 'Simplify it', 'Use left-to-right layout', 'Add error handling', 'Add icons', 'Group into subgraphs'].map((s) => (
                     <button
                       key={s} onClick={() => handleEdit(s)} disabled={isGenerating}
@@ -714,14 +728,11 @@ export default function AIModal() {
                   ))}
                 </div>
 
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between shrink-0">
                   <span className="text-text-dim text-xs">
                     {previewDiagram?._fromFrame ? 'Send an edit to generate a new diagram' : 'Ctrl + Enter to place'}
                   </span>
                   <div className="flex gap-2">
-                    <button onClick={resetPreview} className="px-4 py-2.5 rounded-xl text-sm text-text-muted hover:text-text-primary hover:bg-surface-hover transition-all duration-200">
-                      {previewDiagram?._fromFrame ? 'Cancel' : 'Discard'}
-                    </button>
                     {!previewDiagram?._fromFrame && (
                       <button
                         onClick={handlePlace}
@@ -733,7 +744,7 @@ export default function AIModal() {
                     )}
                   </div>
                 </div>
-              </>
+              </div>
             )}
           </div>
         </div>

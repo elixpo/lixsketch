@@ -59,6 +59,11 @@ export default function useKeyboardShortcuts() {
           // Duplicate — handled by engine
           return
         }
+        if (key === "'") {
+          e.preventDefault()
+          useSketchStore.getState().toggleGrid()
+          return
+        }
         return
       }
 

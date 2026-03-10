@@ -171,8 +171,12 @@ const useSketchStore = create((set, get) => ({
   setPanStart: (p) => set({ panStart: p }),
 
   // --- Canvas background ---
-  canvasBackground: '#000',
+  canvasBackground: '#13171C',
   setCanvasBackground: (color) => set({ canvasBackground: color }),
+
+  // --- Grid ---
+  gridEnabled: false,
+  toggleGrid: () => set((s) => ({ gridEnabled: !s.gridEnabled })),
 
   // --- RoughJS refs (set once after mount) ---
   roughCanvas: null,

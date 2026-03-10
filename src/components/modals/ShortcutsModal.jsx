@@ -38,6 +38,7 @@ const VIEW_SHORTCUTS = [
   { keys: 'Ctrl++', action: 'Zoom In' },
   { keys: 'Ctrl+-', action: 'Zoom Out' },
   { keys: 'Ctrl+0', action: 'Reset Zoom' },
+  { keys: "Ctrl+'", action: 'Toggle Grid' },
   { keys: 'Ctrl+/', action: 'Shortcuts' },
 ]
 

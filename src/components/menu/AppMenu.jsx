@@ -50,13 +50,21 @@ export default function AppMenu() {
   }
 
   return (
-    <div
-      className={`absolute top-14 right-4 w-[220px] bg-surface/75 backdrop-blur-lg rounded-2xl z-[1000] border border-border-light p-2 font-[lixFont] transition-all duration-200 ${
-        menuOpen
-          ? 'opacity-100 blur-0 pointer-events-auto'
-          : 'opacity-0 blur-[20px] pointer-events-none'
-      }`}
-    >
+    <>
+      {/* Invisible backdrop to close menu on outside click */}
+      {menuOpen && (
+        <div
+          className="fixed inset-0 z-[999]"
+          onClick={closeMenu}
+        />
+      )}
+      <div
+        className={`absolute top-14 right-4 w-[220px] bg-surface/75 backdrop-blur-lg rounded-2xl z-[1000] border border-border-light p-2 font-[lixFont] transition-all duration-200 ${
+          menuOpen
+            ? 'opacity-100 blur-0 pointer-events-auto'
+            : 'opacity-0 blur-[20px] pointer-events-none'
+        }`}
+      >
       {/* Menu items */}
       {MENU_ITEMS.map((item) => (
         <button
@@ -152,5 +160,6 @@ export default function AppMenu() {
         </div>
       </div>
     </div>
+    </>
   )
 }

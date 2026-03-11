@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import useUIStore from '@/store/useUIStore'
 import useSketchStore from '@/store/useSketchStore'
+import useAuthStore from '@/store/useAuthStore'
 
 const CANVAS_BACKGROUNDS = [
   { color: '#000', label: 'Black' },
@@ -52,6 +53,11 @@ export default function AppMenu() {
   const toggleZenMode = useSketchStore((s) => s.toggleZenMode)
   const toggleToolLock = useSketchStore((s) => s.toggleToolLock)
   const toggleSnapToObjects = useSketchStore((s) => s.toggleSnapToObjects)
+
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
+  const authUser = useAuthStore((s) => s.user)
+  const login = useAuthStore((s) => s.login)
+  const logout = useAuthStore((s) => s.logout)
 
   const [prefsOpen, setPrefsOpen] = useState(false)
 
@@ -257,17 +263,39 @@ export default function AppMenu() {
 
         <hr className="border-border-light my-1.5" />
 
-        {/* Sign In */}
-        <button
-          onClick={() => closeMenu()}
-          className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs transition-all duration-200 text-text-secondary hover:bg-surface-hover"
-        >
-          <span className="flex items-center gap-2">
-            <i className="bx bx-log-in text-sm" />
-            Sign In
-          </span>
-          <span className="text-text-dim text-[10px] px-1.5 py-0.5 rounded bg-accent-blue/15 text-accent-blue">Soon</span>
-        </button>
+        {/* Sign In / Sign Out */}
+        {isAuthenticated ? (
+          <>
+            <div className="px-3 py-2 flex items-center gap-2">
+              {authUser?.avatar ? (
+                <img src={authUser.avatar} alt="" className="w-5 h-5 rounded-full" />
+              ) : (
+                <i className="bx bx-user-circle text-sm text-accent-blue" />
+              )}
+              <span className="text-text-secondary text-xs truncate flex-1">{authUser?.displayName || authUser?.email}</span>
+            </div>
+            <button
+              onClick={() => { logout(); closeMenu() }}
+              className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs transition-all duration-200 text-red-400 hover:bg-red-500/10"
+            >
+              <span className="flex items-center gap-2">
+                <i className="bx bx-log-out text-sm" />
+                Sign Out
+              </span>
+            </button>
+          </>
+        ) : (
+          <button
+            onClick={() => { login(); closeMenu() }}
+            className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs transition-all duration-200 text-text-secondary hover:bg-surface-hover"
+          >
+            <span className="flex items-center gap-2">
+              <i className="bx bx-log-in text-sm" />
+              Sign In
+            </span>
+            <span className="text-text-dim text-[10px] px-1.5 py-0.5 rounded bg-accent-blue/15 text-accent-blue">Elixpo</span>
+          </button>
+        )}
 
         <hr className="border-border-light my-1.5" />
 

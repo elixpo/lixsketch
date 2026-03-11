@@ -257,6 +257,20 @@ export default function AppMenu() {
 
         <hr className="border-border-light my-1.5" />
 
+        {/* Sign In */}
+        <button
+          onClick={() => closeMenu()}
+          className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs transition-all duration-200 text-text-secondary hover:bg-surface-hover"
+        >
+          <span className="flex items-center gap-2">
+            <i className="bx bx-log-in text-sm" />
+            Sign In
+          </span>
+          <span className="text-text-dim text-[10px] px-1.5 py-0.5 rounded bg-accent-blue/15 text-accent-blue">Soon</span>
+        </button>
+
+        <hr className="border-border-light my-1.5" />
+
         {/* Theme toggle */}
         <div className="px-3 py-2">
           <p className="text-text-dim text-xs uppercase tracking-wider mb-2">

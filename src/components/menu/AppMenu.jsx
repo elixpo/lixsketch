@@ -165,63 +165,57 @@ export default function AppMenu() {
 
         <hr className="border-border-light my-1.5" />
 
-        {/* Preferences - with submenu */}
-        <div className="relative">
-          <button
-            onClick={() => setPrefsOpen((p) => !p)}
-            className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-text-secondary text-xs hover:bg-surface-hover transition-all duration-200 ${prefsOpen ? 'bg-surface-hover' : ''}`}
-          >
-            <span className="flex items-center gap-2">
-              <i className="bx bx-cog text-sm" />
-              Preferences
-            </span>
-            <i className={`bx bx-chevron-right text-sm text-text-dim transition-transform duration-150 ${prefsOpen ? 'rotate-90' : ''}`} />
-          </button>
+        {/* Preferences - inline expandable */}
+        <button
+          onClick={() => setPrefsOpen((p) => !p)}
+          className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-text-secondary text-xs hover:bg-surface-hover cursor-pointer transition-all duration-200 ${prefsOpen ? 'bg-surface-hover' : ''}`}
+        >
+          <span className="flex items-center gap-2">
+            <i className="bx bx-cog text-sm" />
+            Preferences
+          </span>
+          <i className={`bx bx-chevron-down text-sm text-text-dim transition-transform duration-150 ${prefsOpen ? 'rotate-180' : ''}`} />
+        </button>
 
-          {/* Preferences submenu */}
-          {prefsOpen && (
-            <div
-              className="absolute right-full top-0 mr-2 w-[250px] bg-surface/90 backdrop-blur-lg rounded-xl border border-border-light p-2 font-[lixFont]"
-              onClick={(e) => e.stopPropagation()}
-            >
-              {PREFERENCE_ITEMS.map((item) => {
-                const isActive =
-                  (item.id === 'toolLock' && toolLock) ||
-                  (item.id === 'snapObjects' && snapToObjects) ||
-                  (item.id === 'toggleGrid' && gridEnabled) ||
-                  (item.id === 'zenMode' && zenMode) ||
-                  (item.id === 'viewMode' && viewMode) ||
-                  (item.toggle) // arrow binding, snap midpoints default on
+        {prefsOpen && (
+          <div className="ml-2 border-l border-border-light pl-1">
+            {PREFERENCE_ITEMS.map((item) => {
+              const isActive =
+                (item.id === 'toolLock' && toolLock) ||
+                (item.id === 'snapObjects' && snapToObjects) ||
+                (item.id === 'toggleGrid' && gridEnabled) ||
+                (item.id === 'zenMode' && zenMode) ||
+                (item.id === 'viewMode' && viewMode) ||
+                (item.toggle) // arrow binding, snap midpoints default on
 
-                const handleClick = () => {
-                  if (item.id === 'toolLock') toggleToolLock()
-                  else if (item.id === 'snapObjects') toggleSnapToObjects()
-                  else if (item.id === 'toggleGrid') toggleGrid()
-                  else if (item.id === 'zenMode') { toggleZenMode(); closeMenu() }
-                  else if (item.id === 'viewMode') { toggleViewMode(); closeMenu() }
-                }
+              const handleClick = () => {
+                if (item.id === 'toolLock') toggleToolLock()
+                else if (item.id === 'snapObjects') toggleSnapToObjects()
+                else if (item.id === 'toggleGrid') toggleGrid()
+                else if (item.id === 'zenMode') { toggleZenMode(); closeMenu() }
+                else if (item.id === 'viewMode') { toggleViewMode(); closeMenu() }
+              }
 
-                return (
-                  <button
-                    key={item.id}
-                    onClick={handleClick}
-                    className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-text-secondary text-xs hover:bg-surface-hover cursor-pointer transition-all duration-200"
-                  >
-                    <span className="flex items-center gap-2">
-                      {isActive && (
-                        <i className="bx bx-check text-sm text-accent-blue" />
-                      )}
-                      {item.label}
-                    </span>
-                    {item.shortcut && (
-                      <span className="text-text-dim text-xs">{item.shortcut}</span>
+              return (
+                <button
+                  key={item.id}
+                  onClick={handleClick}
+                  className="w-full flex items-center justify-between px-3 py-1.5 rounded-lg text-text-secondary text-[11px] hover:bg-surface-hover cursor-pointer transition-all duration-200"
+                >
+                  <span className="flex items-center gap-2">
+                    {isActive && (
+                      <i className="bx bx-check text-sm text-accent-blue" />
                     )}
-                  </button>
-                )
-              })}
-            </div>
-          )}
-        </div>
+                    {item.label}
+                  </span>
+                  {item.shortcut && (
+                    <span className="text-text-dim text-[10px]">{item.shortcut}</span>
+                  )}
+                </button>
+              )
+            })}
+          </div>
+        )}
 
         {/* Grid toggle */}
         <button

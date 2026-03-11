@@ -69,7 +69,8 @@ pages() {
   echo "==> Deploying to Cloudflare Pages ($PAGES_PROJECT)..."
   npx wrangler pages deploy .vercel/output/static \
     --project-name "$PAGES_PROJECT" \
-    --branch "$PAGES_BRANCH"
+    --branch "$PAGES_BRANCH" \
+    --compatibility-flag nodejs_compat
 
   echo "==> Pages deploy complete."
 }

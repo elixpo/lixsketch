@@ -5,10 +5,10 @@ set -euo pipefail
 # Usage: ./deploy.sh [command]
 #
 # Commands:
-#   pages       Build & deploy Next.js to Cloudflare Pages
+#   deploy      Build & deploy Next.js to Cloudflare Pages
 #   worker      Deploy the collab Worker
 #   secrets     Upload all non-public .env vars as Worker secrets
-#   all         secrets + worker + pages
+#   all         secrets + worker + deploy
 #   build       Build Pages only (no deploy)
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -57,7 +57,7 @@ build() {
 }
 
 # Deploy to Cloudflare Pages
-pages() {
+deploy() {
   if [ ! -d "$SCRIPT_DIR/.vercel/output/static" ]; then
     echo "==> No build found, building first..."
     build
@@ -66,8 +66,7 @@ pages() {
   echo "==> Deploying to Cloudflare Pages ($PAGES_PROJECT)..."
   sudo npx wrangler pages deploy .vercel/output/static \
     --project-name "$PAGES_PROJECT" \
-    --branch "$PAGES_BRANCH" \
-    --compatibility-flag nodejs_compat
+    --branch "$PAGES_BRANCH"
 
   echo "==> Pages deploy complete."
 }
@@ -85,21 +84,21 @@ usage() {
   echo "Usage: ./deploy.sh [command]"
   echo ""
   echo "Commands:"
-  echo "  pages     Build & deploy Next.js to Cloudflare Pages"
+  echo "  deploy    Build & deploy Next.js to Cloudflare Pages"
   echo "  worker    Deploy the collab Worker"
   echo "  secrets   Upload .env vars as Worker secrets"
   echo "  build     Build Pages only (no deploy)"
-  echo "  all       secrets + worker + pages"
+  echo "  all       secrets + worker + deploy"
   echo ""
-  echo "Default: pages"
+  echo "Default: deploy"
 }
 
-case "${1:-pages}" in
-  pages)   pages ;;
+case "${1:-deploy}" in
+  deploy)  deploy ;;
   worker)  worker ;;
   secrets) secrets ;;
   build)   build ;;
-  all)     secrets; worker; pages ;;
+  all)     secrets; worker; deploy ;;
   -h|--help|help) usage ;;
   *)
     echo "Unknown command: $1"

@@ -126,6 +126,10 @@ const useUIStore = create((set, get) => ({
   workspaceName: 'Untitled',
   setWorkspaceName: (name) => set({ workspaceName: name }),
 
+  // --- Session / Encryption ---
+  sessionEncryptionKey: null,
+  setSessionEncryptionKey: (key) => set({ sessionEncryptionKey: key }),
+
   // --- Theme ---
   theme: 'dark',
   setTheme: (newTheme) => {

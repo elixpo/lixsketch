@@ -21,9 +21,11 @@ import FrameSidebar from '@/components/sidebars/FrameSidebar'
 import IconSidebar from '@/components/sidebars/IconSidebar'
 import SVGCanvas from '@/components/canvas/SVGCanvas'
 import useKeyboardShortcuts from '@/hooks/useKeyboardShortcuts'
+import useSessionID from '@/hooks/useSessionID'
 
 export default function Home() {
   useKeyboardShortcuts()
+  useSessionID()
 
   return (
     <div className="relative w-screen h-screen overflow-hidden bg-black">

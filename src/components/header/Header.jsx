@@ -9,6 +9,7 @@ export default function Header() {
   const toggleMenu = useUIStore((s) => s.toggleMenu)
   const toggleCommandPalette = useUIStore((s) => s.toggleCommandPalette)
   const toggleHelpModal = useUIStore((s) => s.toggleHelpModal)
+  const toggleSaveModal = useUIStore((s) => s.toggleSaveModal)
   const viewMode = useSketchStore((s) => s.viewMode)
   const zenMode = useSketchStore((s) => s.zenMode)
 
@@ -51,6 +52,15 @@ export default function Header() {
 
       {/* Right side */}
       <div className="flex items-center gap-2">
+        {/* E2E Shield badge */}
+        <div
+          className="flex items-center gap-1 px-2 py-1 rounded-md bg-green-500/10 text-green-400/80 cursor-default select-none"
+          title="End-to-end encrypted — your data never leaves your device unencrypted"
+        >
+          <i className="bx bxs-shield text-sm" />
+          <span className="text-[10px] font-medium">E2E</span>
+        </div>
+
         {/* Help icon */}
         <button
           onClick={toggleHelpModal}
@@ -60,7 +70,10 @@ export default function Header() {
         </button>
 
         {/* Share button */}
-        <button className="px-3.5 py-1.5 bg-accent-blue hover:bg-accent-blue-hover text-text-primary text-sm rounded-lg transition-all duration-200 font-[lixFont]">
+        <button
+          onClick={toggleSaveModal}
+          className="px-3.5 py-1.5 bg-accent-blue hover:bg-accent-blue-hover text-text-primary text-sm rounded-lg transition-all duration-200 font-[lixFont]"
+        >
           Share
         </button>
 

@@ -94,7 +94,7 @@ export default function AppMenu() {
         {/* Open */}
         <button
           onClick={handleOpen}
-          className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-text-secondary text-xs hover:bg-surface-hover transition-all duration-200"
+          className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-text-secondary text-xs hover:bg-surface-hover cursor-pointer transition-all duration-200"
         >
           <span className="flex items-center gap-2">
             <i className="bx bx-folder-open text-sm" />
@@ -106,7 +106,7 @@ export default function AppMenu() {
         {/* Save As */}
         <button
           onClick={() => { toggleSaveModal(); closeMenu() }}
-          className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-text-secondary text-xs hover:bg-surface-hover transition-all duration-200"
+          className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-text-secondary text-xs hover:bg-surface-hover cursor-pointer transition-all duration-200"
         >
           <span className="flex items-center gap-2">
             <i className="bx bx-save text-sm" />
@@ -118,7 +118,7 @@ export default function AppMenu() {
         {/* Export Image */}
         <button
           onClick={() => { toggleExportImageModal(); closeMenu() }}
-          className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-text-secondary text-xs hover:bg-surface-hover transition-all duration-200"
+          className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-text-secondary text-xs hover:bg-surface-hover cursor-pointer transition-all duration-200"
         >
           <span className="flex items-center gap-2">
             <i className="bx bx-image text-sm" />
@@ -132,7 +132,7 @@ export default function AppMenu() {
         {/* Commands - highlighted */}
         <button
           onClick={() => { toggleCommandPalette(); closeMenu() }}
-          className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs transition-all duration-200 text-accent-blue bg-accent-blue/10 hover:bg-accent-blue/20"
+          className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs transition-all duration-200 text-accent-blue bg-accent-blue/10 hover:bg-accent-blue/20 cursor-pointer"
         >
           <span className="flex items-center gap-2">
             <i className="bx bx-command text-sm" />
@@ -143,7 +143,7 @@ export default function AppMenu() {
 
         {/* Find Text */}
         <button
-          className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-text-secondary text-xs hover:bg-surface-hover transition-all duration-200"
+          className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-text-secondary text-xs hover:bg-surface-hover cursor-pointer transition-all duration-200"
         >
           <span className="flex items-center gap-2">
             <i className="bx bx-search text-sm" />
@@ -155,7 +155,7 @@ export default function AppMenu() {
         {/* Help */}
         <button
           onClick={() => { toggleHelpModal(); closeMenu() }}
-          className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-text-secondary text-xs hover:bg-surface-hover transition-all duration-200"
+          className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-text-secondary text-xs hover:bg-surface-hover cursor-pointer transition-all duration-200"
         >
           <span className="flex items-center gap-2">
             <i className="bx bx-help-circle text-sm" />
@@ -202,7 +202,7 @@ export default function AppMenu() {
                   <button
                     key={item.id}
                     onClick={handleClick}
-                    className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-text-secondary text-xs hover:bg-surface-hover transition-all duration-200"
+                    className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-text-secondary text-xs hover:bg-surface-hover cursor-pointer transition-all duration-200"
                   >
                     <span className="flex items-center gap-2">
                       {isActive && (
@@ -223,7 +223,7 @@ export default function AppMenu() {
         {/* Grid toggle */}
         <button
           onClick={toggleGrid}
-          className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-text-secondary text-xs hover:bg-surface-hover transition-all duration-200"
+          className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-text-secondary text-xs hover:bg-surface-hover cursor-pointer transition-all duration-200"
         >
           <span className="flex items-center gap-2">
             <i className="bx bx-grid-alt text-sm" />
@@ -237,7 +237,7 @@ export default function AppMenu() {
         {/* Reset The Canvas */}
         <button
           onClick={() => { clearShapes(); clearHistory(); closeMenu() }}
-          className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-text-secondary text-xs hover:bg-surface-hover transition-all duration-200"
+          className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-text-secondary text-xs hover:bg-surface-hover cursor-pointer transition-all duration-200"
         >
           <span className="flex items-center gap-2">
             <i className="bx bx-reset text-sm" />
@@ -254,7 +254,7 @@ export default function AppMenu() {
             href={link.href}
             target="_blank"
             rel="noopener noreferrer"
-            className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-text-secondary text-xs hover:bg-surface-hover transition-all duration-200"
+            className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-text-secondary text-xs hover:bg-surface-hover cursor-pointer transition-all duration-200"
           >
             <i className={`bx ${link.icon} text-sm`} />
             {link.label}
@@ -276,7 +276,7 @@ export default function AppMenu() {
             </div>
             <button
               onClick={() => { logout(); closeMenu() }}
-              className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs transition-all duration-200 text-red-400 hover:bg-red-500/10"
+              className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs transition-all duration-200 text-red-400 hover:bg-red-500/10 cursor-pointer"
             >
               <span className="flex items-center gap-2">
                 <i className="bx bx-log-out text-sm" />
@@ -313,7 +313,7 @@ export default function AppMenu() {
               <button
                 key={t.value}
                 onClick={() => setTheme(t.value)}
-                className={`flex-1 flex items-center justify-center py-1.5 rounded-lg text-xs transition-all duration-200 ${
+                className={`flex-1 flex items-center justify-center py-1.5 rounded-lg text-xs cursor-pointer transition-all duration-200 ${
                   theme === t.value
                     ? 'bg-accent text-text-primary'
                     : 'text-text-muted hover:bg-surface-hover'
@@ -336,7 +336,7 @@ export default function AppMenu() {
                 key={bg.color}
                 onClick={() => setCanvasBackground(bg.color)}
                 title={bg.label}
-                className={`w-7 h-7 rounded-full border-2 transition-all duration-200 ${
+                className={`w-7 h-7 rounded-full border-2 cursor-pointer transition-all duration-200 ${
                   canvasBackground === bg.color
                     ? 'border-accent scale-110'
                     : 'border-border hover:border-border-light'

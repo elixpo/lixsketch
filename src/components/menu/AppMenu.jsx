@@ -55,7 +55,7 @@ export default function AppMenu() {
 
   const [prefsOpen, setPrefsOpen] = useState(false)
 
-  if (viewMode || zenMode) return null
+  // Menu is always accessible (via floating button in view/zen mode)
 
   const handleOpen = () => {
     const serializer = window.__sceneSerializer

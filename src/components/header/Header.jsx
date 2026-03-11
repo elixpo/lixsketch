@@ -12,7 +12,19 @@ export default function Header() {
   const viewMode = useSketchStore((s) => s.viewMode)
   const zenMode = useSketchStore((s) => s.zenMode)
 
-  if (viewMode || zenMode) return null
+  // View mode or Zen mode: only show the menu button floating in top-right
+  if (viewMode || zenMode) {
+    return (
+      <div className="fixed top-3 right-4 z-[1001] font-[lixFont]">
+        <button
+          onClick={toggleMenu}
+          className="w-8 h-8 flex items-center justify-center rounded-lg bg-surface text-text-muted hover:text-text-primary hover:bg-surface-hover transition-all duration-200"
+        >
+          <i className="bx bx-menu text-xl" />
+        </button>
+      </div>
+    )
+  }
 
   return (
     <header className="fixed top-0 left-0 right-0 h-12 bg-surface-dark border-b border-[#2c2c35] z-[1001] flex items-center justify-between px-3 font-[lixFont]">

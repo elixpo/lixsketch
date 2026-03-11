@@ -75,6 +75,7 @@ export const SHORTCUT_MAP = {
   9: TOOLS.IMAGE,
   e: TOOLS.ERASER,
   0: TOOLS.ERASER,
+  i: TOOLS.ICON,
   f: TOOLS.FRAME,
   k: TOOLS.LASER,
 }

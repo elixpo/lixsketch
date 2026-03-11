@@ -32,9 +32,12 @@ export default function useSessionID() {
     // Store on window for the engine
     window.__sessionID = sessionID
 
-    // If workspace name is still default, generate a fancy one
+    // Restore workspace name from localStorage, or generate on first visit
     const store = useUIStore.getState()
-    if (store.workspaceName === 'Untitled') {
+    const saved = localStorage.getItem('lixsketch-workspace-name')
+    if (saved) {
+      store.setWorkspaceName(saved)
+    } else {
       store.setWorkspaceName(generateWorkspaceName())
     }
   }, [])

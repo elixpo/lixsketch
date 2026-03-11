@@ -3,7 +3,11 @@
 import { create } from 'zustand'
 
 const STORAGE_KEY = 'lixsketch-auth'
+const COOKIE_NAME = 'lixsketch-session'
+const COOKIE_MAX_AGE = 7 * 24 * 60 * 60 // 7 days in seconds
 const WORKER_URL = process.env.NEXT_PUBLIC_WORKER_URL
+
+// --- Persistence helpers (localStorage + cookie) ---
 
 function loadAuth() {
   if (typeof window === 'undefined') return null
@@ -11,26 +15,37 @@ function loadAuth() {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (raw) return JSON.parse(raw)
   } catch {}
+  // Fallback: try cookie
+  try {
+    const match = document.cookie.match(new RegExp(`(?:^|; )${COOKIE_NAME}=([^;]*)`))
+    if (match) return JSON.parse(decodeURIComponent(match[1]))
+  } catch {}
   return null
 }
 
 function saveAuth(data) {
   if (typeof window === 'undefined') return
   try {
-    if (data) localStorage.setItem(STORAGE_KEY, JSON.stringify(data))
-    else localStorage.removeItem(STORAGE_KEY)
+    if (data) {
+      const json = JSON.stringify(data)
+      localStorage.setItem(STORAGE_KEY, json)
+      document.cookie = `${COOKIE_NAME}=${encodeURIComponent(json)}; path=/; max-age=${COOKIE_MAX_AGE}; SameSite=Lax`
+    } else {
+      localStorage.removeItem(STORAGE_KEY)
+      document.cookie = `${COOKIE_NAME}=; path=/; max-age=0`
+    }
   } catch {}
 }
 
 const useAuthStore = create((set, get) => ({
   user: null,           // { id, email, displayName, avatar, isAdmin }
-  sessionToken: null,   // Worker session token
+  sessionToken: null,   // Session token
   isAuthenticated: false,
   activeRooms: 0,
   maxRooms: 10,
   loading: false,
 
-  // Initialize from localStorage on mount
+  // Initialize from localStorage/cookie on mount
   init: () => {
     const saved = loadAuth()
     if (saved?.sessionToken && saved?.user) {
@@ -39,8 +54,6 @@ const useAuthStore = create((set, get) => ({
         sessionToken: saved.sessionToken,
         isAuthenticated: true,
       })
-      // Validate session is still alive
-      get().fetchMe()
     }
   },
 
@@ -51,7 +64,6 @@ const useAuthStore = create((set, get) => ({
     const redirectUri = `${appOrigin}/api/auth/callback`
     const state = crypto.randomUUID()
 
-    // Store state and origin for after callback
     sessionStorage.setItem('lixsketch-oauth-state', state)
 
     const authUrl = `https://accounts.elixpo.com/oauth/authorize` +
@@ -72,14 +84,12 @@ const useAuthStore = create((set, get) => ({
       sessionToken,
       isAuthenticated: true,
     })
-    // Fetch room counts
-    await get().fetchMe()
   },
 
-  // Fetch current user from worker session
+  // Fetch current user from worker session (no-op for local dev without worker)
   fetchMe: async () => {
     const token = get().sessionToken
-    if (!token) return
+    if (!token || !WORKER_URL) return
 
     try {
       const res = await fetch(`${WORKER_URL}/api/auth/me`, {
@@ -87,7 +97,6 @@ const useAuthStore = create((set, get) => ({
       })
 
       if (!res.ok) {
-        // Session expired
         get().logout()
         return
       }
@@ -108,7 +117,7 @@ const useAuthStore = create((set, get) => ({
   // Refresh the session token
   refresh: async () => {
     const token = get().sessionToken
-    if (!token) return false
+    if (!token || !WORKER_URL) return false
 
     try {
       const res = await fetch(`${WORKER_URL}/api/auth/refresh`, {
@@ -126,7 +135,7 @@ const useAuthStore = create((set, get) => ({
     }
   },
 
-  // Clear auth state
+  // Clear auth state — falls back to guest profile automatically
   logout: () => {
     saveAuth(null)
     set({

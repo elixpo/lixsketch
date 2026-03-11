@@ -1,7 +1,76 @@
 "use client"
 
+import { useState, useRef, useEffect } from 'react'
 import useUIStore from '@/store/useUIStore'
 import useSketchStore from '@/store/useSketchStore'
+import { useProfileStore } from '@/hooks/useGuestProfile'
+
+function ProfileDropdown() {
+  const profile = useProfileStore((s) => s.profile)
+  const setDisplayName = useProfileStore((s) => s.setDisplayName)
+  const regenerateProfile = useProfileStore((s) => s.regenerateProfile)
+  const [open, setOpen] = useState(false)
+  const ref = useRef(null)
+
+  useEffect(() => {
+    if (!open) return
+    const handler = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [open])
+
+  if (!profile) return null
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        onClick={() => setOpen(!open)}
+        className="flex items-center gap-1.5 px-1.5 py-1 rounded-lg hover:bg-surface-hover transition-all duration-200"
+        title={profile.displayName}
+      >
+        <img
+          src={profile.avatar}
+          alt=""
+          className="w-6 h-6 rounded-md"
+        />
+        <span className="text-text-muted text-xs max-w-[80px] truncate hidden sm:block">
+          {profile.displayName}
+        </span>
+        <i className={`bx bx-chevron-down text-text-dim text-xs transition-transform duration-150 ${open ? 'rotate-180' : ''}`} />
+      </button>
+
+      {open && (
+        <div className="absolute top-full right-0 mt-2 w-[220px] bg-surface/90 backdrop-blur-lg border border-border-light rounded-xl p-3 z-[1002] font-[lixFont]">
+          <div className="flex items-center gap-2.5 mb-3">
+            <img src={profile.avatar} alt="" className="w-10 h-10 rounded-lg" />
+            <div className="flex-1 min-w-0">
+              <input
+                type="text"
+                value={profile.displayName}
+                onChange={(e) => setDisplayName(e.target.value)}
+                className="w-full bg-transparent text-text-primary text-sm outline-none border-b border-transparent focus:border-accent-blue transition-all"
+                spellCheck={false}
+              />
+              <span className="text-text-dim text-[10px]">
+                {profile.isGuest ? 'Guest' : 'Signed in'}
+              </span>
+            </div>
+          </div>
+
+          <button
+            onClick={() => { regenerateProfile(); setOpen(false) }}
+            className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-text-secondary text-xs hover:bg-surface-hover transition-all duration-200"
+          >
+            <i className="bx bx-refresh text-sm" />
+            New identity
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
 
 export default function Header() {
   const workspaceName = useUIStore((s) => s.workspaceName)
@@ -84,6 +153,9 @@ export default function Header() {
         >
           Ctrl+/
         </button>
+
+        {/* Profile */}
+        <ProfileDropdown />
 
         {/* Hamburger menu */}
         <button

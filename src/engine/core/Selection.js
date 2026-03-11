@@ -463,6 +463,7 @@ class MultiSelection {
         this.outline.setAttribute('stroke', '#5B57D1');
         this.outline.setAttribute('stroke-width', 2);
         this.outline.setAttribute('stroke-dasharray', '8 4');
+        this.outline.setAttribute('vector-effect', 'non-scaling-stroke');
         this.outline.setAttribute('style', 'pointer-events: none;');
         this.group.appendChild(this.outline);
     }
@@ -492,6 +493,7 @@ class MultiSelection {
             anchor.setAttribute('fill', '#121212');
             anchor.setAttribute('stroke', '#5B57D1');
             anchor.setAttribute('stroke-width', 2);
+            anchor.setAttribute('vector-effect', 'non-scaling-stroke');
             anchor.setAttribute('style', 'pointer-events: all; cursor: pointer;');
 
             const cursors = ['nw-resize', 'ne-resize', 'sw-resize', 'se-resize', 'n-resize', 's-resize', 'w-resize', 'e-resize'];
@@ -515,6 +517,7 @@ class MultiSelection {
         this.rotationAnchor.setAttribute('fill', '#121212');
         this.rotationAnchor.setAttribute('stroke', '#5B57D1');
         this.rotationAnchor.setAttribute('stroke-width', 2);
+        this.rotationAnchor.setAttribute('vector-effect', 'non-scaling-stroke');
         this.rotationAnchor.setAttribute('style', 'pointer-events: all; cursor: grab;');
 
         this.rotationAnchor.addEventListener('mousedown', (e) => this.startRotation(e));
@@ -527,6 +530,7 @@ class MultiSelection {
         this.rotationLine.setAttribute('stroke', '#5B57D1');
         this.rotationLine.setAttribute('stroke-width', 1);
         this.rotationLine.setAttribute('stroke-dasharray', '3 3');
+        this.rotationLine.setAttribute('vector-effect', 'non-scaling-stroke');
         this.rotationLine.setAttribute('style', 'pointer-events: none;');
 
         this.group.appendChild(this.rotationLine);

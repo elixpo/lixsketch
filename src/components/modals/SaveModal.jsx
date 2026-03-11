@@ -44,6 +44,8 @@ function handleSaveAction(id, toggleModal) {
 export default function SaveModal() {
   const saveModalOpen = useUIStore((s) => s.saveModalOpen)
   const toggleSaveModal = useUIStore((s) => s.toggleSaveModal)
+  const workspaceName = useUIStore((s) => s.workspaceName)
+  const setWorkspaceName = useUIStore((s) => s.setWorkspaceName)
   const [shareLink, setShareLink] = useState('')
   const [copied, setCopied] = useState(false)
 
@@ -92,6 +94,19 @@ export default function SaveModal() {
           </button>
         </div>
 
+        {/* Workspace Name */}
+        <div className="mb-4">
+          <label className="text-text-dim text-xs uppercase tracking-wider mb-1.5 block">Workspace Name</label>
+          <input
+            type="text"
+            value={workspaceName}
+            onChange={(e) => setWorkspaceName(e.target.value)}
+            placeholder="e.g. cosmic-penguin"
+            className="w-full bg-surface text-text-primary text-sm border border-border-light rounded-lg px-3 py-2 outline-none focus:border-accent-blue transition-all duration-200"
+            spellCheck={false}
+          />
+        </div>
+
         {/* Share Link Section */}
         <div className="mb-4 p-3.5 rounded-xl border border-border-light bg-surface/50">
           <div className="flex items-center gap-2 mb-2.5">
@@ -135,6 +150,18 @@ export default function SaveModal() {
           <p className="text-text-dim text-[10px] mt-2 leading-relaxed">
             The encryption key is stored in the URL fragment and never sent to the server.
           </p>
+        </div>
+
+        {/* Live Collaborate */}
+        <div className="mb-4 p-3.5 rounded-xl border border-border-light bg-surface/50">
+          <div className="flex items-center gap-2">
+            <i className="bx bx-group text-lg text-accent-blue" />
+            <div className="flex-1">
+              <span className="text-text-primary text-sm font-medium">Live Collaborate</span>
+              <p className="text-text-dim text-[10px] leading-relaxed">Real-time editing with up to 10 people</p>
+            </div>
+            <span className="text-text-dim text-[10px] px-1.5 py-0.5 rounded bg-accent-blue/15 text-accent-blue">Soon</span>
+          </div>
         </div>
 
         {/* Divider */}

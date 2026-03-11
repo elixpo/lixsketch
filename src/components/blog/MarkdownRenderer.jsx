@@ -153,9 +153,245 @@ function RoughBullet() {
   return <canvas ref={canvasRef} className="flex-shrink-0 mt-1.5" />
 }
 
+// ── RoughJS LixScript preview (matches actual canvas rendering) ───────────────
+function RoughLixScriptCanvas({ parsed }) {
+  const canvasRef = useRef(null)
+  const containerRef = useRef(null)
+
+  useEffect(() => {
+    const canvas = canvasRef.current
+    const container = containerRef.current
+    if (!canvas || !container || !parsed) return
+
+    let mounted = true
+
+    async function draw() {
+      const rough = (await import('roughjs')).default
+      if (!mounted) return
+
+      const { shapes: defs } = parsed
+
+      // Build shape map for resolving arrow refs
+      const shapeMap = new Map()
+      for (const def of defs) {
+        if (def.type !== 'arrow' && def.type !== 'line') shapeMap.set(def.id, def)
+      }
+
+      function resolvePoint(pointDef) {
+        if (!pointDef) return { x: 0, y: 0 }
+        if (pointDef.x !== undefined && pointDef.y !== undefined) return pointDef
+        if (pointDef.ref) {
+          const target = shapeMap.get(pointDef.ref)
+          if (!target) return { x: 0, y: 0 }
+          const side = pointDef.side || 'center'
+          const offset = pointDef.offset || 0
+          const tx = target.x || 0, ty = target.y || 0
+          const tw = target.width || 160, th = target.height || 60
+          const cx = tx + tw / 2, cy = ty + th / 2
+          switch (side) {
+            case 'top': return { x: cx + offset, y: ty }
+            case 'bottom': return { x: cx + offset, y: ty + th }
+            case 'left': return { x: tx, y: cy + offset }
+            case 'right': return { x: tx + tw, y: cy + offset }
+            default: return { x: cx + offset, y: cy }
+          }
+        }
+        return { x: 0, y: 0 }
+      }
+
+      // Calculate bounds
+      let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity
+      for (const def of defs) {
+        if (def.type === 'arrow' || def.type === 'line') {
+          const from = resolvePoint(def.from), to = resolvePoint(def.to)
+          minX = Math.min(minX, from.x, to.x); minY = Math.min(minY, from.y, to.y)
+          maxX = Math.max(maxX, from.x, to.x); maxY = Math.max(maxY, from.y, to.y)
+        } else if (def.type !== 'frame') {
+          const x = def.x || 0, y = def.y || 0, w = def.width || 160, h = def.height || 60
+          minX = Math.min(minX, x); minY = Math.min(minY, y)
+          maxX = Math.max(maxX, x + w); maxY = Math.max(maxY, y + h)
+        }
+      }
+      if (!isFinite(minX)) { minX = 0; minY = 0; maxX = 400; maxY = 300 }
+
+      const pad = 50
+      const sceneW = maxX - minX + pad * 2
+      const sceneH = maxY - minY + pad * 2
+
+      // Size canvas to fit container width, scale proportionally
+      const containerW = container.offsetWidth
+      const scale = Math.min(containerW / sceneW, 2)
+      const canvasW = sceneW * scale
+      const canvasH = sceneH * scale
+
+      const dpr = window.devicePixelRatio || 1
+      canvas.width = canvasW * dpr
+      canvas.height = canvasH * dpr
+      canvas.style.width = canvasW + 'px'
+      canvas.style.height = canvasH + 'px'
+
+      const ctx = canvas.getContext('2d')
+      ctx.scale(dpr * scale, dpr * scale)
+      ctx.translate(-minX + pad, -minY + pad)
+
+      const rc = rough.canvas(canvas)
+
+      // Draw each shape with RoughJS
+      for (const def of defs) {
+        const props = def.props || {}
+        const stroke = props.stroke || '#fff'
+        const sw = props.strokeWidth || 2
+        const fill = props.fill || 'transparent'
+        const roughness = 1.5
+
+        switch (def.type) {
+          case 'rect': {
+            const x = def.x || 0, y = def.y || 0, w = def.width || 160, h = def.height || 60
+            rc.rectangle(x, y, w, h, {
+              stroke, strokeWidth: sw, roughness, bowing: 0.8,
+              fill: fill !== 'transparent' ? fill : undefined,
+              fillStyle: fill !== 'transparent' ? 'solid' : undefined,
+            })
+            if (props.label) {
+              ctx.save()
+              ctx.font = `${props.labelFontSize || 14}px lixFont, sans-serif`
+              ctx.fillStyle = props.labelColor || '#e0e0e0'
+              ctx.textAlign = 'center'
+              ctx.textBaseline = 'middle'
+              ctx.fillText(props.label, x + w / 2, y + h / 2)
+              ctx.restore()
+            }
+            break
+          }
+
+          case 'circle':
+          case 'ellipse': {
+            const w = def.width || 80, h = def.height || 80
+            const cx = (def.x || 0) + w / 2, cy = (def.y || 0) + h / 2
+            rc.ellipse(cx, cy, w, h, {
+              stroke, strokeWidth: sw, roughness, bowing: 0.8,
+              fill: fill !== 'transparent' ? fill : undefined,
+              fillStyle: fill !== 'transparent' ? 'solid' : undefined,
+            })
+            if (props.label) {
+              ctx.save()
+              ctx.font = `${props.labelFontSize || 14}px lixFont, sans-serif`
+              ctx.fillStyle = props.labelColor || '#e0e0e0'
+              ctx.textAlign = 'center'
+              ctx.textBaseline = 'middle'
+              ctx.fillText(props.label, cx, cy)
+              ctx.restore()
+            }
+            break
+          }
+
+          case 'text': {
+            const content = props.content || props.text || 'Text'
+            ctx.save()
+            ctx.font = `${props.fontSize || 16}px lixFont, sans-serif`
+            ctx.fillStyle = props.color || props.fill || '#fff'
+            ctx.textBaseline = 'top'
+            ctx.fillText(content, def.x || 0, def.y || 0)
+            ctx.restore()
+            break
+          }
+
+          case 'arrow': {
+            const from = resolvePoint(def.from)
+            const toOrig = resolvePoint(def.to)
+            const headLen = 10
+            const dx = toOrig.x - from.x, dy = toOrig.y - from.y
+            const dist = Math.sqrt(dx * dx + dy * dy) || 1
+
+            // Shorten endpoint for arrowhead
+            const to = dist < headLen * 2 ? toOrig : {
+              x: toOrig.x - (dx / dist) * headLen,
+              y: toOrig.y - (dy / dist) * headLen,
+            }
+
+            // Draw line with RoughJS
+            rc.line(from.x, from.y, to.x, to.y, {
+              stroke, strokeWidth: sw, roughness: 1.2, bowing: 0.5,
+            })
+
+            // Draw arrowhead manually (filled triangle)
+            const angle = Math.atan2(toOrig.y - from.y, toOrig.x - from.x)
+            const a1x = toOrig.x - headLen * Math.cos(angle - Math.PI / 7)
+            const a1y = toOrig.y - headLen * Math.sin(angle - Math.PI / 7)
+            const a2x = toOrig.x - headLen * Math.cos(angle + Math.PI / 7)
+            const a2y = toOrig.y - headLen * Math.sin(angle + Math.PI / 7)
+
+            ctx.save()
+            ctx.beginPath()
+            ctx.moveTo(toOrig.x, toOrig.y)
+            ctx.lineTo(a1x, a1y)
+            ctx.lineTo(a2x, a2y)
+            ctx.closePath()
+            ctx.fillStyle = stroke
+            ctx.fill()
+            ctx.restore()
+
+            // Label
+            if (props.label) {
+              const lx = (from.x + toOrig.x) / 2
+              const ly = (from.y + toOrig.y) / 2 - 10
+              ctx.save()
+              ctx.font = '11px lixFont, sans-serif'
+              ctx.fillStyle = props.labelColor || '#a0a0b0'
+              ctx.textAlign = 'center'
+              ctx.textBaseline = 'bottom'
+              ctx.fillText(props.label, lx, ly)
+              ctx.restore()
+            }
+            break
+          }
+
+          case 'line': {
+            const from = resolvePoint(def.from)
+            const to = resolvePoint(def.to)
+            rc.line(from.x, from.y, to.x, to.y, {
+              stroke, strokeWidth: sw, roughness: 1.2, bowing: 0.5,
+            })
+            break
+          }
+
+          case 'frame': {
+            const x = def.x || 0, y = def.y || 0, w = def.width || 600, h = def.height || 400
+            rc.rectangle(x, y, w, h, {
+              stroke: props.stroke || '#555',
+              strokeWidth: 1,
+              roughness: 1.5,
+              bowing: 0.5,
+              strokeLineDash: [8, 4],
+            })
+            if (props.name || def.id) {
+              ctx.save()
+              ctx.font = '12px lixFont, sans-serif'
+              ctx.fillStyle = '#888'
+              ctx.textBaseline = 'bottom'
+              ctx.fillText(props.name || def.id, x + 10, y - 4)
+              ctx.restore()
+            }
+            break
+          }
+        }
+      }
+    }
+
+    const timer = setTimeout(draw, 50)
+    return () => { mounted = false; clearTimeout(timer) }
+  }, [parsed])
+
+  return (
+    <div ref={containerRef} className="bg-[#0a0a12] p-6 flex items-center justify-center min-h-48 overflow-auto">
+      <canvas ref={canvasRef} />
+    </div>
+  )
+}
+
 function LixScriptBlock({ code }) {
   const [tab, setTab] = useState('preview')
-  const [svgMarkup, setSvgMarkup] = useState(null)
+  const [parsedData, setParsedData] = useState(null)
   const [parseError, setParseError] = useState(false)
 
   useEffect(() => {
@@ -163,7 +399,7 @@ function LixScriptBlock({ code }) {
 
     async function render() {
       try {
-        const { parseLixScript, previewLixScript } = await import('@/engine/core/LixScriptParser')
+        const { parseLixScript, resolveShapeRefs } = await import('@/engine/core/LixScriptParser')
         const parsed = parseLixScript(code)
         if (cancelled) return
 
@@ -172,10 +408,9 @@ function LixScriptBlock({ code }) {
           return
         }
 
-        const svg = previewLixScript(parsed)
-        if (!cancelled && svg) {
-          setSvgMarkup(svg)
-        }
+        // Resolve refs so shapes have absolute coordinates
+        resolveShapeRefs(parsed.shapes)
+        if (!cancelled) setParsedData(parsed)
       } catch {
         if (!cancelled) setParseError(true)
       }
@@ -185,12 +420,12 @@ function LixScriptBlock({ code }) {
     return () => { cancelled = true }
   }, [code])
 
-  const showPreview = tab === 'preview' && svgMarkup && !parseError
+  const showPreview = tab === 'preview' && parsedData && !parseError
 
   return (
-    <div className="my-6 rounded-xl border border-[#5B57D1]/25 overflow-hidden bg-[#0d1117]">
+    <div className="my-6 rounded-xl border border-[#8B88E8]/25 overflow-hidden bg-[#0d1117]">
       {/* Header with tabs */}
-      <div className="flex items-center justify-between px-4 py-2 bg-[#5B57D1]/5 border-b border-[#5B57D1]/15">
+      <div className="flex items-center justify-between px-4 py-2 bg-[#8B88E8]/5 border-b border-[#8B88E8]/15">
         <div className="flex items-center gap-1">
           <button
             onClick={() => setTab('preview')}
@@ -218,17 +453,12 @@ function LixScriptBlock({ code }) {
         <CopyButton text={code} />
       </div>
 
-      {showPreview && (
-        <div
-          className="bg-[#0a0a12] p-6 flex items-center justify-center min-h-48 overflow-auto"
-          dangerouslySetInnerHTML={{ __html: svgMarkup }}
-        />
-      )}
+      {showPreview && <RoughLixScriptCanvas parsed={parsedData} />}
 
-      {tab === 'preview' && !svgMarkup && !parseError && (
+      {tab === 'preview' && !parsedData && !parseError && (
         <div className="bg-[#0a0a12] p-8 flex items-center justify-center min-h-48">
           <div className="flex items-center gap-2 text-[#444480] text-xs font-[lixFont]">
-            <div className="w-4 h-4 border border-[#5B57D1]/40 border-t-transparent rounded-full animate-spin" />
+            <div className="w-4 h-4 border border-[#8B88E8]/40 border-t-transparent rounded-full animate-spin" />
             Rendering diagram...
           </div>
         </div>
@@ -237,7 +467,7 @@ function LixScriptBlock({ code }) {
       {tab === 'preview' && parseError && (
         <div className="bg-[#0a0a12] p-8 flex items-center justify-center min-h-48">
           <div className="text-center text-[#444480] text-xs font-[lixFont]">
-            <i className="bx bx-shape-square text-2xl text-[#5B57D1]/30 mb-2" />
+            <i className="bx bx-shape-square text-2xl text-[#8B88E8]/30 mb-2" />
             <p>Preview unavailable — switch to Code tab to view the LixScript source.</p>
           </div>
         </div>

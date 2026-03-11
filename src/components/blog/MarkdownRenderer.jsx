@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useEffect, useRef } from 'react'
+import { useState, useCallback, useEffect, useRef, useMemo } from 'react'
 
 function CopyButton({ text }) {
   const [copied, setCopied] = useState(false)
@@ -27,36 +27,103 @@ function CopyButton({ text }) {
 }
 
 function LixScriptBlock({ code }) {
-  const canvasRef = useRef(null)
+  const [tab, setTab] = useState('preview') // 'preview' | 'code'
+  const [svgMarkup, setSvgMarkup] = useState(null)
+  const [parseError, setParseError] = useState(false)
 
   useEffect(() => {
-    // If the sketch engine is loaded, try to render a preview
-    // Otherwise, just show the code
-    if (typeof window !== 'undefined' && window.__lixscriptPreview) {
+    let cancelled = false
+
+    async function render() {
       try {
-        const svgMarkup = window.__lixscriptPreview(code)
-        if (canvasRef.current && svgMarkup) {
-          canvasRef.current.innerHTML = svgMarkup
+        const { parseLixScript, previewLixScript } = await import('@/engine/core/LixScriptParser')
+        const parsed = parseLixScript(code)
+        if (cancelled) return
+
+        if (parsed.errors && parsed.errors.length > 0) {
+          setParseError(true)
+          return
         }
-      } catch (e) {
-        // Silently fail — just show the code
+
+        const svg = previewLixScript(parsed)
+        if (!cancelled && svg) {
+          setSvgMarkup(svg)
+        }
+      } catch {
+        if (!cancelled) setParseError(true)
       }
     }
+
+    render()
+    return () => { cancelled = true }
   }, [code])
+
+  const showPreview = tab === 'preview' && svgMarkup && !parseError
 
   return (
     <div className="my-6 rounded-xl border border-accent-blue/20 overflow-hidden">
+      {/* Header with tabs */}
       <div className="flex items-center justify-between px-4 py-2 bg-accent-blue/5 border-b border-accent-blue/10">
-        <div className="flex items-center gap-2">
-          <i className="bx bx-shape-square text-accent-blue text-sm" />
-          <span className="text-accent-blue text-xs font-medium">LixScript Diagram</span>
+        <div className="flex items-center gap-1">
+          <button
+            onClick={() => setTab('preview')}
+            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs transition-all cursor-pointer ${
+              tab === 'preview'
+                ? 'bg-accent-blue/15 text-accent-blue'
+                : 'text-text-dim hover:text-text-muted'
+            }`}
+          >
+            <i className="bx bx-show text-sm" />
+            Preview
+          </button>
+          <button
+            onClick={() => setTab('code')}
+            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs transition-all cursor-pointer ${
+              tab === 'code'
+                ? 'bg-accent-blue/15 text-accent-blue'
+                : 'text-text-dim hover:text-text-muted'
+            }`}
+          >
+            <i className="bx bx-code-alt text-sm" />
+            Code
+          </button>
         </div>
         <CopyButton text={code} />
       </div>
-      <div ref={canvasRef} className="hidden" />
-      <pre className="p-4 overflow-x-auto bg-[#0d0d14]">
-        <code className="text-text-secondary text-sm font-[lixCode] leading-relaxed">{code}</code>
-      </pre>
+
+      {/* Preview tab */}
+      {showPreview && (
+        <div
+          className="bg-[#0a0a12] p-6 flex items-center justify-center min-h-48 overflow-auto"
+          dangerouslySetInnerHTML={{ __html: svgMarkup }}
+        />
+      )}
+
+      {/* Fallback preview — parser not available or error */}
+      {tab === 'preview' && !svgMarkup && !parseError && (
+        <div className="bg-[#0a0a12] p-8 flex items-center justify-center min-h-48">
+          <div className="flex items-center gap-2 text-text-dim text-xs">
+            <div className="w-4 h-4 border border-accent-blue/40 border-t-transparent rounded-full animate-spin" />
+            Rendering diagram...
+          </div>
+        </div>
+      )}
+
+      {tab === 'preview' && parseError && (
+        <div className="bg-[#0a0a12] p-8 flex items-center justify-center min-h-48">
+          <div className="text-center text-text-dim text-xs">
+            <i className="bx bx-shape-square text-2xl text-accent-blue/30 mb-2" />
+            <p>Preview unavailable — switch to Code tab to view the LixScript source.</p>
+          </div>
+        </div>
+      )}
+
+      {/* Code tab */}
+      {tab === 'code' && (
+        <pre className="p-4 overflow-x-auto bg-[#0d0d14] max-h-96 overflow-y-auto docs-scroll select-text">
+          <code className="text-text-secondary text-sm font-[lixCode] leading-relaxed">{code}</code>
+        </pre>
+      )}
     </div>
   )
 }
@@ -68,7 +135,7 @@ function CodeFenceBlock({ code, language }) {
         <span className="text-text-dim text-[10px] font-[lixCode] uppercase">{language || 'code'}</span>
         <CopyButton text={code} />
       </div>
-      <pre className="p-4 overflow-x-auto bg-[#0d0d14]">
+      <pre className="p-4 overflow-x-auto bg-[#0d0d14] select-text">
         <code className="text-text-secondary text-sm font-[lixCode] leading-relaxed">{code}</code>
       </pre>
     </div>
@@ -77,6 +144,7 @@ function CodeFenceBlock({ code, language }) {
 
 /**
  * Simple markdown-to-JSX renderer.
+ * Strips the first H1 (since the blog page renders it from metadata).
  * Handles: headings, paragraphs, bold, italic, inline code, code fences (with
  * special LixScript rendering), unordered/ordered lists, blockquotes, links, hrs.
  */
@@ -86,6 +154,7 @@ export default function MarkdownRenderer({ content }) {
   const lines = content.split('\n')
   const elements = []
   let i = 0
+  let skippedTitle = false
 
   while (i < lines.length) {
     const line = lines[i]
@@ -124,10 +193,17 @@ export default function MarkdownRenderer({ content }) {
       continue
     }
 
+    // Skip the first H1 — already rendered by the blog page header
+    if (line.startsWith('# ') && !skippedTitle) {
+      skippedTitle = true
+      i++
+      continue
+    }
+
     // Headings
     if (line.startsWith('# ')) {
       elements.push(
-        <h1 key={elements.length} className="text-2xl font-semibold text-text-primary mt-10 mb-4 first:mt-0">
+        <h1 key={elements.length} className="text-2xl font-semibold text-text-primary mt-10 mb-4">
           {renderInline(line.slice(2))}
         </h1>
       )
@@ -178,8 +254,8 @@ export default function MarkdownRenderer({ content }) {
       elements.push(
         <ul key={elements.length} className="list-none space-y-1.5 my-4">
           {items.map((item, ii) => (
-            <li key={ii} className="flex items-start gap-2 text-text-secondary text-sm leading-relaxed">
-              <span className="text-accent-blue mt-1.5 text-[6px]">●</span>
+            <li key={ii} className="flex items-start gap-2 text-text-muted text-sm leading-relaxed">
+              <span className="text-accent-blue mt-1.5 text-[6px]">&#x25CF;</span>
               <span>{renderInline(item)}</span>
             </li>
           ))}
@@ -196,9 +272,9 @@ export default function MarkdownRenderer({ content }) {
         i++
       }
       elements.push(
-        <ol key={elements.length} className="list-none space-y-1.5 my-4 counter-reset-list">
+        <ol key={elements.length} className="list-none space-y-1.5 my-4">
           {items.map((item, ii) => (
-            <li key={ii} className="flex items-start gap-2.5 text-text-secondary text-sm leading-relaxed">
+            <li key={ii} className="flex items-start gap-2.5 text-text-muted text-sm leading-relaxed">
               <span className="text-accent-blue text-xs font-medium min-w-4 mt-0.5">{ii + 1}.</span>
               <span>{renderInline(item)}</span>
             </li>
@@ -210,7 +286,7 @@ export default function MarkdownRenderer({ content }) {
 
     // Paragraph
     elements.push(
-      <p key={elements.length} className="text-text-secondary text-sm leading-relaxed my-3">
+      <p key={elements.length} className="text-text-muted text-sm leading-relaxed my-3">
         {renderInline(line)}
       </p>
     )
@@ -244,7 +320,7 @@ function renderInline(text) {
     match = remaining.match(/\*(.+?)\*/)
     if (match && match.index !== undefined) {
       if (match.index > 0) parts.push(remaining.slice(0, match.index))
-      parts.push(<em key={key++} className="text-text-muted italic">{match[1]}</em>)
+      parts.push(<em key={key++} className="text-text-secondary italic">{match[1]}</em>)
       remaining = remaining.slice(match.index + match[0].length)
       continue
     }

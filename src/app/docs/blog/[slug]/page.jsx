@@ -65,23 +65,23 @@ export default function BlogPostPage() {
       </header>
 
       <div className="max-w-3xl mx-auto pt-20 pb-16 px-6">
-        {/* Post header */}
+        {/* Post header — distinct from body */}
         <div className="mb-10">
-          <div className="flex items-center gap-3 mb-4">
+          <div className="flex items-center gap-3 mb-5">
             <div className="w-10 h-10 rounded-xl bg-accent-blue/10 flex items-center justify-center">
               <i className={`${post.icon} text-xl text-accent-blue`} />
             </div>
             <div className="flex flex-wrap gap-2">
               {post.tags.map(tag => (
-                <span key={tag} className="px-2 py-0.5 text-[10px] rounded-md bg-surface-card border border-white/[0.06] text-text-dim uppercase tracking-wider">
+                <span key={tag} className="px-2 py-0.5 text-[10px] rounded-md bg-accent-blue/8 border border-accent-blue/15 text-accent-blue/70 uppercase tracking-wider">
                   {tag}
                 </span>
               ))}
             </div>
           </div>
-          <h1 className="text-2xl md:text-3xl font-semibold text-text-primary mb-3">{post.title}</h1>
-          <p className="text-text-muted text-base leading-relaxed">{post.description}</p>
-          <p className="text-text-dim text-xs mt-3">{new Date(post.date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+          <h1 className="text-3xl md:text-4xl font-semibold text-white mb-4 leading-tight">{post.title}</h1>
+          <p className="text-text-secondary text-lg leading-relaxed">{post.description}</p>
+          <p className="text-text-dim text-xs mt-4">{new Date(post.date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
         </div>
 
         <hr className="border-white/[0.06] mb-10" />

@@ -83,7 +83,7 @@ export function parseLixScript(source) {
 
         // Check for property block { ... }
         if (rest.includes('{') && !rest.includes('}')) {
-          // Multi-line property block
+          // Multi-line property block — consume lines until closing }
           i++
           const props = []
           while (i < tokens.length && !tokens[i].value.startsWith('}')) {
@@ -99,10 +99,13 @@ export function parseLixScript(source) {
             const props = blockMatch[1].split(/[,;]/).map(s => s.trim()).filter(Boolean)
             parseProperties(shape, props, variables, errors)
           }
+          i++ // advance past this single line
+        } else {
+          // No property block
+          i++
         }
 
         shapes.push(shape)
-        i++
         continue
       }
 
@@ -329,14 +332,17 @@ export function renderLixScript(parsed) {
 
   const createdShapes = new Map() // id -> { instance, def }
   const renderErrors = []
-  let frame = null
 
-  // Find frame first (if any) — create it so shapes can be added
-  const frameDef = shapeDefs.find(s => s.type === 'frame')
-  if (frameDef) {
-    frame = createFrame(frameDef, renderErrors)
+  // Check if user defined a frame — if not, we auto-create one
+  const userFrameDef = shapeDefs.find(s => s.type === 'frame')
+  let frame = null
+  let frameDef = userFrameDef
+
+  if (userFrameDef) {
+    // User-defined frame
+    frame = createFrame(userFrameDef, renderErrors)
     if (frame) {
-      createdShapes.set(frameDef.id, { instance: frame, def: frameDef })
+      createdShapes.set(userFrameDef.id, { instance: frame, def: userFrameDef })
     }
   }
 
@@ -348,11 +354,6 @@ export function renderLixScript(parsed) {
     const instance = createShape(def, renderErrors)
     if (instance) {
       createdShapes.set(def.id, { instance, def })
-
-      // Add to frame if specified
-      if (frame && shouldAddToFrame(def, frameDef)) {
-        frame.addShapeToFrame(instance)
-      }
     }
   }
 
@@ -363,8 +364,58 @@ export function renderLixScript(parsed) {
     const instance = createConnection(def, createdShapes, renderErrors)
     if (instance) {
       createdShapes.set(def.id, { instance, def })
+    }
+  }
 
-      if (frame && shouldAddToFrame(def, frameDef)) {
+  // Auto-create wrapping frame if user didn't define one
+  if (!frame && createdShapes.size > 0) {
+    // Calculate bounds from all created shapes
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity
+
+    for (const [, { instance, def }] of createdShapes) {
+      if (def.type === 'arrow' || def.type === 'line') {
+        // Use the actual instance start/end coordinates
+        const from = resolveConnectionPoint(def.from, createdShapes)
+        const to = resolveConnectionPoint(def.to, createdShapes)
+        if (from) { minX = Math.min(minX, from.x); minY = Math.min(minY, from.y); maxX = Math.max(maxX, from.x); maxY = Math.max(maxY, from.y) }
+        if (to) { minX = Math.min(minX, to.x); minY = Math.min(minY, to.y); maxX = Math.max(maxX, to.x); maxY = Math.max(maxY, to.y) }
+      } else if (def.type !== 'frame') {
+        const x = def.x || 0
+        const y = def.y || 0
+        const w = def.width || 160
+        const h = def.height || 60
+        minX = Math.min(minX, x)
+        minY = Math.min(minY, y)
+        maxX = Math.max(maxX, x + w)
+        maxY = Math.max(maxY, y + h)
+      }
+    }
+
+    if (isFinite(minX)) {
+      const pad = 40
+      const autoFrameDef = {
+        type: 'frame',
+        id: '_lixscript_auto_frame',
+        line: 0,
+        x: minX - pad,
+        y: minY - pad,
+        width: (maxX - minX) + pad * 2,
+        height: (maxY - minY) + pad * 2,
+        props: { name: 'LixScript' }
+      }
+      frameDef = autoFrameDef
+      frame = createFrame(autoFrameDef, renderErrors)
+      if (frame) {
+        createdShapes.set(autoFrameDef.id, { instance: frame, def: autoFrameDef })
+      }
+    }
+  }
+
+  // Add all shapes to frame
+  if (frame) {
+    for (const [id, { instance, def }] of createdShapes) {
+      if (def.type === 'frame') continue // don't add frame to itself
+      if (shouldAddToFrame(def, frameDef)) {
         frame.addShapeToFrame(instance)
       }
     }
@@ -818,25 +869,62 @@ export function previewLixScript(parsed) {
 
   resolveShapeRefs(defs)
 
+  // Build a shape map for resolving arrow references in preview
+  const shapeMap = new Map()
+  for (const def of defs) {
+    if (def.type !== 'arrow' && def.type !== 'line') {
+      shapeMap.set(def.id, def)
+    }
+  }
+
+  // Resolve arrow/line endpoints to coordinates for preview
+  function resolvePreviewPoint(pointDef) {
+    if (!pointDef) return { x: 0, y: 0 }
+    if (pointDef.x !== undefined && pointDef.y !== undefined) return pointDef
+
+    if (pointDef.ref) {
+      const target = shapeMap.get(pointDef.ref)
+      if (!target) return { x: 0, y: 0 }
+
+      const side = pointDef.side || 'center'
+      const offset = pointDef.offset || 0
+      const tx = target.x || 0
+      const ty = target.y || 0
+      const tw = target.width || 160
+      const th = target.height || 60
+
+      // For circle, x/y is top-left of bounding box in our DSL
+      const cx = tx + tw / 2
+      const cy = ty + th / 2
+
+      switch (side) {
+        case 'top': return { x: cx + offset, y: ty }
+        case 'bottom': return { x: cx + offset, y: ty + th }
+        case 'left': return { x: tx, y: cy + offset }
+        case 'right': return { x: tx + tw, y: cy + offset }
+        case 'center': return { x: cx + offset, y: cy }
+        default: return { x: cx, y: cy }
+      }
+    }
+    return { x: 0, y: 0 }
+  }
+
   // Calculate bounds
   let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity
 
   for (const def of defs) {
-    const x = def.x || 0
-    const y = def.y || 0
-    const w = def.width || 160
-    const h = def.height || 60
-
     if (def.type === 'arrow' || def.type === 'line') {
-      const from = def.from || {}
-      const to = def.to || {}
-      const fx = from.x || 0, fy = from.y || 0
-      const tx = to.x || 0, ty = to.y || 0
-      minX = Math.min(minX, fx, tx)
-      minY = Math.min(minY, fy, ty)
-      maxX = Math.max(maxX, fx, tx)
-      maxY = Math.max(maxY, fy, ty)
-    } else {
+      const from = resolvePreviewPoint(def.from)
+      const to = resolvePreviewPoint(def.to)
+      minX = Math.min(minX, from.x, to.x)
+      minY = Math.min(minY, from.y, to.y)
+      maxX = Math.max(maxX, from.x, to.x)
+      maxY = Math.max(maxY, from.y, to.y)
+    } else if (def.type !== 'frame') {
+      const x = def.x || 0
+      const y = def.y || 0
+      const w = def.width || 160
+      const h = def.height || 60
       minX = Math.min(minX, x)
       minY = Math.min(minY, y)
       maxX = Math.max(maxX, x + w)
@@ -886,25 +974,25 @@ export function previewLixScript(parsed) {
       }
 
       case 'arrow': {
-        const from = def.from || {}
-        const to = def.to || {}
-        const fx = from.x || 0, fy = from.y || 0
-        const tx = to.x || 0, ty = to.y || 0
+        const from = resolvePreviewPoint(def.from)
+        const to = resolvePreviewPoint(def.to)
         const stroke = props.stroke || '#fff'
         const sw = props.strokeWidth || 2
-        svgContent += `<line x1="${fx}" y1="${fy}" x2="${tx}" y2="${ty}" stroke="${stroke}" stroke-width="${sw}" marker-end="url(#arrowhead-preview)" />`
+        const dash = props.style === 'dashed' ? ' stroke-dasharray="10,10"' : props.style === 'dotted' ? ' stroke-dasharray="2,8"' : ''
+        svgContent += `<line x1="${from.x}" y1="${from.y}" x2="${to.x}" y2="${to.y}" stroke="${stroke}" stroke-width="${sw}"${dash} marker-end="url(#arrowhead-preview)" />`
         if (props.label) {
-          const mx = (fx + tx) / 2
-          const my = (fy + ty) / 2 - 10
+          const mx = (from.x + to.x) / 2
+          const my = (from.y + to.y) / 2 - 10
           svgContent += `<text x="${mx}" y="${my}" text-anchor="middle" fill="${props.labelColor || '#a0a0b0'}" font-size="11" font-family="sans-serif">${escapeXml(props.label)}</text>`
         }
         break
       }
 
       case 'line': {
-        const from = def.from || {}
-        const to = def.to || {}
-        svgContent += `<line x1="${from.x || 0}" y1="${from.y || 0}" x2="${to.x || 0}" y2="${to.y || 0}" stroke="${props.stroke || '#fff'}" stroke-width="${props.strokeWidth || 2}" />`
+        const from = resolvePreviewPoint(def.from)
+        const to = resolvePreviewPoint(def.to)
+        const dash = props.style === 'dashed' ? ' stroke-dasharray="10,10"' : props.style === 'dotted' ? ' stroke-dasharray="2,8"' : ''
+        svgContent += `<line x1="${from.x}" y1="${from.y}" x2="${to.x}" y2="${to.y}" stroke="${props.stroke || '#fff'}" stroke-width="${props.strokeWidth || 2}"${dash} />`
         break
       }
 

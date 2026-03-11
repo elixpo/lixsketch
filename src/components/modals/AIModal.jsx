@@ -641,7 +641,7 @@ export default function AIModal() {
                   { value: 'describe', label: 'Describe' },
                   { value: 'mermaid', label: 'Mermaid' },
                   { value: 'graph', label: 'Graph' },
-                  { value: 'code', label: 'Code' },
+                  { value: 'code', label: 'Code', beta: true },
                 ].map((t) => (
                   <button
                     key={t.value}
@@ -649,7 +649,7 @@ export default function AIModal() {
                     className={`flex-1 px-4 py-2 rounded-lg text-sm transition-all duration-200 ${
                       mode === t.value ? 'bg-surface-active text-text-primary' : 'text-text-muted hover:text-text-primary'
                     }`}
-                  >{t.label}</button>
+                  >{t.label}{t.beta && <span className="ml-1.5 px-1.5 py-0.5 text-[9px] rounded-md bg-orange-500/20 text-orange-400 font-medium uppercase leading-none">Beta</span>}</button>
                 ))}
               </div>
             )}
@@ -751,17 +751,6 @@ export default function AIModal() {
                     }}
                   />
 
-                  {/* Errors */}
-                  {lixErrors.length > 0 && (
-                    <div className="mt-2 p-2 rounded-lg bg-red-500/10 border border-red-500/20">
-                      {lixErrors.map((err, i) => (
-                        <p key={i} className="text-red-400 text-[11px] font-mono">
-                          <span className="text-red-400/60">line {err.line}:</span> {err.message}
-                        </p>
-                      ))}
-                    </div>
-                  )}
-
                   {/* Quick examples */}
                   <div className="mt-3 pt-3 border-t border-white/[0.06]">
                     <p className="text-text-muted text-xs uppercase tracking-wider mb-2">Quick Examples</p>
@@ -802,8 +791,16 @@ export default function AIModal() {
                 <div className="flex-1 flex flex-col min-w-0">
                   <p className="text-text-muted text-xs uppercase tracking-wider mb-2">Preview</p>
                   {lixErrors.length > 0 ? (
-                    <div className="flex-1 flex items-center justify-center rounded-xl bg-[#111] border border-white/[0.06]">
-                      <p className="text-red-400/70 text-sm">Fix errors to see preview</p>
+                    <div className="flex-1 flex flex-col rounded-xl bg-[#111] border border-white/[0.06] p-4 overflow-y-auto">
+                      <div className="flex items-center gap-2 mb-3">
+                        <i className="bx bx-error-circle text-red-400 text-lg" />
+                        <span className="text-red-400 text-sm font-medium">{lixErrors.length} error{lixErrors.length > 1 ? 's' : ''}</span>
+                      </div>
+                      {lixErrors.map((err, i) => (
+                        <p key={i} className="text-red-400/80 text-[11px] font-mono mb-1">
+                          <span className="text-red-400/50">line {err.line}:</span> {err.message}
+                        </p>
+                      ))}
                     </div>
                   ) : lixPreviewSVG ? (
                     <DiagramPreview svgMarkup={lixPreviewSVG} className="flex-1 min-h-[300px]" />

@@ -24,11 +24,13 @@ import MultiSelectActions from '@/components/canvas/MultiSelectActions'
 import useKeyboardShortcuts from '@/hooks/useKeyboardShortcuts'
 import useSessionID from '@/hooks/useSessionID'
 import useGuestProfile from '@/hooks/useGuestProfile'
+import useAuth from '@/hooks/useAuth'
 
 export default function Home() {
   useKeyboardShortcuts()
   useSessionID()
   useGuestProfile()
+  useAuth()
 
   return (
     <div className="relative w-screen h-screen overflow-hidden bg-black">

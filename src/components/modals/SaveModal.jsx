@@ -8,7 +8,7 @@ import { generateKey } from '@/utils/encryption'
 const SAVE_OPTIONS = [
   {
     id: 'lixsketch',
-    label: 'Scene (.json)',
+    label: 'Scene (.lixjson)',
     description: 'Save scene data for later',
     icon: 'bx-braces',
   },

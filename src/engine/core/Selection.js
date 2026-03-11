@@ -1380,8 +1380,21 @@ function handleMultiSelectionMouseDown(e) {
         }
 
         if (multiSelection.isPointInBounds(x, y)) {
-            multiSelection.startDrag(e);
-            return true;
+            // Only start drag if clicking on a shape that's part of the selection
+            // This allows clicking through empty areas of the selection rectangle
+            let clickedOnSelectedShape = false;
+            for (const shape of multiSelection.selectedShapes) {
+                if (shape.contains && shape.contains(x, y)) {
+                    clickedOnSelectedShape = true;
+                    break;
+                }
+            }
+            if (clickedOnSelectedShape) {
+                multiSelection.startDrag(e);
+                return true;
+            }
+            // Click was in bounds but not on a selected shape — fall through
+            // to allow clicking on other shapes or starting a new selection
         }
     }
 

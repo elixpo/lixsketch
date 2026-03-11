@@ -424,7 +424,7 @@ export function downloadScene(workspaceName = 'Untitled') {
 
     const a = document.createElement('a');
     a.href = url;
-    a.download = `${workspaceName.replace(/[^a-zA-Z0-9_-]/g, '_')}.json`;
+    a.download = `${workspaceName.replace(/[^a-zA-Z0-9_-]/g, '_')}.lixjson`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -453,7 +453,7 @@ export function uploadScene() {
     return new Promise((resolve, reject) => {
         const input = document.createElement('input');
         input.type = 'file';
-        input.accept = '.json';
+        input.accept = '.lixjson,.json';
         input.onchange = (e) => {
             const file = e.target.files[0];
             if (!file) return resolve(false);

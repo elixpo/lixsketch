@@ -6,7 +6,8 @@ export default function Header() {
   const workspaceName = useUIStore((s) => s.workspaceName)
   const setWorkspaceName = useUIStore((s) => s.setWorkspaceName)
   const toggleMenu = useUIStore((s) => s.toggleMenu)
-  const toggleShortcutsModal = useUIStore((s) => s.toggleShortcutsModal)
+  const toggleCommandPalette = useUIStore((s) => s.toggleCommandPalette)
+  const toggleHelpModal = useUIStore((s) => s.toggleHelpModal)
 
   return (
     <header className="fixed top-0 left-0 right-0 h-12 bg-surface-dark border-b border-[#2c2c35] z-[1001] flex items-center justify-between px-3 font-[lixFont]">
@@ -34,7 +35,10 @@ export default function Header() {
       {/* Right side */}
       <div className="flex items-center gap-2">
         {/* Help icon */}
-        <button className="w-8 h-8 flex items-center justify-center rounded-lg text-text-muted hover:text-text-primary hover:bg-surface-hover transition-all duration-200">
+        <button
+          onClick={toggleHelpModal}
+          className="w-8 h-8 flex items-center justify-center rounded-lg text-text-muted hover:text-text-primary hover:bg-surface-hover transition-all duration-200"
+        >
           <i className="bx bx-help-circle text-lg" />
         </button>
 
@@ -45,7 +49,7 @@ export default function Header() {
 
         {/* Shortcuts button */}
         <button
-          onClick={toggleShortcutsModal}
+          onClick={toggleCommandPalette}
           className="px-2.5 py-1.5 bg-surface hover:bg-surface-hover text-text-muted text-sm rounded-lg border border-border transition-all duration-200 font-[lixFont]"
         >
           Ctrl+/

@@ -18,7 +18,7 @@ export default function useKeyboardShortcuts() {
         }
         if (key === '/') {
           e.preventDefault()
-          useUIStore.getState().toggleShortcutsModal()
+          useUIStore.getState().toggleCommandPalette()
           return
         }
       }
@@ -130,6 +130,14 @@ export default function useKeyboardShortcuts() {
 
         if (e.key === 'Escape') {
           const uiStore = useUIStore.getState()
+          if (uiStore.commandPaletteOpen) {
+            uiStore.toggleCommandPalette()
+            return
+          }
+          if (uiStore.helpModalOpen) {
+            uiStore.toggleHelpModal()
+            return
+          }
           if (uiStore.shortcutsModalOpen) {
             uiStore.toggleShortcutsModal()
             return

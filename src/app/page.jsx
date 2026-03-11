@@ -8,6 +8,8 @@ import AppMenu from '@/components/menu/AppMenu'
 import ShortcutsModal from '@/components/modals/ShortcutsModal'
 import SaveModal from '@/components/modals/SaveModal'
 import AIModal from '@/components/modals/AIModal'
+import CommandPalette from '@/components/modals/CommandPalette'
+import HelpModal from '@/components/modals/HelpModal'
 import RectangleSidebar from '@/components/sidebars/RectangleSidebar'
 import CircleSidebar from '@/components/sidebars/CircleSidebar'
 import LineSidebar from '@/components/sidebars/LineSidebar'
@@ -51,6 +53,8 @@ export default function Home() {
       <ShortcutsModal />
       <SaveModal />
       <AIModal />
+      <CommandPalette />
+      <HelpModal />
     </div>
   )
 }

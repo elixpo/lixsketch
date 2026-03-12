@@ -655,10 +655,10 @@ export default function LandingPage() {
                   Our v1 Product
                 </div>
                 <h3 className="text-2xl md:text-3xl font-light text-text-primary mb-3">
-                  InkFlowa
+                  InkFlow
                 </h3>
                 <p className="text-text-muted text-sm md:text-base leading-relaxed mb-6 max-w-md">
-                  Where it all started. InkFlowa was our first take at a canvas — the foundation that led to LixSketch. Check out the original.
+                  Where it all started. InkFlow was our first take at a canvas — the foundation that led to LixSketch. Check out the original.
                 </p>
                 <a
                   href="https://inkflowa.vercel.app"
@@ -667,7 +667,7 @@ export default function LandingPage() {
                   className="inline-flex items-center gap-2 px-6 py-2.5 bg-[#8B88E8]/10 hover:bg-[#8B88E8]/20 border border-[#8B88E8]/30 text-[#8B88E8] rounded-xl text-sm transition-all duration-200 hover:shadow-lg hover:shadow-[#8B88E8]/10"
                 >
                   <i className="bx bx-link-external text-lg" />
-                  Visit InkFlowa
+                  Visit InkFlow
                 </a>
               </div>
 

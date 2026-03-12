@@ -342,6 +342,15 @@ export function loadScene(sceneData) {
     // Remove all existing shape DOM elements
     const existingShapes = window.shapes || [];
     existingShapes.forEach(shape => {
+        // For frames, clean up clipGroup and clipPath too
+        if (shape.shapeName === 'frame') {
+            if (shape.clipGroup && shape.clipGroup.parentNode) {
+                shape.clipGroup.parentNode.removeChild(shape.clipGroup);
+            }
+            if (shape.clipPath && shape.clipPath.parentNode) {
+                shape.clipPath.parentNode.removeChild(shape.clipPath);
+            }
+        }
         if (shape.group && shape.group.parentNode) {
             shape.group.parentNode.removeChild(shape.group);
         } else if (shape.element && shape.element.parentNode) {
@@ -382,13 +391,30 @@ export function loadScene(sceneData) {
     // Second pass: restore frame containment
     for (const data of frameData) {
         const frame = idMap.get(data.shapeID);
-        if (frame && data.containedShapeIDs) {
-            data.containedShapeIDs.forEach(childID => {
+        if (frame && data.containedShapeIDs && data.containedShapeIDs.length > 0) {
+            for (const childID of data.containedShapeIDs) {
                 const child = idMap.get(childID);
-                if (child && typeof frame.addShapeToFrame === 'function') {
-                    frame.addShapeToFrame(child);
+                if (!child) {
+                    console.warn(`[SceneSerializer] Frame "${data.frameName}" references missing shape: ${childID}`);
+                    continue;
                 }
-            });
+                try {
+                    if (typeof frame.addShapeToFrame === 'function') {
+                        frame.addShapeToFrame(child);
+                    } else {
+                        // Fallback: manually set containment
+                        frame.containedShapes.push(child);
+                        child.parentFrame = frame;
+                    }
+                } catch (err) {
+                    console.warn(`[SceneSerializer] Failed to restore containment for ${childID} in frame ${data.shapeID}:`, err);
+                    // Fallback: at least set the reference
+                    if (!frame.containedShapes.includes(child)) {
+                        frame.containedShapes.push(child);
+                    }
+                    child.parentFrame = frame;
+                }
+            }
         }
     }
 

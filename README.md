@@ -1,4 +1,4 @@
-# LixSketch - The Canvas You Can Trust 🖌️
+# LixSketch - Built by a Ganz
 
 <img width="1866" height="886" alt="image" src="https://github.com/user-attachments/assets/a0b93c41-32ce-44a1-ac37-4c3f9eb555cd" />
 

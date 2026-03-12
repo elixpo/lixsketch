@@ -255,8 +255,10 @@ class ImageShape {
 
     // Add methods for frame compatibility
     removeSelection() {
-        // Remove any selection UI if needed
-        removeSelectionOutline();
+        // Remove selection outlines from SVG
+        svg.querySelectorAll(".selection-outline").forEach(el => el.remove());
+        // Remove resize/rotation anchors if present
+        svg.querySelectorAll(".resize-anchor, .rotation-anchor").forEach(el => el.remove());
     }
 
     selectShape() {

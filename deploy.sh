@@ -16,10 +16,6 @@ ENV_FILE="$SCRIPT_DIR/.env"
 PAGES_PROJECT="lixsketch"
 PAGES_BRANCH="main"
 
-# D1 and KV binding IDs (must match wrangler.toml / next.config.mjs)
-D1_DB_ID="65fc6d04-d659-4cb6-b34c-750a763693e4"
-KV_ID="aa3a1466b15e443a8f0858c3b9a776c8"
-
 # ── Helpers ──────────────────────────────────────────────────
 
 load_env() {
@@ -30,6 +26,13 @@ load_env() {
   set -a
   source "$ENV_FILE"
   set +a
+}
+
+# Pull D1 and KV IDs from .env (loaded by load_env)
+get_binding_ids() {
+  load_env
+  D1_DB_ID="${D1_DATABASE_ID:?D1_DATABASE_ID not set in .env}"
+  KV_ID="${KV_NAMESPACE_ID:?KV_NAMESPACE_ID not set in .env}"
 }
 
 # ── Commands ─────────────────────────────────────────────────

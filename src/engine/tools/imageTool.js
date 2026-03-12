@@ -8,12 +8,12 @@ let isDraggingImage = false;
 let imageToPlace = null;
 let imageX = 0;
 let imageY = 0;
-let scaleFactor = 0.2; 
-let currentImageElement = null; 
+let scaleFactor = 0.2;
+let currentImageElement = null;
 
 let selectedImage = null;
 let originalX, originalY, originalWidth, originalHeight;
-let currentAnchor = null; 
+let currentAnchor = null;
 let isDragging = false;
 let isRotatingImage = false;
 let dragOffsetX, dragOffsetY;
@@ -21,11 +21,15 @@ let startRotationMouseAngle = null;
 let startImageRotation = null;
 let imageRotation = 0;
 let aspect_ratio_lock = true;
-const minImageSize = 20; 
+const minImageSize = 20;
 
 // Frame attachment variables
 let draggedShapeInitialFrameImage = null;
 let hoveredFrameImage = null;
+
+// Per-room image size limit: 5MB total
+const ROOM_IMAGE_LIMIT_BYTES = 5 * 1024 * 1024;
+if (!window.__roomImageBytesUsed) window.__roomImageBytesUsed = 0;
 
 
 // Convert SVG element to our ImageShape class
@@ -95,11 +99,19 @@ const handleImageUpload = (file) => {
         return;
     }
 
-    
-    const maxSize = 50 * 1024 * 1024; // 50MB
+    // Per-room 5MB total image limit
+    if (window.__roomImageBytesUsed + file.size > ROOM_IMAGE_LIMIT_BYTES) {
+        const usedMB = (window.__roomImageBytesUsed / (1024 * 1024)).toFixed(2);
+        const fileMB = (file.size / (1024 * 1024)).toFixed(2);
+        alert(`Room image limit reached (5 MB). Used: ${usedMB} MB, this file: ${fileMB} MB. Delete some images to free space.`);
+        isImageToolActive = false;
+        return;
+    }
+
+    const maxSize = 5 * 1024 * 1024; // 5MB per file (matches room limit)
     if (file.size > maxSize) {
         console.error('File size too large');
-        alert('Image file is too large. Please select an image smaller than 10MB.');
+        alert('Image file is too large. Please select an image smaller than 5 MB.');
         return;
     }
 
@@ -107,8 +119,11 @@ const handleImageUpload = (file) => {
 
     const reader = new FileReader();
     
+    // Store file size for room limit tracking
+    window.__pendingImageFileSize = file.size;
+
     reader.onload = (e) => {
-        imageToPlace = e.target.result; 
+        imageToPlace = e.target.result;
         isDraggingImage = true;
         console.log('Image loaded and ready to place');
     };
@@ -318,6 +333,12 @@ const handleMouseDownImage = async (e) => {
                 }
             }
         });
+
+        // Track image size for room limit
+        const placedFileSize = window.__pendingImageFileSize || 0;
+        finalImage.__fileSize = placedFileSize;
+        window.__roomImageBytesUsed = (window.__roomImageBytesUsed || 0) + placedFileSize;
+        window.__pendingImageFileSize = 0;
 
         // Add click event to the newly added image
         finalImage.addEventListener('click', selectImage);
@@ -1065,6 +1086,10 @@ function stopInteracting() {
 // Add delete functionality for images
 function deleteCurrentImage() {
     if (selectedImage) {
+        // Release image bytes from room limit
+        const freedBytes = selectedImage.__fileSize || 0;
+        window.__roomImageBytesUsed = Math.max(0, (window.__roomImageBytesUsed || 0) - freedBytes);
+
         // Find the ImageShape wrapper
         let imageShape = null;
         if (typeof shapes !== 'undefined' && Array.isArray(shapes)) {
@@ -1072,7 +1097,7 @@ function deleteCurrentImage() {
             if (imageShape) {
                 const idx = shapes.indexOf(imageShape);
                 if (idx !== -1) shapes.splice(idx, 1);
-                
+
                 // Remove the group (which contains the image)
                 if (imageShape.group && imageShape.group.parentNode) {
                     imageShape.group.parentNode.removeChild(imageShape.group);

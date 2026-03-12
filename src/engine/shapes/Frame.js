@@ -24,6 +24,10 @@ class Frame {
         this.height = height;
         this.rotation = options.rotation || 0;
         this.frameName = options.frameName || "Frame";
+        this.fillStyle = options.fillStyle || "transparent"; // 'transparent' | 'solid' | 'grid'
+        this.fillColor = options.fillColor || "#1e1e28";
+        this.gridSize = options.gridSize || 20;
+        this.gridColor = options.gridColor || "rgba(255,255,255,0.06)";
         this.options = {
             stroke: options.stroke || "#555",
             strokeWidth: options.strokeWidth || 1,
@@ -75,6 +79,50 @@ class Frame {
         }
         this.anchors = [];
 
+        // Ensure defs exists for grid pattern
+        let defs = svg.querySelector('defs');
+        if (!defs) {
+            defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+            svg.appendChild(defs);
+        }
+
+        // Determine fill based on fillStyle
+        let fillValue = "transparent";
+        if (this.fillStyle === 'solid') {
+            fillValue = this.fillColor;
+        } else if (this.fillStyle === 'grid') {
+            // Create or update a grid pattern unique to this frame
+            const patternId = `frame-grid-${this.shapeID}`;
+            let pattern = defs.querySelector(`#${patternId}`);
+            if (!pattern) {
+                pattern = document.createElementNS('http://www.w3.org/2000/svg', 'pattern');
+                pattern.setAttribute('id', patternId);
+                pattern.setAttribute('patternUnits', 'userSpaceOnUse');
+                defs.appendChild(pattern);
+            }
+            // Update pattern attributes
+            pattern.setAttribute('x', this.x);
+            pattern.setAttribute('y', this.y);
+            pattern.setAttribute('width', this.gridSize);
+            pattern.setAttribute('height', this.gridSize);
+            // Clear and rebuild pattern content
+            while (pattern.firstChild) pattern.removeChild(pattern.firstChild);
+            // Background fill
+            const bgRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            bgRect.setAttribute('width', this.gridSize);
+            bgRect.setAttribute('height', this.gridSize);
+            bgRect.setAttribute('fill', this.fillColor);
+            pattern.appendChild(bgRect);
+            // Grid lines
+            const gridPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            gridPath.setAttribute('d', `M ${this.gridSize} 0 L 0 0 0 ${this.gridSize}`);
+            gridPath.setAttribute('fill', 'none');
+            gridPath.setAttribute('stroke', this.gridColor);
+            gridPath.setAttribute('stroke-width', '0.5');
+            pattern.appendChild(gridPath);
+            fillValue = `url(#${patternId})`;
+        }
+
         // Create the frame rectangle
         const frameRect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
         frameRect.setAttribute("x", this.x);
@@ -83,9 +131,9 @@ class Frame {
         frameRect.setAttribute("height", this.height);
         frameRect.setAttribute("stroke", this.options.stroke);
         frameRect.setAttribute("stroke-width", this.options.strokeWidth);
-        frameRect.setAttribute("fill", this.options.fill);
+        frameRect.setAttribute("fill", fillValue);
         frameRect.setAttribute("opacity", this.options.opacity);
-        frameRect.setAttribute("stroke-dasharray", "5,5"); 
+        frameRect.setAttribute("stroke-dasharray", "5,5");
         frameRect.classList.add("frame-rect");
 
         // Apply rotation

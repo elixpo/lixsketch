@@ -94,6 +94,22 @@ export default {
       return handleImageDelete(request, env);
     }
 
+    // --- AI quota routes ---
+
+    if (url.pathname === '/api/ai/quota' && request.method === 'GET') {
+      return handleAIQuota(request, env);
+    }
+
+    if (url.pathname === '/api/ai/usage' && request.method === 'POST') {
+      return handleAIUsage(request, env);
+    }
+
+    // --- User quota summary ---
+
+    if (url.pathname === '/api/user/quota-summary' && request.method === 'GET') {
+      return handleQuotaSummary(request, env);
+    }
+
     // Health check
     if (url.pathname === '/health') {
       return json({ status: 'ok', timestamp: new Date().toISOString() });
@@ -710,6 +726,187 @@ async function cloudinarySign(params: string, apiSecret: string): Promise<string
   // Cloudinary expects hex-encoded SHA-1, but with Web Crypto we use SHA-256
   // Actually, Cloudinary uses SHA-1 by default but accepts SHA-256 with signature_algorithm param
   return Array.from(new Uint8Array(sig)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+// =============================================================================
+// AI Quota Handlers
+// =============================================================================
+
+const AI_LIMITS: Record<string, number> = {
+  guest: 5,
+  free: 10,
+  pro: 50,
+  team: -1, // unlimited
+};
+
+async function handleAIQuota(request: Request, env: Env): Promise<Response> {
+  try {
+    const url = new URL(request.url);
+    const userId = url.searchParams.get('userId');
+    const guestId = url.searchParams.get('guestId');
+
+    if (!userId && !guestId) {
+      return json({ error: 'Missing userId or guestId' }, 400);
+    }
+
+    let tier = 'guest';
+    if (userId) {
+      const user = await env.DB.prepare(
+        `SELECT tier FROM users WHERE id = ?`
+      ).bind(userId).first<{ tier: string }>();
+      tier = user?.tier || 'free';
+    }
+
+    const limit = AI_LIMITS[tier] ?? 10;
+    const col = userId ? 'user_id' : 'guest_id';
+    const identifier = userId || guestId;
+
+    const result = await env.DB.prepare(
+      `SELECT COUNT(*) as count FROM ai_usage
+       WHERE ${col} = ? AND used_at >= date('now')`
+    ).bind(identifier).first<{ count: number }>();
+
+    const used = result?.count || 0;
+
+    return json({
+      used,
+      limit: limit === -1 ? 'unlimited' : limit,
+      remaining: limit === -1 ? 'unlimited' : Math.max(0, limit - used),
+      tier,
+    });
+  } catch (err) {
+    return json({ error: 'Failed to fetch AI quota' }, 500);
+  }
+}
+
+async function handleAIUsage(request: Request, env: Env): Promise<Response> {
+  try {
+    const body = await request.json() as {
+      userId?: string;
+      guestId?: string;
+      mode?: string;
+    };
+
+    if (!body.userId && !body.guestId) {
+      return json({ error: 'Missing userId or guestId' }, 400);
+    }
+
+    let tier = 'guest';
+    if (body.userId) {
+      const user = await env.DB.prepare(
+        `SELECT tier FROM users WHERE id = ?`
+      ).bind(body.userId).first<{ tier: string }>();
+      tier = user?.tier || 'free';
+    }
+
+    const limit = AI_LIMITS[tier] ?? 10;
+    const col = body.userId ? 'user_id' : 'guest_id';
+    const identifier = body.userId || body.guestId;
+
+    // Check current usage
+    const result = await env.DB.prepare(
+      `SELECT COUNT(*) as count FROM ai_usage
+       WHERE ${col} = ? AND used_at >= date('now')`
+    ).bind(identifier).first<{ count: number }>();
+
+    const used = result?.count || 0;
+
+    if (limit !== -1 && used >= limit) {
+      return json({ error: 'Daily AI limit reached', quotaExceeded: true, used, limit }, 429);
+    }
+
+    // Record usage
+    const id = crypto.randomUUID();
+    await env.DB.prepare(
+      `INSERT INTO ai_usage (id, user_id, guest_id, mode) VALUES (?, ?, ?, ?)`
+    ).bind(id, body.userId || null, body.guestId || null, body.mode || 'lixscript').run();
+
+    return json({
+      used: used + 1,
+      limit: limit === -1 ? 'unlimited' : limit,
+      remaining: limit === -1 ? 'unlimited' : Math.max(0, limit - used - 1),
+    });
+  } catch (err) {
+    return json({ error: 'Failed to record AI usage' }, 500);
+  }
+}
+
+// =============================================================================
+// User Quota Summary Handler
+// =============================================================================
+
+async function handleQuotaSummary(request: Request, env: Env): Promise<Response> {
+  try {
+    const url = new URL(request.url);
+    const userId = url.searchParams.get('userId');
+    const guestId = url.searchParams.get('guestId');
+
+    if (!userId && !guestId) {
+      return json({ error: 'Missing userId or guestId' }, 400);
+    }
+
+    const identifier = userId || guestId;
+    const ownerType = userId ? 'user' : 'guest';
+
+    // Get tier
+    let tier = 'guest';
+    let email: string | null = null;
+    let displayName: string | null = null;
+    if (userId) {
+      const user = await env.DB.prepare(
+        `SELECT tier, email, display_name FROM users WHERE id = ?`
+      ).bind(userId).first<{ tier: string; email: string; display_name: string }>();
+      tier = user?.tier || 'free';
+      email = user?.email || null;
+      displayName = user?.display_name || null;
+    }
+
+    // AI usage today
+    const aiCol = userId ? 'user_id' : 'guest_id';
+    const aiResult = await env.DB.prepare(
+      `SELECT COUNT(*) as count FROM ai_usage
+       WHERE ${aiCol} = ? AND used_at >= date('now')`
+    ).bind(identifier).first<{ count: number }>();
+    const aiUsed = aiResult?.count || 0;
+    const aiLimit = AI_LIMITS[tier] ?? 10;
+
+    // Workspace count
+    const wsResult = await env.DB.prepare(
+      `SELECT COUNT(*) as count FROM scenes
+       WHERE created_by = ? AND owner_type = ?`
+    ).bind(identifier, ownerType).first<{ count: number }>();
+    const workspaceCount = wsResult?.count || 0;
+    const workspaceLimit = userId ? 3 : 1;
+
+    // Image storage (sum of size_bytes for user's scenes)
+    const storageResult = await env.DB.prepare(
+      `SELECT COALESCE(SUM(size_bytes), 0) as total FROM scenes
+       WHERE created_by = ? AND owner_type = ?`
+    ).bind(identifier, ownerType).first<{ total: number }>();
+    const storageUsed = storageResult?.total || 0;
+
+    return json({
+      tier,
+      email,
+      displayName,
+      isGuest: !userId,
+      ai: {
+        used: aiUsed,
+        limit: aiLimit === -1 ? 'unlimited' : aiLimit,
+        remaining: aiLimit === -1 ? 'unlimited' : Math.max(0, aiLimit - aiUsed),
+      },
+      workspaces: {
+        used: workspaceCount,
+        limit: workspaceLimit,
+      },
+      storage: {
+        usedBytes: storageUsed,
+        limitBytes: 5 * 1024 * 1024, // 5MB per room
+      },
+    });
+  } catch (err) {
+    return json({ error: 'Failed to fetch quota summary' }, 500);
+  }
 }
 
 // =============================================================================

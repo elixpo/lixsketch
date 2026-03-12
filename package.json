@@ -26,8 +26,8 @@
     "worker:dev": "wrangler dev",
     "worker:deploy": "wrangler deploy",
     "db:create": "wrangler d1 create lixsketch",
-    "db:migrate": "wrangler d1 execute lixsketch --file=./worker/migrations/0001_initial_schema.sql",
-    "db:migrate:local": "wrangler d1 execute lixsketch --local --file=./worker/migrations/0001_initial_schema.sql",
+    "db:migrate": "wrangler d1 execute lixsketch --file=./worker/migrations/0002_workspace_limits.sql",
+    "db:migrate:local": "wrangler d1 execute lixsketch --local --file=./worker/migrations/0002_workspace_limits.sql",
     "kv:create": "wrangler kv namespace create lixsketch"
   }
 }

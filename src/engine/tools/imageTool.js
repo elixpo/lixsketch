@@ -2,6 +2,7 @@
 // Image tool event handlers - extracted from imageTool.js
 import { pushCreateAction, pushDeleteAction, pushTransformAction, pushFrameAttachmentAction } from '../core/UndoRedo.js';
 import { updateAttachedArrows as updateArrowsForShape, cleanupAttachments } from './arrowTool.js';
+import { compressImage } from '../../utils/imageCompressor.js';
 
 
 let isDraggingImage = false;
@@ -36,6 +37,92 @@ if (!window.__roomImageBytesUsed) window.__roomImageBytesUsed = 0;
 function wrapImageElement(element) {
     const imageShape = new ImageShape(element);
     return imageShape;
+}
+
+/**
+ * Async image upload pipeline:
+ * 1. Show loading indicator on the image
+ * 2. Compress the image adaptively
+ * 3. Get a signed upload URL from the worker
+ * 4. Upload compressed image to Cloudinary
+ * 5. Replace the base64 href with Cloudinary URL
+ * 6. Remove loading indicator
+ */
+async function uploadImageToCloudinary(imageShape) {
+    const workerUrl = window.__WORKER_URL;
+    const sessionId = window.__sessionID;
+    if (!workerUrl || !sessionId) return;
+
+    const href = imageShape.element.getAttribute('href') || '';
+    if (!href.startsWith('data:')) return; // already a URL, skip
+
+    imageShape.uploadStatus = 'uploading';
+    imageShape.uploadAbortController = new AbortController();
+    const signal = imageShape.uploadAbortController.signal;
+
+    imageShape.showUploadIndicator();
+
+    try {
+        // Step 1: Compress
+        const compressed = await compressImage(href);
+        if (signal.aborted) return;
+
+        // Step 2: Get signed upload params
+        const signRes = await fetch(`${workerUrl}/api/images/sign`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                sessionId,
+                filename: `img_${Date.now()}`,
+            }),
+            signal,
+        });
+        if (!signRes.ok) throw new Error('Failed to get upload signature');
+        const signData = await signRes.json();
+        if (signal.aborted) return;
+
+        // Step 3: Upload to Cloudinary
+        const formData = new FormData();
+        formData.append('file', compressed.blob);
+        formData.append('api_key', signData.apiKey);
+        formData.append('timestamp', String(signData.timestamp));
+        formData.append('signature', signData.signature);
+        formData.append('folder', signData.folder);
+        formData.append('public_id', signData.publicId);
+
+        const uploadRes = await fetch(
+            `https://api.cloudinary.com/v1_1/${signData.cloudName}/image/upload`,
+            { method: 'POST', body: formData, signal }
+        );
+        if (!uploadRes.ok) throw new Error('Cloudinary upload failed');
+        const uploadData = await uploadRes.json();
+        if (signal.aborted) return;
+
+        // Step 4: Replace base64 with Cloudinary URL
+        const cloudUrl = uploadData.secure_url || uploadData.url;
+        imageShape.element.setAttribute('href', cloudUrl);
+        imageShape.element.setAttribute('data-href', cloudUrl);
+        imageShape.element.setAttribute('data-cloudinary-id', uploadData.public_id);
+
+        // Update file size tracking with actual compressed size
+        const oldSize = imageShape.element.__fileSize || 0;
+        const newSize = uploadData.bytes || compressed.compressedSize;
+        imageShape.element.__fileSize = newSize;
+        window.__roomImageBytesUsed = Math.max(0, (window.__roomImageBytesUsed || 0) - oldSize + newSize);
+
+        imageShape.uploadStatus = 'done';
+        console.log(`[ImageUpload] Uploaded to Cloudinary: ${cloudUrl} (${(newSize / 1024).toFixed(1)}KB)`);
+    } catch (err) {
+        if (signal.aborted) {
+            console.log('[ImageUpload] Upload aborted (image deleted)');
+            return;
+        }
+        console.warn('[ImageUpload] Upload failed:', err);
+        imageShape.uploadStatus = 'failed';
+    } finally {
+        imageShape.removeUploadIndicator();
+        imageShape.uploadAbortController = null;
+    }
 }
 
 document.getElementById("importImage")?.addEventListener('click', () => {
@@ -373,6 +460,11 @@ const handleMouseDownImage = async (e) => {
         currentShape = placedShape;
         currentShape.isSelected = true;
         placedShape.selectShape();
+
+        // Fire async upload pipeline (compress + upload to Cloudinary)
+        uploadImageToCloudinary(imageShape).catch(err => {
+            console.warn('[ImageTool] Upload pipeline error:', err);
+        });
 
     } catch (error) {
         console.error("Error placing image:", error);
@@ -1098,6 +1190,17 @@ function stopInteracting() {
 // Add delete functionality for images
 function deleteCurrentImage() {
     if (selectedImage) {
+        // Find the ImageShape wrapper
+        let imageShape = (typeof shapes !== 'undefined' && Array.isArray(shapes))
+            ? shapes.find(s => s.shapeName === 'image' && s.element === selectedImage)
+            : null;
+
+        // Abort any in-progress upload
+        if (imageShape?.uploadAbortController) {
+            imageShape.uploadAbortController.abort();
+            imageShape.removeUploadIndicator();
+        }
+
         // Release image bytes from room limit
         const freedBytes = selectedImage.__fileSize || 0;
         window.__roomImageBytesUsed = Math.max(0, (window.__roomImageBytesUsed || 0) - freedBytes);
@@ -1119,18 +1222,13 @@ function deleteCurrentImage() {
             }
         }
 
-        // Find the ImageShape wrapper
-        let imageShape = null;
-        if (typeof shapes !== 'undefined' && Array.isArray(shapes)) {
-            imageShape = shapes.find(shape => shape.shapeName === 'image' && shape.element === selectedImage);
-            if (imageShape) {
-                const idx = shapes.indexOf(imageShape);
-                if (idx !== -1) shapes.splice(idx, 1);
+        if (imageShape) {
+            const idx = shapes.indexOf(imageShape);
+            if (idx !== -1) shapes.splice(idx, 1);
 
-                // Remove the group (which contains the image)
-                if (imageShape.group && imageShape.group.parentNode) {
-                    imageShape.group.parentNode.removeChild(imageShape.group);
-                }
+            // Remove the group (which contains the image)
+            if (imageShape.group && imageShape.group.parentNode) {
+                imageShape.group.parentNode.removeChild(imageShape.group);
             }
         }
         

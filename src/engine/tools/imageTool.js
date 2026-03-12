@@ -1107,4 +1107,22 @@ document.addEventListener('keydown', (e) => {
     }
 });
 
+// Window bridge: allow React UI to trigger the file picker
+window.openImageFilePicker = function() {
+    isImageToolActive = true;
+    const fileInput = document.createElement('input');
+    fileInput.type = 'file';
+    fileInput.accept = 'image/*';
+    fileInput.style.display = 'none';
+    document.body.appendChild(fileInput);
+    fileInput.addEventListener('change', (event) => {
+        const file = event.target.files[0];
+        if (file) {
+            handleImageUpload(file);
+        }
+        document.body.removeChild(fileInput);
+    });
+    fileInput.click();
+};
+
 export { handleMouseDownImage, handleMouseMoveImage, handleMouseUpImage };

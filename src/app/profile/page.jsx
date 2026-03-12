@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { motion, useInView } from 'framer-motion'
 import Link from 'next/link'
 import useAuthStore from '@/store/useAuthStore'
@@ -192,6 +193,7 @@ const TIER_COLORS = {
 // ── Page ─────────────────────────────────────────────────────────────────────
 
 export default function ProfilePage() {
+  const router = useRouter()
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
   const user = useAuthStore((s) => s.user)
   const login = useAuthStore((s) => s.login)
@@ -263,19 +265,19 @@ export default function ProfilePage() {
           animate={headerInView ? { opacity: 1, y: 0 } : {}}
           transition={{ duration: 0.5 }}
         >
-          <Link
-            href="/"
-            className="inline-flex items-center gap-2 text-text-dim text-xs hover:text-text-secondary transition-colors mb-8"
+          <button
+            onClick={() => router.back()}
+            className="inline-flex items-center gap-2 text-text-dim text-xs hover:text-text-secondary transition-colors mb-8 bg-transparent border-none cursor-pointer"
           >
             <i className="bx bx-arrow-back text-sm" />
-            Back to home
-          </Link>
+            Back
+          </button>
 
           {/* Profile header */}
           <div className="flex items-start gap-4 mb-8">
             <div className="w-14 h-14 rounded-xl bg-accent-blue/20 flex items-center justify-center shrink-0">
               {isAuthenticated && user?.avatar ? (
-                <img src={user.avatar} alt="" className="w-14 h-14 rounded-xl" />
+                <img src={user.avatar} alt="" className="w-14 h-14 rounded-xl" referrerPolicy="no-referrer" />
               ) : (
                 <i className="bx bx-user text-2xl text-accent-blue" />
               )}

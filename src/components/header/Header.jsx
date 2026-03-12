@@ -40,7 +40,7 @@ function ProfileDropdown() {
         title={displayName}
       >
         {avatar ? (
-          <img src={avatar} alt="" className="w-6 h-6 rounded-md" />
+          <img src={avatar} alt="" className="w-6 h-6 rounded-md" referrerPolicy="no-referrer" />
         ) : (
           <div className="w-6 h-6 rounded-md bg-accent-blue/20 flex items-center justify-center">
             <i className="bx bx-user text-xs text-accent-blue" />
@@ -56,7 +56,7 @@ function ProfileDropdown() {
         <div className="absolute top-full right-0 mt-2 w-[220px] bg-surface/90 backdrop-blur-lg border border-border-light rounded-xl p-3 z-[1002] font-[lixFont]">
           <div className="flex items-center gap-2.5 mb-3">
             {avatar ? (
-              <img src={avatar} alt="" className="w-10 h-10 rounded-lg" />
+              <img src={avatar} alt="" className="w-10 h-10 rounded-lg" referrerPolicy="no-referrer" />
             ) : (
               <div className="w-10 h-10 rounded-lg bg-accent-blue/20 flex items-center justify-center">
                 <i className="bx bx-user text-lg text-accent-blue" />

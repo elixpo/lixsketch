@@ -612,27 +612,18 @@ function resizeImage(event) {
 
     const { x: globalX, y: globalY } = getSVGCoordsFromMouse(event);
 
-    // Get the current image center for rotation calculations
-    const imgX = parseFloat(selectedImage.getAttribute('x'));
-    const imgY = parseFloat(selectedImage.getAttribute('y'));
-    const imgWidth = parseFloat(selectedImage.getAttribute("width"));
-    const imgHeight = parseFloat(selectedImage.getAttribute('height'));
-    const centerX = imgX + imgWidth / 2;
-    const centerY = imgY + imgHeight / 2;
+    // Use ORIGINAL center for consistent inverse rotation (avoids drift)
+    const centerX = originalX + originalWidth / 2;
+    const centerY = originalY + originalHeight / 2;
 
     // Convert mouse position to local coordinates accounting for rotation
     let localX = globalX;
     let localY = globalY;
-    
+
     if (imageRotation !== 0) {
-        // Convert rotation to radians
         const rotationRad = (imageRotation * Math.PI) / 180;
-        
-        // Translate to origin (center of image)
         const translatedX = globalX - centerX;
         const translatedY = globalY - centerY;
-        
-        // Apply inverse rotation
         localX = translatedX * Math.cos(-rotationRad) - translatedY * Math.sin(-rotationRad) + centerX;
         localY = translatedX * Math.sin(-rotationRad) + translatedY * Math.cos(-rotationRad) + centerY;
     }
@@ -647,39 +638,42 @@ function resizeImage(event) {
     let newY = originalY;
     const aspectRatio = originalHeight / originalWidth;
 
+    // Track which corner is fixed (relative to original rect)
+    let fixedRelX, fixedRelY;
+
     switch (currentAnchor.style.cursor) {
         case "nw-resize":
             newWidth = originalWidth - dx;
             newHeight = originalHeight - dy;
             if (aspect_ratio_lock) {
                 newHeight = newWidth * aspectRatio;
-                // Adjust dy to maintain aspect ratio
                 dy = originalHeight - newHeight;
             }
             newX = originalX + (originalWidth - newWidth);
             newY = originalY + (originalHeight - newHeight);
+            fixedRelX = originalWidth; fixedRelY = originalHeight;
             break;
         case "ne-resize":
             newWidth = dx;
             newHeight = originalHeight - dy;
             if (aspect_ratio_lock) {
                 newHeight = newWidth * aspectRatio;
-                // Adjust dy to maintain aspect ratio
                 dy = originalHeight - newHeight;
             }
             newX = originalX;
             newY = originalY + (originalHeight - newHeight);
+            fixedRelX = 0; fixedRelY = originalHeight;
             break;
         case "sw-resize":
             newWidth = originalWidth - dx;
             newHeight = dy;
             if (aspect_ratio_lock) {
                 newHeight = newWidth * aspectRatio;
-                // Adjust dy to maintain aspect ratio
                 dy = newHeight;
             }
             newX = originalX + (originalWidth - newWidth);
             newY = originalY;
+            fixedRelX = originalWidth; fixedRelY = 0;
             break;
         case "se-resize":
             newWidth = dx;
@@ -689,12 +683,43 @@ function resizeImage(event) {
             }
             newX = originalX;
             newY = originalY;
+            fixedRelX = 0; fixedRelY = 0;
             break;
     }
 
     // Ensure minimum size
     newWidth = Math.max(minImageSize, newWidth);
     newHeight = Math.max(minImageSize, newHeight);
+
+    // Compensate for rotation center shift when rotated
+    if (imageRotation !== 0) {
+        const rad = (imageRotation * Math.PI) / 180;
+        const cosR = Math.cos(rad);
+        const sinR = Math.sin(rad);
+
+        // Compute rotated world position of the fixed corner in the original rect
+        const oldCX = originalX + originalWidth / 2;
+        const oldCY = originalY + originalHeight / 2;
+        const odx = (originalX + fixedRelX) - oldCX;
+        const ody = (originalY + fixedRelY) - oldCY;
+        const fixedWorldX = oldCX + odx * cosR - ody * sinR;
+        const fixedWorldY = oldCY + odx * sinR + ody * cosR;
+
+        // Determine where the fixed corner sits in the new rect (relative to new origin)
+        const fixedNewRelX = fixedRelX === 0 ? 0 : newWidth;
+        const fixedNewRelY = fixedRelY === 0 ? 0 : newHeight;
+
+        // Solve for new origin so the fixed corner stays in place
+        const ncx = newWidth / 2;
+        const ncy = newHeight / 2;
+        const ndx = fixedNewRelX - ncx;
+        const ndy = fixedNewRelY - ncy;
+        const rotX = ncx + ndx * cosR - ndy * sinR;
+        const rotY = ncy + ndx * sinR + ndy * cosR;
+
+        newX = fixedWorldX - rotX;
+        newY = fixedWorldY - rotY;
+    }
 
     // Apply the new dimensions and position
     selectedImage.setAttribute('width', newWidth);

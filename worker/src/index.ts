@@ -244,7 +244,7 @@ async function handleAuthMe(request: Request, env: Env): Promise<Response> {
       isAdmin: sessionData.isAdmin,
     },
     activeRooms: roomCount?.count || 0,
-    maxRooms: 10, // free plan
+    maxRooms: 1, // 1 room per user
   });
 }
 

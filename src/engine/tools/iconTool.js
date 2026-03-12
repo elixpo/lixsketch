@@ -1300,71 +1300,7 @@ function addIconClickListeners() {
     });
 }
 
-// Track active category filter
-let activeCategory = null; // { query: string } or null
-
-// Category filter dropdowns
-document.querySelectorAll('.choiceBoxes').forEach(box => {
-    box.addEventListener('click', async () => {
-        const wasSelected = box.classList.contains('selected');
-        document.querySelectorAll('.choiceBoxes').forEach(b => b.classList.remove('selected'));
-
-        if (!wasSelected) {
-            box.classList.add('selected');
-            const label = box.querySelector('p')?.textContent.trim() || '';
-            const queryMap = {
-                'General Icons': null,           // null = default feed
-                'Tech Icons': 'tech',
-                'Devops Icons': 'devops'
-            };
-            const catQuery = queryMap.hasOwnProperty(label) ? queryMap[label] : label.toLowerCase();
-            activeCategory = catQuery ? { query: catQuery } : null;
-
-            const searchText = iconSearchInput.value.trim();
-            if (searchText) {
-                // Combine category + search text
-                const combined = catQuery ? `${catQuery} ${searchText}` : searchText;
-                await searchAndRenderIcons(combined);
-            } else if (catQuery) {
-                await searchAndRenderIcons(catQuery);
-            } else {
-                await renderIconsFromServer();
-            }
-        } else {
-            // Deselected — fall back to search text or default feed
-            activeCategory = null;
-            const searchText = iconSearchInput.value.trim();
-            if (searchText) {
-                await searchAndRenderIcons(searchText);
-            } else {
-                await renderIconsFromServer();
-            }
-        }
-    });
-});
-
-iconSearchInput.addEventListener('input', async (e) => {
-    const query = e.target.value.trim();
-
-    if (searchTimeout) {
-        clearTimeout(searchTimeout);
-    }
-
-    searchTimeout = setTimeout(async () => {
-        if (query === '') {
-            // Respect active category when search is cleared
-            if (activeCategory) {
-                await searchAndRenderIcons(activeCategory.query);
-            } else {
-                await renderIconsFromServer();
-            }
-        } else {
-            // Combine with category if active
-            const combined = activeCategory ? `${activeCategory.query} ${query}` : query;
-            await searchAndRenderIcons(combined);
-        }
-    }, 300);
-});
+// Legacy category/search listeners disabled — React IconSidebar handles all icon UI
 
 function handleIconClick(event, filename) {
     event.stopPropagation();
@@ -1402,7 +1338,6 @@ window.prepareIconPlacement = function(svgContent) {
 window.__iconToolSelectIcon = selectIcon;
 window.__iconToolRemoveSelection = removeSelection;
 
-// Try to render legacy icons but don't fail if elements missing
-try { renderIconsFromServer(); } catch(e) { /* React handles icon UI */ }
+// Legacy icon rendering disabled — React IconSidebar handles icon UI
 
 export { handleMouseDownIcon, handleMouseMoveIcon, handleMouseUpIcon, startDrag, stopDrag}

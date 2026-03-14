@@ -15,14 +15,27 @@ export default function ImageSourcePicker() {
     setVisible(false)
   }, [])
 
+  const handleGenerateAI = useCallback(() => {
+    close()
+    setActiveTool('select')
+    toggleImageGenerateModal()
+  }, [close, setActiveTool, toggleImageGenerateModal])
+
+  const handleUpload = useCallback(() => {
+    close()
+    if (window.openImageFilePicker) {
+      window.openImageFilePicker()
+    }
+  }, [close])
+
   // Register the global bridge function
   useEffect(() => {
     window.__showImageSourcePicker = () => {
-      // Position next to the toolbar (left side, centered vertically near the image tool button)
-      const toolbarEl = document.querySelector('.fixed.left-2\\.5')
-      if (toolbarEl) {
-        const rect = toolbarEl.getBoundingClientRect()
-        setPosition({ x: rect.right + 8, y: rect.top + rect.height / 2 - 50 })
+      // Find the image tool button in the toolbar by its title
+      const imageBtn = document.querySelector('button[title="Image (9)"]')
+      if (imageBtn) {
+        const rect = imageBtn.getBoundingClientRect()
+        setPosition({ x: rect.right + 10, y: rect.top - 10 })
       } else {
         setPosition({ x: 65, y: window.innerHeight / 2 - 50 })
       }
@@ -34,56 +47,57 @@ export default function ImageSourcePicker() {
     }
   }, [])
 
-  // Close on outside click
+  // Close on outside click & keybinds
   useEffect(() => {
     if (!visible) return
+
     const handleClick = (e) => {
       if (ref.current && !ref.current.contains(e.target)) {
         close()
-        // Switch back to select if user dismisses without choosing
         setActiveTool('select')
       }
     }
-    const handleEsc = (e) => {
+
+    const handleKeyDown = (e) => {
       if (e.key === 'Escape') {
         close()
         setActiveTool('select')
       }
+      // G = Generate with AI
+      if (e.key === 'g' || e.key === 'G') {
+        e.preventDefault()
+        e.stopPropagation()
+        handleGenerateAI()
+      }
+      // U = Upload from device
+      if (e.key === 'u' || e.key === 'U') {
+        e.preventDefault()
+        e.stopPropagation()
+        handleUpload()
+      }
     }
+
     // Delay to avoid catching the click that opened it
     const timer = setTimeout(() => {
       document.addEventListener('mousedown', handleClick)
-      document.addEventListener('keydown', handleEsc)
+      document.addEventListener('keydown', handleKeyDown, true)
     }, 50)
     return () => {
       clearTimeout(timer)
       document.removeEventListener('mousedown', handleClick)
-      document.removeEventListener('keydown', handleEsc)
+      document.removeEventListener('keydown', handleKeyDown, true)
     }
-  }, [visible, close, setActiveTool])
-
-  const handleGenerateAI = () => {
-    close()
-    setActiveTool('select')
-    toggleImageGenerateModal()
-  }
-
-  const handleUpload = () => {
-    close()
-    if (window.openImageFilePicker) {
-      window.openImageFilePicker()
-    }
-  }
+  }, [visible, close, setActiveTool, handleGenerateAI, handleUpload])
 
   if (!visible) return null
 
   return (
     <div
       ref={ref}
-      className="fixed z-[1100] font-[lixFont] animate-in fade-in slide-in-from-left-2 duration-150"
+      className="fixed z-[1100] font-[lixFont]"
       style={{ left: position.x, top: position.y }}
     >
-      <div className="bg-surface-card border border-border-light rounded-xl p-1.5 shadow-2xl shadow-black/40 flex flex-col gap-1 min-w-[180px]">
+      <div className="bg-surface-card border border-border-light rounded-xl p-1.5 shadow-2xl shadow-black/40 flex flex-col gap-1 min-w-[200px]">
         <button
           onClick={handleGenerateAI}
           className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-text-muted hover:text-accent-blue hover:bg-surface-hover transition-all group"
@@ -94,10 +108,11 @@ export default function ImageSourcePicker() {
               <path d="M18 14l1 3 3 1-3 1-1 3-1-3-3-1 3-1 1-3z" />
             </svg>
           </div>
-          <div className="text-left">
+          <div className="flex-1 text-left">
             <div className="text-sm font-medium">Generate with AI</div>
             <div className="text-[10px] text-text-dim">Create from a prompt</div>
           </div>
+          <kbd className="text-[10px] text-text-dim bg-surface-dark px-1.5 py-0.5 rounded">G</kbd>
         </button>
 
         <div className="h-px bg-white/[0.06] mx-2" />
@@ -109,10 +124,11 @@ export default function ImageSourcePicker() {
           <div className="w-8 h-8 rounded-lg bg-surface-hover flex items-center justify-center group-hover:bg-surface-active transition-all">
             <i className="bx bx-upload text-lg" />
           </div>
-          <div className="text-left">
+          <div className="flex-1 text-left">
             <div className="text-sm font-medium">Upload from device</div>
             <div className="text-[10px] text-text-dim">PNG, JPG, SVG, WebP</div>
           </div>
+          <kbd className="text-[10px] text-text-dim bg-surface-dark px-1.5 py-0.5 rounded">U</kbd>
         </button>
       </div>
     </div>

@@ -54,6 +54,13 @@ class Rectangle {
         this._hitArea = null;
         this._labelBg = null;
 
+        // Shading / gradient support for research paper style diagrams
+        this.shadeColor = options.shadeColor || null;
+        this.shadeOpacity = options.shadeOpacity !== undefined ? options.shadeOpacity : 0.15;
+        this.shadeDirection = options.shadeDirection || 'bottom'; // 'top' | 'bottom' | 'left' | 'right'
+        this._shadeRect = null;
+        this._shadeGradient = null;
+
          if (!this.group.parentNode) {
              svg.appendChild(this.group);
          }
@@ -71,7 +78,7 @@ class Rectangle {
         const preserveSet = this._skipAnchors ? new Set([...this.anchors, this.selectionOutline, this.rotationAnchor].filter(Boolean)) : null;
         for (let i = 0; i < this.group.children.length; i++) {
             const child = this.group.children[i];
-            if (child !== this.element && child !== this.labelElement && child !== this._hitArea && child !== this._labelBg) {
+            if (child !== this.element && child !== this.labelElement && child !== this._hitArea && child !== this._labelBg && child !== this._shadeRect) {
                 if (preserveSet && preserveSet.has(child)) continue;
                 childrenToRemove.push(child);
             }
@@ -111,6 +118,9 @@ class Rectangle {
         this._hitArea.setAttribute('width', this.width);
         this._hitArea.setAttribute('height', this.height);
 
+        // Shading / gradient overlay
+        this._updateShade();
+
         // Update embedded label
         this._updateLabelElement();
 
@@ -128,6 +138,80 @@ class Rectangle {
         if (!this.group.parentNode) {
             this.updateAttachedArrows();
             svg.appendChild(this.group);
+        }
+    }
+
+    _updateShade() {
+        if (!this.shadeColor) {
+            if (this._shadeRect && this._shadeRect.parentNode === this.group) {
+                this.group.removeChild(this._shadeRect);
+                this._shadeRect = null;
+            }
+            if (this._shadeGradient && this._shadeGradient.parentNode) {
+                this._shadeGradient.parentNode.removeChild(this._shadeGradient);
+                this._shadeGradient = null;
+            }
+            return;
+        }
+
+        // Create or update gradient in SVG defs
+        let defs = svg.querySelector('defs');
+        if (!defs) {
+            defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+            svg.appendChild(defs);
+        }
+
+        const gradId = `shade-${this.shapeID}`;
+        if (!this._shadeGradient) {
+            this._shadeGradient = document.createElementNS('http://www.w3.org/2000/svg', 'linearGradient');
+            this._shadeGradient.setAttribute('id', gradId);
+            defs.appendChild(this._shadeGradient);
+        }
+
+        // Direction mapping
+        const dirs = {
+            top:    { x1: '0%', y1: '0%', x2: '0%', y2: '100%' },
+            bottom: { x1: '0%', y1: '100%', x2: '0%', y2: '0%' },
+            left:   { x1: '0%', y1: '0%', x2: '100%', y2: '0%' },
+            right:  { x1: '100%', y1: '0%', x2: '0%', y2: '0%' },
+        };
+        const d = dirs[this.shadeDirection] || dirs.bottom;
+        this._shadeGradient.setAttribute('x1', d.x1);
+        this._shadeGradient.setAttribute('y1', d.y1);
+        this._shadeGradient.setAttribute('x2', d.x2);
+        this._shadeGradient.setAttribute('y2', d.y2);
+
+        // Rebuild stops
+        while (this._shadeGradient.firstChild) this._shadeGradient.removeChild(this._shadeGradient.firstChild);
+        const stop1 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
+        stop1.setAttribute('offset', '0%');
+        stop1.setAttribute('stop-color', this.shadeColor);
+        stop1.setAttribute('stop-opacity', this.shadeOpacity);
+        const stop2 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
+        stop2.setAttribute('offset', '100%');
+        stop2.setAttribute('stop-color', this.shadeColor);
+        stop2.setAttribute('stop-opacity', '0');
+        this._shadeGradient.appendChild(stop1);
+        this._shadeGradient.appendChild(stop2);
+
+        // Create or update shade rect
+        if (!this._shadeRect) {
+            this._shadeRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            this._shadeRect.setAttribute('pointer-events', 'none');
+        }
+        this._shadeRect.setAttribute('x', 0);
+        this._shadeRect.setAttribute('y', 0);
+        this._shadeRect.setAttribute('width', this.width);
+        this._shadeRect.setAttribute('height', this.height);
+        this._shadeRect.setAttribute('fill', `url(#${gradId})`);
+        this._shadeRect.setAttribute('rx', 2);
+
+        // Insert after rough element
+        if (this._shadeRect.parentNode === this.group) this.group.removeChild(this._shadeRect);
+        if (this.element && this.element.nextSibling) {
+            this.group.insertBefore(this._shadeRect, this.element.nextSibling);
+        } else {
+            this.group.appendChild(this._shadeRect);
         }
     }
 

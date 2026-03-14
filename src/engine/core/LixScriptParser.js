@@ -483,10 +483,12 @@ function createFrame(def, errors) {
     const h = def.height || 400
 
     const frame = new Frame(x, y, w, h, {
-      frameName: def.props.name || def.id,
+      frameName: def.props.frameName || def.props.name || def.id,
       stroke: def.props.stroke || '#555',
       strokeWidth: def.props.strokeWidth || 1,
       fill: def.props.fill || 'transparent',
+      fillStyle: def.props.fillStyle || 'transparent',
+      fillColor: def.props.fillColor || '#1e1e28',
       opacity: def.props.opacity || 1,
       rotation: def.props.rotation || 0,
     })
@@ -497,6 +499,11 @@ function createFrame(def, errors) {
     // Tag as scripted
     frame._frameType = 'lixscript'
     frame._lixscriptSource = true
+
+    // Set image from URL if provided
+    if (def.props.imageURL && typeof frame.setImageFromURL === 'function') {
+      frame.setImageFromURL(def.props.imageURL, def.props.imageFit || 'cover')
+    }
 
     return frame
   } catch (err) {
@@ -545,6 +552,9 @@ function createRect(def, errors) {
     fillStyle: def.props.fillStyle || 'none',
     roughness: def.props.roughness !== undefined ? def.props.roughness : 1.5,
     strokeDasharray: resolveStrokeStyle(def.props.style),
+    shadeColor: def.props.shadeColor || null,
+    shadeOpacity: def.props.shadeOpacity !== undefined ? parseFloat(def.props.shadeOpacity) : 0.15,
+    shadeDirection: def.props.shadeDirection || 'bottom',
   })
 
   if (def.props.rotation) rect.rotation = def.props.rotation
@@ -584,6 +594,9 @@ function createCircle(def, errors) {
     fillStyle: def.props.fillStyle || 'none',
     roughness: def.props.roughness !== undefined ? def.props.roughness : 1.5,
     strokeDasharray: resolveStrokeStyle(def.props.style),
+    shadeColor: def.props.shadeColor || null,
+    shadeOpacity: def.props.shadeOpacity !== undefined ? parseFloat(def.props.shadeOpacity) : 0.15,
+    shadeDirection: def.props.shadeDirection || 'bottom',
   })
 
   if (def.props.rotation) circle.rotation = def.props.rotation

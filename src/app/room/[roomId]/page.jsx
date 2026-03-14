@@ -22,6 +22,8 @@ import FrameSidebar from '@/components/sidebars/FrameSidebar'
 import IconSidebar from '@/components/sidebars/IconSidebar'
 import SVGCanvas from '@/components/canvas/SVGCanvas'
 import MultiSelectActions from '@/components/canvas/MultiSelectActions'
+import ImageSourcePicker from '@/components/canvas/ImageSourcePicker'
+import ImageGenerateModal from '@/components/modals/ImageGenerateModal'
 import useKeyboardShortcuts from '@/hooks/useKeyboardShortcuts'
 import useGuestProfile from '@/hooks/useGuestProfile'
 import useAuth from '@/hooks/useAuth'
@@ -63,6 +65,8 @@ export default function RoomPage() {
       <CommandPalette />
       <HelpModal />
       <ExportImageModal />
+      <ImageGenerateModal />
+      <ImageSourcePicker />
     </div>
   )
 }

@@ -52,6 +52,7 @@ class Rectangle {
         this.labelFontSize = options.labelFontSize || 14;
         this._isEditingLabel = false;
         this._hitArea = null;
+        this._labelBg = null;
 
          if (!this.group.parentNode) {
              svg.appendChild(this.group);
@@ -70,7 +71,7 @@ class Rectangle {
         const preserveSet = this._skipAnchors ? new Set([...this.anchors, this.selectionOutline, this.rotationAnchor].filter(Boolean)) : null;
         for (let i = 0; i < this.group.children.length; i++) {
             const child = this.group.children[i];
-            if (child !== this.element && child !== this.labelElement && child !== this._hitArea) {
+            if (child !== this.element && child !== this.labelElement && child !== this._hitArea && child !== this._labelBg) {
                 if (preserveSet && preserveSet.has(child)) continue;
                 childrenToRemove.push(child);
             }
@@ -137,6 +138,10 @@ class Rectangle {
                 this.group.removeChild(this.labelElement);
                 this.labelElement = null;
             }
+            if (this._labelBg && this._labelBg.parentNode === this.group) {
+                this.group.removeChild(this._labelBg);
+                this._labelBg = null;
+            }
             return;
         }
 
@@ -156,15 +161,29 @@ class Rectangle {
         this.labelElement.setAttribute('font-family', 'lixFont, sans-serif');
         this.labelElement.textContent = this.label;
 
-        // Ensure label is after the rough element (on top)
-        if (this.labelElement.parentNode !== this.group) {
-            // Insert after element but before any anchors
-            if (this.element && this.element.nextSibling) {
-                this.group.insertBefore(this.labelElement, this.element.nextSibling);
-            } else {
-                this.group.appendChild(this.labelElement);
-            }
+        // Background padding rect behind text (like arrows have)
+        const canvasBg = window.getComputedStyle(svg).backgroundColor || '#000';
+        if (!this._labelBg) {
+            this._labelBg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            this._labelBg.setAttribute('pointer-events', 'none');
         }
+        this._labelBg.setAttribute('fill', canvasBg);
+        const hPadding = 6;
+        const vPadding = 2;
+        const charWidth = this.labelFontSize * 0.6;
+        const bgW = this.label.length * charWidth + hPadding * 2;
+        const bgH = this.labelFontSize + vPadding * 2;
+        this._labelBg.setAttribute('x', this.width / 2 - bgW / 2);
+        this._labelBg.setAttribute('y', this.height / 2 - bgH / 2);
+        this._labelBg.setAttribute('width', bgW);
+        this._labelBg.setAttribute('height', bgH);
+        this._labelBg.setAttribute('rx', 3);
+
+        // Re-append bg then text on top
+        if (this._labelBg.parentNode === this.group) this.group.removeChild(this._labelBg);
+        if (this.labelElement.parentNode === this.group) this.group.removeChild(this.labelElement);
+        this.group.appendChild(this._labelBg);
+        this.group.appendChild(this.labelElement);
     }
 
     _setupLabelDblClick() {

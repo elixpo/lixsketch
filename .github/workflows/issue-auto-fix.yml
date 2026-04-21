@@ -278,25 +278,12 @@ jobs:
           show_full_output: true
           github_token: ${{ secrets.CI_AGENT_TOKEN }}
           branch_prefix: "elixpo/"
-          # No allowed_tools cap — every Claude Code tool is available
-          # (Read / Edit / Write / MultiEdit / Glob / Grep / Bash / BashOutput /
-          # TodoWrite / Task / WebFetch / WebSearch / NotebookEdit / Skill / ...).
-          # Task routes to CCR 'background' = qwen-coder, so code-heavy
-          # multi-file work can be delegated to the coder-tuned model.
           prompt: ${{ steps.build_prompt.outputs.prompt }}
-          # Required for CI — without this, claude-code's default permission
-          # mode prompts for approval on Bash/Edit/Write and the agent stalls
-          # with `"This command requires approval"`. Safe here: ephemeral
-          # sandbox, branch-protected main, every change lands through a PR.
           claude_args: |
             --permission-mode bypassPermissions
           additional_permissions: |
             actions: read
 
-      # ─────────────────────────────────────────────────────────────────
-      # Post-strip the "Claude finished …" / "Generated with Claude Code"
-      # footer the runtime appends to its tracking comment.
-      # ─────────────────────────────────────────────────────────────────
       - name: Strip Claude branding from tracking comment
         if: always() && steps.whitelist.outputs.authorized == 'true'
         env:
@@ -326,11 +313,6 @@ jobs:
             echo "Comment $COMMENT_ID already clean."
           fi
 
-      # ─────────────────────────────────────────────────────────────────
-      # Post-guard: ensure a PR exists for the branch the bot created,
-      # linked to the issue via "Fixes #N" so it appears in the
-      # Development tab.
-      # ─────────────────────────────────────────────────────────────────
       - name: Ensure PR exists for any new elixpo/* branch
         if: steps.whitelist.outputs.authorized == 'true'
         env:
@@ -394,10 +376,6 @@ jobs:
           gh issue comment "$ISSUE_NUMBER" --repo "$REPO" \
             --body "Opened #$PR_NUM with the changes."
 
-      # ─────────────────────────────────────────────────────────────────
-      # Failure fallback: post a blockquote on the issue if anything in
-      # this workflow errored (claude-code-action, PR scaffold, etc.)
-      # ─────────────────────────────────────────────────────────────────
       - name: Post failure notice
         if: failure() && steps.whitelist.outputs.authorized == 'true'
         env:

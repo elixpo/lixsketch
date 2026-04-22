@@ -3,6 +3,7 @@
 import useSketchStore, { TOOLS } from '@/store/useSketchStore'
 import ShapeSidebar, { ToolbarButton, Divider, LayerControls } from './ShapeSidebar'
 import { useState, useCallback } from 'react'
+import { useTranslation } from '@/hooks/useTranslation'
 
 const STROKE_COLORS = ['#fff', '#FF8383', '#3A994C', '#56A2E8', '#FFD700', '#FF69B4', '#A855F7']
 
@@ -23,6 +24,7 @@ function ColorGrid({ colors, selected, onSelect }) {
 }
 
 export default function PaintbrushSidebar() {
+  const { t } = useTranslation()
   const activeTool = useSketchStore((s) => s.activeTool)
   const selectedShapeSidebar = useSketchStore((s) => s.selectedShapeSidebar)
   const [strokeColor, setStrokeColor] = useState('#fff')
@@ -40,7 +42,7 @@ export default function PaintbrushSidebar() {
 
   return (
     <ShapeSidebar visible={activeTool === TOOLS.FREEHAND || selectedShapeSidebar === 'paintbrush'}>
-      <ToolbarButton tooltip="Stroke color"
+      <ToolbarButton tooltip={t('sidebar.strokeColor')}
         preview={<span className="w-4 h-4 rounded-md border border-white/20" style={{ backgroundColor: strokeColor }} />}
       >
         <p className="text-xs text-text-muted uppercase tracking-wider mb-2">Stroke</p>
@@ -49,7 +51,7 @@ export default function PaintbrushSidebar() {
 
       <Divider />
 
-      <ToolbarButton icon="bxs-edit-alt" tooltip="Stroke width">
+      <ToolbarButton icon="bxs-edit-alt" tooltip={t('sidebar.strokeWidth')}>
         <p className="text-xs text-text-muted uppercase tracking-wider mb-2">Width</p>
         <div className="flex items-center gap-1">
           {[1, 2, 4, 7].map((w) => (
@@ -102,7 +104,7 @@ export default function PaintbrushSidebar() {
 
       <Divider />
 
-      <ToolbarButton icon="bxs-sun" tooltip="Opacity">
+      <ToolbarButton icon="bxs-sun" tooltip={t('sidebar.opacity')}>
         <p className="text-xs text-text-muted uppercase tracking-wider mb-2">Opacity {Math.round(opacity * 100)}%</p>
         <input
           type="range" min="0" max="1" step="0.05" value={opacity}

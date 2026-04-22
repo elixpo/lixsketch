@@ -4,6 +4,7 @@ import useSketchStore, { TOOLS } from '@/store/useSketchStore'
 import useUIStore from '@/store/useUIStore'
 import ShapeSidebar, { ToolbarButton, Divider, LayerControls } from './ShapeSidebar'
 import { useState, useCallback, useEffect } from 'react'
+import { useTranslation } from '@/hooks/useTranslation'
 import { compressImage } from '@/utils/imageCompressor'
 
 const FILL_STYLES = [
@@ -22,6 +23,7 @@ const FILL_COLORS = [
 ]
 
 export default function FrameSidebar() {
+  const { t } = useTranslation()
   const activeTool = useSketchStore((s) => s.activeTool)
   const selectedShapeSidebar = useSketchStore((s) => s.selectedShapeSidebar)
   const toggleAIModal = useUIStore((s) => s.toggleAIModal)

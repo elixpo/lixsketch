@@ -9,11 +9,11 @@ const STROKE_COLORS = ['#fff', '#FF8383', '#3A994C', '#56A2E8', '#FFD700', '#FF6
 const BG_COLORS = ['transparent', '#f0f0f0', '#ffcccb', '#90ee90', '#add8e6', '#FFE4B5', '#DDA0DD', '#2d2d2d']
 
 const FILLS = [
-  { value: 'hachure', label: 'Hachure' },
-  { value: 'solid', label: 'Solid' },
-  { value: 'dots', label: 'Dots' },
-  { value: 'cross-hatch', label: 'Cross' },
-  { value: 'transparent', label: 'None' },
+  { value: 'hachure', label: 'sidebar.fill.hachure' },
+  { value: 'solid', label: 'sidebar.fill.solid' },
+  { value: 'dots', label: 'sidebar.fill.dots' },
+  { value: 'cross-hatch', label: 'sidebar.fill.cross' },
+  { value: 'transparent', label: 'sidebar.fill.none' },
 ]
 
 function ColorGrid({ colors, selected, onSelect }) {
@@ -64,7 +64,7 @@ export default function CircleSidebar() {
         tooltip={t('sidebar.strokeColor')}
         preview={<span className="w-4 h-4 rounded-md border border-white/20" style={{ backgroundColor: strokeColor }} />}
       >
-        <p className="text-xs text-text-muted uppercase tracking-wider mb-2">Stroke</p>
+        <p className="text-xs text-text-muted uppercase tracking-wider mb-2">{t('sidebar.sectionHeader.stroke')}</p>
         <ColorGrid colors={STROKE_COLORS} selected={strokeColor} onSelect={updateStroke} />
       </ToolbarButton>
 
@@ -78,14 +78,14 @@ export default function CircleSidebar() {
           </span>
         }
       >
-        <p className="text-xs text-text-muted uppercase tracking-wider mb-2">Background</p>
+        <p className="text-xs text-text-muted uppercase tracking-wider mb-2">{t('sidebar.sectionHeader.background')}</p>
         <ColorGrid colors={BG_COLORS} selected={bgColor} onSelect={updateBg} />
       </ToolbarButton>
 
       <Divider />
 
       <ToolbarButton icon="bxs-edit-alt" tooltip={t('sidebar.strokeWidth')}>
-        <p className="text-xs text-text-muted uppercase tracking-wider mb-2">Width</p>
+        <p className="text-xs text-text-muted uppercase tracking-wider mb-2">{t('sidebar.sectionHeader.width')}</p>
         <div className="flex items-center gap-1">
           {[1, 2, 4, 7].map((w) => (
             <button key={w} onClick={() => updateThickness(w)}
@@ -115,14 +115,14 @@ export default function CircleSidebar() {
       <Divider />
 
       <ToolbarButton icon="bxs-brush" tooltip="Fill style">
-        <p className="text-xs text-text-muted uppercase tracking-wider mb-2">Fill</p>
+        <p className="text-xs text-text-muted uppercase tracking-wider mb-2">{t('sidebar.sectionHeader.fill')}</p>
         <div className="flex flex-col gap-0.5">
           {FILLS.map((f) => (
             <button key={f.value} onClick={() => updateFill(f.value)}
               className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs transition-all duration-100 ${fillStyle === f.value ? 'bg-[#5B57D1] text-white' : 'text-text-secondary hover:bg-white/[0.06]'}`}
             >
               <span className="w-1.5 h-1.5 rounded-full bg-current" />
-              {f.label}
+              {t(f.label)}
             </button>
           ))}
         </div>

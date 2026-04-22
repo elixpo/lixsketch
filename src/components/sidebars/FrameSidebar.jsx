@@ -95,7 +95,7 @@ export default function FrameSidebar() {
   return (
     <ShapeSidebar visible={activeTool === TOOLS.FRAME || selectedShapeSidebar === 'frame'}>
       <ToolbarButton icon="bxs-rename" tooltip="Frame name">
-        <p className="text-xs text-text-muted uppercase tracking-wider mb-2">Name</p>
+        <p className="text-xs text-text-muted uppercase tracking-wider mb-2">{t('sidebar.sectionHeader.name')}</p>
         <input
           type="text"
           value={frameName}
@@ -109,7 +109,7 @@ export default function FrameSidebar() {
 
       {/* Fill style */}
       <ToolbarButton icon="bxs-palette" tooltip="Fill style">
-        <p className="text-xs text-text-muted uppercase tracking-wider mb-2">Background</p>
+        <p className="text-xs text-text-muted uppercase tracking-wider mb-2">{t('sidebar.sectionHeader.background')}</p>
         <div className="flex gap-1 mb-2.5">
           {FILL_STYLES.map((s) => (
             <button
@@ -131,7 +131,7 @@ export default function FrameSidebar() {
         {/* Color picker — only show for solid/grid */}
         {fillStyle !== 'transparent' && (
           <>
-            <p className="text-xs text-text-muted uppercase tracking-wider mb-1.5">Color</p>
+            <p className="text-xs text-text-muted uppercase tracking-wider mb-1.5">{t('sidebar.sectionHeader.color')}</p>
             <div className="flex items-center gap-1.5">
               {FILL_COLORS.map((c) => (
                 <button
@@ -161,7 +161,7 @@ export default function FrameSidebar() {
       <Divider />
 
       <ToolbarButton icon="bx-image-alt" tooltip="Background image">
-        <p className="text-xs text-text-muted uppercase tracking-wider mb-2">Background Image</p>
+        <p className="text-xs text-text-muted uppercase tracking-wider mb-2">{t('sidebar.sectionHeader.backgroundImage')}</p>
         <div className="flex gap-1.5 mb-2">
           <button
             onClick={() => {
@@ -212,7 +212,7 @@ export default function FrameSidebar() {
           if (!shape?.shapeName === 'frame' || !shape?._frameImageURL) return null
           return (
             <>
-              <p className="text-xs text-text-muted uppercase tracking-wider mb-1.5">Fit</p>
+              <p className="text-xs text-text-muted uppercase tracking-wider mb-1.5">{t('sidebar.sectionHeader.fit')}</p>
               <div className="flex gap-1">
                 {[
                   { id: 'cover', label: 'Cover' },

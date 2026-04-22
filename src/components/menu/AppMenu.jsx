@@ -8,11 +8,11 @@ import { triggerCloudSync } from '@/hooks/useAutoSave'
 import { useTranslation } from '@/hooks/useTranslation'
 
 const CANVAS_BACKGROUNDS = [
-  { color: '#000', label: 'Black' },
-  { color: '#161718', label: 'Dark Gray' },
-  { color: '#13171C', label: 'Blue Black' },
-  { color: '#181605', label: 'Dark Yellow' },
-  { color: '#1B1615', label: 'Dark Brown' },
+  { color: '#000', label: 'menu.canvasBg.black' },
+  { color: '#161718', label: 'menu.canvasBg.darkGray' },
+  { color: '#13171C', label: 'menu.canvasBg.blueBlack' },
+  { color: '#181605', label: 'menu.canvasBg.darkYellow' },
+  { color: '#1B1615', label: 'menu.canvasBg.darkBrown' },
 ]
 
 export default function AppMenu() {
@@ -397,7 +397,7 @@ export default function AppMenu() {
               <button
                 key={bg.color}
                 onClick={() => setCanvasBackground(bg.color)}
-                title={bg.label}
+                title={t(bg.label)}
                 className={`w-7 h-7 rounded-full border-2 cursor-pointer transition-all duration-200 ${
                   canvasBackground === bg.color
                     ? 'border-accent scale-110'

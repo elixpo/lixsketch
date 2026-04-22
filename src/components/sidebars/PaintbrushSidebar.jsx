@@ -45,14 +45,14 @@ export default function PaintbrushSidebar() {
       <ToolbarButton tooltip={t('sidebar.strokeColor')}
         preview={<span className="w-4 h-4 rounded-md border border-white/20" style={{ backgroundColor: strokeColor }} />}
       >
-        <p className="text-xs text-text-muted uppercase tracking-wider mb-2">Stroke</p>
+        <p className="text-xs text-text-muted uppercase tracking-wider mb-2">{t('sidebar.sectionHeader.stroke')}</p>
         <ColorGrid colors={STROKE_COLORS} selected={strokeColor} onSelect={updateStroke} />
       </ToolbarButton>
 
       <Divider />
 
       <ToolbarButton icon="bxs-edit-alt" tooltip={t('sidebar.strokeWidth')}>
-        <p className="text-xs text-text-muted uppercase tracking-wider mb-2">Width</p>
+        <p className="text-xs text-text-muted uppercase tracking-wider mb-2">{t('sidebar.sectionHeader.width')}</p>
         <div className="flex items-center gap-1">
           {[1, 2, 4, 7].map((w) => (
             <button key={w} onClick={() => updateThickness(w)}
@@ -67,7 +67,7 @@ export default function PaintbrushSidebar() {
       <Divider />
 
       <ToolbarButton icon="bxs-pen" tooltip="Taper">
-        <p className="text-xs text-text-muted uppercase tracking-wider mb-2">Taper</p>
+        <p className="text-xs text-text-muted uppercase tracking-wider mb-2">{t('sidebar.sectionHeader.taper')}</p>
         <div className="flex flex-col gap-0.5">
           {[
             { v: 'uniform', i: 'bxs-minus-circle', l: 'Uniform' },
@@ -86,7 +86,7 @@ export default function PaintbrushSidebar() {
       <Divider />
 
       <ToolbarButton icon="bxs-shape-polygon" tooltip="Roughness">
-        <p className="text-xs text-text-muted uppercase tracking-wider mb-2">Roughness</p>
+        <p className="text-xs text-text-muted uppercase tracking-wider mb-2">{t('sidebar.sectionHeader.roughness')}</p>
         <div className="flex flex-col gap-0.5">
           {[
             { v: 'smooth', i: 'bxs-droplet', l: 'Smooth' },

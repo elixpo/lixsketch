@@ -41,14 +41,14 @@ export default function LineSidebar() {
       <ToolbarButton tooltip={t('sidebar.strokeColor')}
         preview={<span className="w-4 h-4 rounded-md border border-white/20" style={{ backgroundColor: strokeColor }} />}
       >
-        <p className="text-xs text-text-muted uppercase tracking-wider mb-2">Stroke</p>
+        <p className="text-xs text-text-muted uppercase tracking-wider mb-2">{t('sidebar.sectionHeader.stroke')}</p>
         <ColorGrid colors={STROKE_COLORS} selected={strokeColor} onSelect={updateStroke} />
       </ToolbarButton>
 
       <Divider />
 
       <ToolbarButton icon="bxs-edit-alt" tooltip={t('sidebar.strokeWidth')}>
-        <p className="text-xs text-text-muted uppercase tracking-wider mb-2">Width</p>
+        <p className="text-xs text-text-muted uppercase tracking-wider mb-2">{t('sidebar.sectionHeader.width')}</p>
         <div className="flex items-center gap-1">
           {[1, 2, 4, 7].map((w) => (
             <button key={w} onClick={() => updateThickness(w)}
@@ -78,7 +78,7 @@ export default function LineSidebar() {
       <Divider />
 
       <ToolbarButton icon="bxs-shape-polygon" tooltip="Sloppiness">
-        <p className="text-xs text-text-muted uppercase tracking-wider mb-2">Sloppiness</p>
+        <p className="text-xs text-text-muted uppercase tracking-wider mb-2">{t('sidebar.sectionHeader.sloppiness')}</p>
         <div className="flex items-center gap-1">
           {[{ v: 0, l: '0' }, { v: 2, l: '2' }, { v: 4, l: '4' }].map((s) => (
             <button key={s.v} onClick={() => updateSloppiness(s.v)}
@@ -91,7 +91,7 @@ export default function LineSidebar() {
       <Divider />
 
       <ToolbarButton icon="bxs-landscape" tooltip="Edge">
-        <p className="text-xs text-text-muted uppercase tracking-wider mb-2">Edge</p>
+        <p className="text-xs text-text-muted uppercase tracking-wider mb-2">{t('sidebar.sectionHeader.edge')}</p>
         <div className="flex flex-col gap-0.5">
           {[{ v: 'smooth', i: 'bxs-droplet', l: 'Smooth' }, { v: 'rough', i: 'bxs-bolt', l: 'Rough' }].map((e) => (
             <button key={e.v} onClick={() => updateEdge(e.v)}

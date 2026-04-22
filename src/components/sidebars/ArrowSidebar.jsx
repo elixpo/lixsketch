@@ -83,7 +83,7 @@ export default function ArrowSidebar() {
     <ShapeSidebar visible={activeTool === TOOLS.ARROW || selectedShapeSidebar === 'arrow'}>
       {/* Head style */}
       <ToolbarButton icon="bxs-right-arrow" tooltip="Arrow head">
-        <p className="text-xs text-text-secondary uppercase tracking-wider mb-2">Head</p>
+        <p className="text-xs text-text-secondary uppercase tracking-wider mb-2">{t('sidebar.sectionHeader.head')}</p>
         <div className="flex items-center gap-1">
           {HEAD_STYLES.map((h) => (
             <button key={h.value} onClick={() => updateHead(h.value)}
@@ -100,14 +100,14 @@ export default function ArrowSidebar() {
       <ToolbarButton tooltip={t('sidebar.strokeColor')}
         preview={<span className="w-4 h-4 rounded-md border border-white/20" style={{ backgroundColor: strokeColor }} />}
       >
-        <p className="text-xs text-text-secondary uppercase tracking-wider mb-2">Stroke</p>
+        <p className="text-xs text-text-secondary uppercase tracking-wider mb-2">{t('sidebar.sectionHeader.stroke')}</p>
         <ColorGrid colors={STROKE_COLORS} selected={strokeColor} onSelect={updateStroke} />
       </ToolbarButton>
 
       <Divider />
 
       <ToolbarButton icon="bxs-edit-alt" tooltip={t('sidebar.strokeWidth')}>
-        <p className="text-xs text-text-secondary uppercase tracking-wider mb-2">Width</p>
+        <p className="text-xs text-text-secondary uppercase tracking-wider mb-2">{t('sidebar.sectionHeader.width')}</p>
         <div className="flex items-center gap-1">
           {[1, 2, 4, 7].map((w) => (
             <button key={w} onClick={() => updateThickness(w)}
@@ -138,7 +138,7 @@ export default function ArrowSidebar() {
 
       {/* Arrow type */}
       <ToolbarButton icon="bxs-share-alt" tooltip="Arrow type">
-        <p className="text-xs text-text-secondary uppercase tracking-wider mb-2">Type</p>
+        <p className="text-xs text-text-secondary uppercase tracking-wider mb-2">{t('sidebar.sectionHeader.type')}</p>
         <div className="flex flex-col gap-0.5">
           {[
             { v: 'straight', i: 'bxs-right-arrow-alt', l: 'Straight' },

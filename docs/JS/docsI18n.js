@@ -1,11 +1,11 @@
 let translations = {};
 let currentLang = localStorage.getItem('lix_ui_prefs') 
-  ? JSON.parse(localStorage.getItem('lix_ui_prefs')).state?.language || 'en'
+  ? JSON.parse(localStorage.getItem('lix_ui_prefs')).language || 'en'
   : 'en';
 
 async function loadTranslations(lang) {
   try {
-    const response = await fetch(`../src/locales/${lang}.json`);
+    const response = await fetch(`/locales/${lang}.json`);
     translations = await response.json();
     applyTranslations();
   } catch (error) {
@@ -34,7 +34,7 @@ function applyTranslations() {
   
   document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
     const key = el.getAttribute('data-i18n-placeholder');
-    el.setAttribute('data-placeholder', t(key));
+    el.setAttribute('placeholder', t(key));
   });
 
   // Dispatch event so other scripts can update their labels

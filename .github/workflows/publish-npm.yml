@@ -1,11 +1,11 @@
-name: Publish @elixpo/lixsketch to NPM
+name: Publish @elixpo/sketch.elixpo to NPM
 
 on:
   push:
     branches:
       - main
     paths:
-      - 'packages/lixsketch/**'
+      - 'packages/sketch.elixpo/**'
 
 jobs:
   publish:
@@ -23,10 +23,10 @@ jobs:
         run: npm ci
 
       - name: Check version is not already published
-        working-directory: packages/lixsketch
+        working-directory: packages/sketch.elixpo
         run: |
           LOCAL=$(node -p "require('./package.json').version")
-          REMOTE=$(npm view @elixpo/lixsketch version 2>/dev/null || echo "0.0.0")
+          REMOTE=$(npm view @elixpo/sketch.elixpo version 2>/dev/null || echo "0.0.0")
           echo "Local version: $LOCAL"
           echo "Published version: $REMOTE"
           if [ "$LOCAL" = "$REMOTE" ]; then
@@ -35,6 +35,6 @@ jobs:
           fi
 
       - name: Publish to NPM
-        run: npm publish -w packages/lixsketch --access public
+        run: npm publish -w packages/sketch.elixpo --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_LIXSKETCH_PUBLISH_TOKEN }}

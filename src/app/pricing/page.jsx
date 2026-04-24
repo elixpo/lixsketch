@@ -610,7 +610,7 @@ export default function PricingPage() {
           <p className="text-text-dim text-xs mb-4">
             Questions? Want a custom plan? Reach out on{' '}
             <a
-              href="https://github.com/elixpo/lixsketch/discussions"
+              href="https://github.com/elixpo/sketch.elixpo/discussions"
               target="_blank"
               rel="noopener noreferrer"
               className="text-[#8B88E8] hover:underline"

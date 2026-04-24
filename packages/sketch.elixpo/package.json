@@ -1,5 +1,5 @@
 {
-  "name": "@elixpo/lixsketch",
+  "name": "@elixpo/sketch.elixpo",
   "version": "5.4.2",
   "description": "Open-source SVG whiteboard engine with hand-drawn aesthetics — the core of LixSketch",
   "type": "module",
@@ -36,11 +36,11 @@
   "homepage": "https://sketch.elixpo.com",
   "repository": {
     "type": "git",
-    "url": "https://github.com/elixpo/lixsketch.git",
-    "directory": "packages/lixsketch"
+    "url": "https://github.com/elixpo/sketch.elixpo.git",
+    "directory": "packages/sketch.elixpo"
   },
   "bugs": {
-    "url": "https://github.com/elixpo/lixsketch/issues"
+    "url": "https://github.com/elixpo/sketch.elixpo/issues"
   },
   "dependencies": {
     "roughjs": "^4.6.6",

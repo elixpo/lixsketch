@@ -1,6 +1,6 @@
 {
   "name": "lixsketch",
-  "version": "5.4.7",
+  "version": "5.4.8",
   "description": "Open-source infinite canvas sketching with a hand-drawn aesthetic and a Notion-like docs editor",
   "author": {
     "name": "Ayushman Bhattacharya",
@@ -11,10 +11,10 @@
   "homepage": "https://sketch.elixpo.com",
   "repository": {
     "type": "git",
-    "url": "https://github.com/elixpo/elixposketch.git"
+    "url": "https://github.com/elixpo/sketch.elixpo.git"
   },
   "bugs": {
-    "url": "https://github.com/elixpo/elixposketch/issues"
+    "url": "https://github.com/elixpo/sketch.elixpo/issues"
   },
   "keywords": [
     "sketch",
@@ -50,7 +50,7 @@
   },
   "dependencies": {
     "@cloudflare/next-on-pages": "^1.13.16",
-    "@elixpo/lixsketch": "workspace:*",
+    "@elixpo/sketch.elixpo": "workspace:*",
     "framer-motion": "^12.35.2",
     "fuse.js": "^7.1.0",
     "highlight.js": "^11.11.1",

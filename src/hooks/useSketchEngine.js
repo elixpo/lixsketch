@@ -29,7 +29,7 @@ export default function useSketchEngine(svgRef, ready = true) {
           getState: () => useSketchStore.getState(),
         }
 
-        const { SketchEngine } = await import('@elixpo/lixsketch')
+        const { SketchEngine } = await import('@elixpo/sketch.elixpo')
         if (cancelled) return
 
         const engine = new SketchEngine(svgRef.current)

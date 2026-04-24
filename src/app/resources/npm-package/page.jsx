@@ -6,7 +6,7 @@ import content from '@/content/pages/npm-package.md'
 export default function NpmPackagePage() {
   return (
     <CanvasPageLayout
-      title="@elixpo/lixsketch"
+      title="@elixpo/sketch.elixpo"
       description="The LixSketch engine as a standalone npm package. Mount an infinite, hand-drawn canvas on any SVG element."
       icon="bx bxl-nodejs"
       tags={['npm', 'package', 'engine', 'open-source']}

@@ -41,7 +41,7 @@ export default function DocsPanel() {
     <div className="w-full h-full bg-surface-dark overflow-hidden flex flex-col">
       <div className="flex-1 min-h-0 overflow-y-auto lix-editor-host">
         {ready ? (
-          <LixThemeProvider>
+          <LixThemeProvider defaultTheme="dark" storageKey="lixsketch_doc_theme">
             <LixEditor
               initialContent={initialContent}
               onChange={(editor) => {

@@ -17,20 +17,59 @@ export default function SVGCanvas() {
   const [viewBox, setViewBox] = useState('0 0 1920 1080')
 
   useEffect(() => {
-    // The lixsketch engine's zoom/pan code is hardcoded to
-    // window.innerWidth/innerHeight, so the SVG viewBox MUST stay in sync
-    // with window dimensions even in split mode. The SVG element's actual
-    // pixel size is smaller than viewBox during split — that's fine,
-    // because tool pointer math uses the rect.width / viewBox.width ratio
-    // to convert clientX into SVG coords correctly.
-    setViewBox(`0 0 ${window.innerWidth} ${window.innerHeight}`)
+    // Track the SVG element's *actual rendered size* and keep both the
+    // viewBox attribute AND the engine's `window.currentViewBox` in sync
+    // with it. This is what makes split mode work:
+    //
+    //  - With `preserveAspectRatio` defaults, a viewBox whose aspect
+    //    doesn't match the element's gets letterboxed inside the element.
+    //    The package's pointer math (`mouseX / rect.width * viewBox.width`)
+    //    does NOT compensate for the letterbox — clicks map to wrong SVG
+    //    coords. Matching viewBox to rect avoids the letterbox entirely.
+    //
+    //  - The engine's freehand tool (and others) read `currentViewBox`
+    //    directly. If we change the viewBox attribute without updating
+    //    that global, freehand's pointer math drifts.
+    //
+    //  - `preserveAspectRatio="none"` is a belt-and-suspenders against
+    //    any future viewBox/element aspect mismatch (e.g. mid-zoom).
+    const sync = () => {
+      const el = svgRef.current
+      if (!el) return
+      const rect = el.getBoundingClientRect()
+      const w = Math.max(1, Math.round(rect.width))
+      const h = Math.max(1, Math.round(rect.height))
+
+      setViewBox(`0 0 ${w} ${h}`)
+
+      // Keep the engine's view of canvas size aligned. Preserve current
+      // pan offset (x, y) — only width/height track the element.
+      if (typeof window !== 'undefined') {
+        const cv = window.currentViewBox || { x: 0, y: 0 }
+        window.currentViewBox = {
+          x: cv.x || 0,
+          y: cv.y || 0,
+          width: w,
+          height: h,
+        }
+      }
+    }
+
+    sync()
     setSvgReady(true)
 
-    const onResize = () => {
-      setViewBox(`0 0 ${window.innerWidth} ${window.innerHeight}`)
+    window.addEventListener('resize', sync)
+
+    let ro
+    if (typeof ResizeObserver !== 'undefined' && svgRef.current) {
+      ro = new ResizeObserver(sync)
+      ro.observe(svgRef.current)
     }
-    window.addEventListener('resize', onResize)
-    return () => window.removeEventListener('resize', onResize)
+
+    return () => {
+      window.removeEventListener('resize', sync)
+      if (ro) ro.disconnect()
+    }
   }, [])
 
   // Close icon sidebar when clicking on canvas without an icon ready to place
@@ -71,6 +110,7 @@ export default function SVGCanvas() {
         touchAction: 'none',
       }}
       viewBox={viewBox}
+      preserveAspectRatio="none"
       suppressHydrationWarning
     >
       {gridEnabled && (

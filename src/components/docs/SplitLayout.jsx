@@ -7,6 +7,17 @@ const STORAGE_KEY = 'lixsketch-split-ratio'
 const MIN_RATIO = 0.35
 const MAX_RATIO = 0.65
 
+/**
+ * SplitLayout always renders the same JSX tree (canvas wrapper + handle +
+ * docs wrapper) and just changes pane widths between modes. This is
+ * critical because remounting SVGCanvas would re-init the imperative
+ * sketch engine, wipe the zoom/pan state, and detach all shape DOM nodes.
+ *
+ * Modes:
+ *   - canvas: canvas pane = 100%, docs pane = 0
+ *   - split:  canvas pane = ratio,  docs pane = 1 - ratio
+ *   - docs:   canvas pane = 0,      docs pane = 100%
+ */
 export default function SplitLayout({ canvas, docs }) {
   const layoutMode = useSketchStore((s) => s.layoutMode)
   const [ratio, setRatio] = useState(0.5)
@@ -21,11 +32,12 @@ export default function SplitLayout({ canvas, docs }) {
   }, [])
 
   const onMouseDown = useCallback((e) => {
+    if (layoutMode !== 'split') return
     e.preventDefault()
     draggingRef.current = true
     document.body.style.cursor = 'col-resize'
     document.body.style.userSelect = 'none'
-  }, [])
+  }, [layoutMode])
 
   useEffect(() => {
     const onMove = (e) => {
@@ -52,33 +64,56 @@ export default function SplitLayout({ canvas, docs }) {
     }
   }, [ratio])
 
-  // Whenever layout flips, fire a resize so canvas re-measures viewport.
+  // Fire resize whenever the layout mode changes so consumers (sketch
+  // engine, BlockNote etc.) can re-measure their viewports.
   useEffect(() => {
     const id = requestAnimationFrame(() => window.dispatchEvent(new Event('resize')))
     return () => cancelAnimationFrame(id)
   }, [layoutMode])
 
+  // Compute pane widths per mode (single JSX tree below).
+  let leftWidth, rightWidth, handleVisible, paddingTop
   if (layoutMode === 'canvas') {
-    return <div className="absolute inset-0">{canvas}</div>
-  }
-  if (layoutMode === 'docs') {
-    return <div className="absolute inset-0 pt-12">{docs}</div>
+    leftWidth = '100%'
+    rightWidth = '0%'
+    handleVisible = false
+    // canvas-only mode: header floats, canvas takes full screen as before
+    paddingTop = '0px'
+  } else if (layoutMode === 'docs') {
+    leftWidth = '0%'
+    rightWidth = '100%'
+    handleVisible = false
+    paddingTop = '3rem'
+  } else {
+    // split
+    leftWidth = `${ratio * 100}%`
+    rightWidth = `${(1 - ratio) * 100}%`
+    handleVisible = true
+    paddingTop = '3rem'
   }
 
-  // split
-  const leftPct = `${ratio * 100}%`
-  const rightPct = `${(1 - ratio) * 100}%`
   return (
-    <div ref={containerRef} className="absolute inset-0 pt-12 flex">
-      <div style={{ width: leftPct }} className="relative h-full overflow-hidden">
+    <div
+      ref={containerRef}
+      className="absolute inset-0 flex"
+      style={{ paddingTop }}
+    >
+      <div
+        style={{ width: leftWidth }}
+        className="relative h-full overflow-hidden"
+      >
         {canvas}
       </div>
       <div
         onMouseDown={onMouseDown}
-        className="w-[6px] h-full bg-border-light hover:bg-accent-blue/40 cursor-col-resize shrink-0 transition-colors"
+        className="h-full bg-border-light hover:bg-accent-blue/40 cursor-col-resize shrink-0 transition-colors"
+        style={{ width: handleVisible ? '6px' : '0px', pointerEvents: handleVisible ? 'auto' : 'none' }}
         title="Drag to resize"
       />
-      <div style={{ width: rightPct }} className="relative h-full overflow-hidden border-l border-border-light">
+      <div
+        style={{ width: rightWidth }}
+        className={`relative h-full overflow-hidden ${handleVisible ? 'border-l border-border-light' : ''}`}
+      >
         {docs}
       </div>
     </div>

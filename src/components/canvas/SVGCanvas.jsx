@@ -17,35 +17,20 @@ export default function SVGCanvas() {
   const [viewBox, setViewBox] = useState('0 0 1920 1080')
 
   useEffect(() => {
-    // Match viewBox to the SVG element's actual rendered size, not the
-    // viewport. In split mode the SVG is narrower than window.innerWidth,
-    // so using innerWidth would scale coordinates and offset the pointer.
-    const updateViewBox = () => {
-      const el = svgRef.current
-      if (!el) return
-      const rect = el.getBoundingClientRect()
-      const w = Math.max(1, Math.round(rect.width))
-      const h = Math.max(1, Math.round(rect.height))
-      setViewBox(`0 0 ${w} ${h}`)
-    }
-
-    updateViewBox()
+    // The lixsketch engine's zoom/pan code is hardcoded to
+    // window.innerWidth/innerHeight, so the SVG viewBox MUST stay in sync
+    // with window dimensions even in split mode. The SVG element's actual
+    // pixel size is smaller than viewBox during split — that's fine,
+    // because tool pointer math uses the rect.width / viewBox.width ratio
+    // to convert clientX into SVG coords correctly.
+    setViewBox(`0 0 ${window.innerWidth} ${window.innerHeight}`)
     setSvgReady(true)
 
-    window.addEventListener('resize', updateViewBox)
-
-    // Also re-measure when the SVG itself resizes (split-pane drag, layout
-    // mode flip) — these don't always emit a window resize.
-    let ro
-    if (typeof ResizeObserver !== 'undefined' && svgRef.current) {
-      ro = new ResizeObserver(updateViewBox)
-      ro.observe(svgRef.current)
+    const onResize = () => {
+      setViewBox(`0 0 ${window.innerWidth} ${window.innerHeight}`)
     }
-
-    return () => {
-      window.removeEventListener('resize', updateViewBox)
-      if (ro) ro.disconnect()
-    }
+    window.addEventListener('resize', onResize)
+    return () => window.removeEventListener('resize', onResize)
   }, [])
 
   // Close icon sidebar when clicking on canvas without an icon ready to place

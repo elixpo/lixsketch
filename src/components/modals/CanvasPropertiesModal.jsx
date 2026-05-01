@@ -2,10 +2,12 @@
 
 import { useState, useEffect } from 'react'
 import useUIStore from '@/store/useUIStore'
+import useSketchStore from '@/store/useSketchStore'
 import useAuthStore from '@/store/useAuthStore'
 import useCollabStore from '@/store/useCollabStore'
 import { useProfileStore } from '@/hooks/useGuestProfile'
 import { getSessionID } from '@/hooks/useSessionID'
+import { triggerDocCloudSync, persistLayoutMode } from '@/hooks/useDocAutoSave'
 
 function formatBytes(bytes) {
   if (!bytes || bytes === 0) return '0 B'
@@ -42,6 +44,14 @@ export default function CanvasPropertiesModal() {
   const adminUserId = useCollabStore((s) => s.adminUserId)
   const ws = useCollabStore((s) => s.ws)
 
+  const layoutMode = useSketchStore((s) => s.layoutMode)
+  const setLayoutMode = useSketchStore((s) => s.setLayoutMode)
+  const handleSetLayout = (mode) => {
+    if (mode === layoutMode) return
+    setLayoutMode(mode)
+    persistLayoutMode(mode)
+  }
+
   // Determine if current user is admin
   const myUserId = isAuthenticated ? authUser?.id : guestProfile?.id
   const isAdmin = myUserId && adminUserId && myUserId === adminUserId
@@ -67,9 +77,32 @@ export default function CanvasPropertiesModal() {
     const zoom = window.currentZoom || 1
     const sessionId = getSessionID() || ''
 
-    // Estimate data size from localStorage
-    const saved = localStorage.getItem('lixsketch-autosave')
-    const dataSize = saved ? new Blob([saved]).size : 0
+    // Estimate canvas data size from localStorage (per-session key, fall
+    // back to the legacy single-key entry).
+    const sceneSavedKey = sessionId ? `lixsketch-autosave-${sessionId}` : 'lixsketch-autosave'
+    const sceneSaved = localStorage.getItem(sceneSavedKey) || localStorage.getItem('lixsketch-autosave')
+    const dataSize = sceneSaved ? new Blob([sceneSaved]).size : 0
+
+    // Doc stats: pulled from the doc-autosave localStorage buffer.
+    const docKey = sessionId ? `lixsketch-doc-autosave-${sessionId}` : 'lixsketch-doc-autosave'
+    const docMetaKey = sessionId ? `lixsketch-doc-autosave-meta-${sessionId}` : 'lixsketch-doc-autosave-meta'
+    const docSaved = localStorage.getItem(docKey)
+    let docBlockCount = 0
+    let docSize = 0
+    let docSavedAt = null
+    if (docSaved) {
+      docSize = new Blob([docSaved]).size
+      try {
+        const parsed = JSON.parse(docSaved)
+        if (Array.isArray(parsed?.blocks)) docBlockCount = parsed.blocks.length
+        if (parsed?.savedAt) docSavedAt = parsed.savedAt
+      } catch {}
+    }
+    let docCloudUpdatedAt = null
+    try {
+      const meta = JSON.parse(localStorage.getItem(docMetaKey) || '{}')
+      docCloudUpdatedAt = meta?.lastSeenUpdatedAt || null
+    } catch {}
 
     // Count shape types
     const typeCounts = {}
@@ -85,6 +118,10 @@ export default function CanvasPropertiesModal() {
       dataSize: formatBytes(dataSize),
       sessionId,
       typeCounts,
+      docBlockCount,
+      docSize: formatBytes(docSize),
+      docSavedAt,
+      docCloudUpdatedAt,
     })
   }, [isOpen])
 

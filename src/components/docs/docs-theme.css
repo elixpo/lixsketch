@@ -51,11 +51,30 @@
   --bn-colors-highlights-blue-text: #aeacff;
 }
 
-/* The wrapper that BlockNote renders inside our flex column */
+/* The wrapper that BlockNote renders inside our flex column.
+   Use sketch's handwritten lixFont everywhere except code blocks,
+   inline code, and KaTeX math (which need their own typefaces). */
 .lix-sketch-theme .bn-container {
   background: var(--bn-colors-editor-background);
   color: var(--bn-colors-editor-text);
-  font-family: var(--font-inter, 'Inter', system-ui, sans-serif);
+  font-family: 'lixFont', system-ui, sans-serif;
+}
+
+.lix-sketch-theme .bn-editor,
+.lix-sketch-theme .bn-block-content,
+.lix-sketch-theme [contenteditable="true"] {
+  font-family: 'lixFont', system-ui, sans-serif;
+}
+
+/* Code, inline code, and math keep the package defaults. */
+.lix-sketch-theme pre,
+.lix-sketch-theme code,
+.lix-sketch-theme .bn-code-block,
+.lix-sketch-theme .bn-inline-content code,
+.lix-sketch-theme .shiki,
+.lix-sketch-theme .katex,
+.lix-sketch-theme .katex * {
+  font-family: revert !important;
 }
 
 /* The editable surface itself */

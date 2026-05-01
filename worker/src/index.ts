@@ -515,10 +515,12 @@ async function handleSceneDelete(request: Request, env: Env): Promise<Response> 
       return json({ error: 'Unauthorized — session mismatch' }, 403);
     }
 
-    // Delete the scene (cascade deletes scene_permissions)
-    await env.DB.prepare(
-      `DELETE FROM scenes WHERE id = ?`
-    ).bind(perm.scene_id).run();
+    // Delete the scene (cascade deletes scene_permissions). Also drop
+    // the paired canvas doc — there's no real FK so we cascade manually.
+    await env.DB.batch([
+      env.DB.prepare(`DELETE FROM canvas_docs WHERE session_id = ?`).bind(perm.session_id),
+      env.DB.prepare(`DELETE FROM scenes WHERE id = ?`).bind(perm.scene_id),
+    ]);
 
     return json({ success: true });
   } catch (err) {

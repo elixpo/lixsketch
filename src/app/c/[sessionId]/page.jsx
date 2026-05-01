@@ -63,29 +63,32 @@ export default function CanvasPage() {
     <div className="relative w-screen h-screen overflow-hidden bg-black">
       <Header />
 
-      {/* Toolbar + sidebars only matter when the canvas is on screen */}
-      {canvasVisible && (
-        <>
-          <Toolbar />
-          <RectangleSidebar />
-          <CircleSidebar />
-          <LineSidebar />
-          <ArrowSidebar />
-          <PaintbrushSidebar />
-          <TextSidebar />
-          <FrameSidebar />
-          <IconSidebar />
-          <ImageSidebar />
-        </>
-      )}
-
       <SplitLayout
-        canvas={<SVGCanvas />}
+        canvas={
+          <>
+            <SVGCanvas />
+            {/* All canvas chrome lives inside the canvas wrapper so it
+                can't visually overflow into the docs panel during split. */}
+            {canvasVisible && (
+              <>
+                <Toolbar />
+                <RectangleSidebar />
+                <CircleSidebar />
+                <LineSidebar />
+                <ArrowSidebar />
+                <PaintbrushSidebar />
+                <TextSidebar />
+                <FrameSidebar />
+                <IconSidebar />
+                <ImageSidebar />
+                <MultiSelectActions />
+                <Footer />
+              </>
+            )}
+          </>
+        }
         docs={<DocsPanel />}
       />
-
-      {canvasVisible && <MultiSelectActions />}
-      <Footer />
       <AppMenu />
       <ShortcutsModal />
       <SaveModal />

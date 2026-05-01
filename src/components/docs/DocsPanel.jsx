@@ -1,24 +1,21 @@
 'use client'
 
-import dynamic from 'next/dynamic'
-import { useEffect, useState, useRef } from 'react'
 import useSketchStore from '@/store/useSketchStore'
 import useDocAutoSave, { triggerDocSync } from '@/hooks/useDocAutoSave'
 
 // BlockNote ships its base styles separately; the lixeditor stylesheet
-// only contains overrides on top of these. All three are required.
+// only contains overrides on top of these.
 import '@blocknote/core/fonts/inter.css'
 import '@blocknote/mantine/style.css'
 import '@elixpo/lixeditor/styles'
+import './docs-theme.css'
 
-const LixEditor = dynamic(
-  () => import('@elixpo/lixeditor').then((m) => m.LixEditor),
-  { ssr: false, loading: () => <DocsLoading /> }
-)
-const LixThemeProvider = dynamic(
-  () => import('@elixpo/lixeditor').then((m) => ({ default: m.LixThemeProvider })),
-  { ssr: false }
-)
+// Static imports work here because this whole component is loaded via
+// `next/dynamic({ ssr: false })` from page.jsx. Wrapping LixEditor /
+// LixThemeProvider in additional `dynamic()` calls created separate
+// boundaries that broke React context propagation, leaving the editor
+// stuck in light mode.
+import { LixEditor, LixThemeProvider } from '@elixpo/lixeditor'
 
 function DocsLoading() {
   return (
@@ -33,12 +30,11 @@ export default function DocsPanel() {
   const visible = layoutMode === 'split' || layoutMode === 'docs'
 
   const { initialContent, ready } = useDocAutoSave(visible)
-  const editorRef = useRef(null)
 
   if (!visible) return null
 
   return (
-    <div className="w-full h-full bg-surface-dark overflow-hidden flex flex-col">
+    <div className="w-full h-full bg-surface-dark overflow-hidden flex flex-col lix-sketch-theme">
       <div className="flex-1 min-h-0 overflow-y-auto lix-editor-host">
         {ready ? (
           <LixThemeProvider defaultTheme="dark" storageKey="lixsketch_doc_theme">

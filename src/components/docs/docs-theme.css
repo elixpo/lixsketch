@@ -1,0 +1,106 @@
+/*
+ * Reskin BlockNote's dark theme to match sketch.elixpo's palette.
+ *
+ * BlockNote exposes a set of CSS custom properties (`--bn-colors-*`)
+ * that drive every surface, border, hover state, and accent. We
+ * override them under `.lix-sketch-theme` so the editor blends with
+ * the canvas chrome instead of using BlockNote's default greys.
+ *
+ * Token map → sketch globals.css:
+ *   --color-surface         #232329  (toolbar / floating panels)
+ *   --color-surface-dark    #1a1a20  (page background)
+ *   --color-surface-hover   #343448  (hover / selected blocks)
+ *   --color-surface-card    #1e1e28  (slash-menu items)
+ *   --color-accent-blue     #5B57D1  (selection / focused outline)
+ *   --color-text-primary    #ffffff
+ *   --color-text-secondary  #e8e8ee
+ *   --color-border-light    #3a3a50
+ */
+
+.lix-sketch-theme [data-color-scheme="dark"],
+.lix-sketch-theme.bn-container,
+.lix-sketch-theme .bn-container,
+.lix-sketch-theme [data-color-scheme] {
+  /* Editor surfaces */
+  --bn-colors-editor-background: #1a1a20;
+  --bn-colors-editor-text: #ffffff;
+  --bn-colors-menu-background: #232329;
+  --bn-colors-menu-text: #e8e8ee;
+  --bn-colors-tooltip-background: #1e1e28;
+  --bn-colors-tooltip-text: #ffffff;
+
+  /* Hover / selected */
+  --bn-colors-hovered-background: #343448;
+  --bn-colors-hovered-text: #ffffff;
+  --bn-colors-selected-background: #5B57D1;
+  --bn-colors-selected-text: #ffffff;
+
+  /* Disabled / placeholder text */
+  --bn-colors-disabled-background: #1a1a20;
+  --bn-colors-disabled-text: #6b6b80;
+
+  /* Side menu / chevron / drag handle */
+  --bn-colors-side-menu: #6b6b80;
+
+  /* Borders + shadows */
+  --bn-colors-border: #3a3a50;
+  --bn-colors-shadow: rgba(0, 0, 0, 0.4);
+
+  /* Highlight palette tweaks (optional — keep BlockNote defaults if these break) */
+  --bn-colors-highlights-blue-background: rgba(91, 87, 209, 0.18);
+  --bn-colors-highlights-blue-text: #aeacff;
+}
+
+/* The wrapper that BlockNote renders inside our flex column */
+.lix-sketch-theme .bn-container {
+  background: var(--bn-colors-editor-background);
+  color: var(--bn-colors-editor-text);
+  font-family: var(--font-inter, 'Inter', system-ui, sans-serif);
+}
+
+/* The editable surface itself */
+.lix-sketch-theme .bn-editor {
+  background: transparent;
+  color: var(--bn-colors-editor-text);
+  caret-color: var(--bn-colors-selected-background);
+  padding-top: 1.25rem;
+  padding-bottom: 1.25rem;
+}
+
+/* Block hover background */
+.lix-sketch-theme .bn-block-outer:hover > .bn-block {
+  background: rgba(52, 52, 72, 0.35);
+  border-radius: 6px;
+}
+
+/* Slash / formatting menus */
+.lix-sketch-theme .mantine-Menu-dropdown,
+.lix-sketch-theme .mantine-Popover-dropdown,
+.lix-sketch-theme .bn-suggestion-menu {
+  background: #1e1e28 !important;
+  color: #ffffff !important;
+  border: 1px solid #3a3a50 !important;
+}
+
+/* Floating toolbar buttons */
+.lix-sketch-theme .mantine-ActionIcon-root,
+.lix-sketch-theme .mantine-Button-root {
+  color: #e8e8ee;
+}
+.lix-sketch-theme .mantine-ActionIcon-root:hover,
+.lix-sketch-theme .mantine-Button-root:hover {
+  background: #343448;
+  color: #ffffff;
+}
+
+/* Scrollbar — match canvas */
+.lix-editor-host::-webkit-scrollbar {
+  width: 8px;
+}
+.lix-editor-host::-webkit-scrollbar-thumb {
+  background: #3a3a50;
+  border-radius: 4px;
+}
+.lix-editor-host::-webkit-scrollbar-thumb:hover {
+  background: #5B57D1;
+}

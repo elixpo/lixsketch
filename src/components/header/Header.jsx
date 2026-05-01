@@ -6,6 +6,43 @@ import useUIStore from '@/store/useUIStore'
 import useSketchStore from '@/store/useSketchStore'
 import useAuthStore from '@/store/useAuthStore'
 import { useProfileStore } from '@/hooks/useGuestProfile'
+import { persistLayoutMode } from '@/hooks/useDocAutoSave'
+
+function LayoutModeToggle() {
+  const layoutMode = useSketchStore((s) => s.layoutMode)
+  const setLayoutMode = useSketchStore((s) => s.setLayoutMode)
+
+  const modes = [
+    { key: 'canvas', icon: 'bx-shape-square', title: 'Canvas only' },
+    { key: 'split', icon: 'bx-columns', title: 'Split: canvas + docs' },
+    { key: 'docs', icon: 'bx-file-blank', title: 'Document only' },
+  ]
+
+  const onPick = (key) => {
+    if (key === layoutMode) return
+    setLayoutMode(key)
+    persistLayoutMode(key)
+  }
+
+  return (
+    <div className="flex items-center bg-surface rounded-lg border border-border p-0.5">
+      {modes.map((m) => (
+        <button
+          key={m.key}
+          onClick={() => onPick(m.key)}
+          title={m.title}
+          className={`w-7 h-7 flex items-center justify-center rounded-md transition-all duration-150 ${
+            layoutMode === m.key
+              ? 'bg-accent-blue text-text-primary'
+              : 'text-text-muted hover:text-text-primary hover:bg-surface-hover'
+          }`}
+        >
+          <i className={`bx ${m.icon} text-sm`} />
+        </button>
+      ))}
+    </div>
+  )
+}
 
 function ProfileDropdown() {
   const profile = useProfileStore((s) => s.profile)
@@ -221,6 +258,8 @@ export default function Header() {
 
       {/* Right side */}
       <div className="flex items-center gap-2">
+        {/* Layout mode toggle (canvas / split / docs) */}
+        <LayoutModeToggle />
         {/* Save status dot */}
         <SaveStatusDot />
         {/* E2E Shield badge */}

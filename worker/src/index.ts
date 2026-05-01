@@ -74,6 +74,20 @@ export default {
       return handleSceneDelete(request, env);
     }
 
+    // --- Canvas doc routes (paired WYSIWYG document per session) ---
+
+    if (url.pathname === '/api/canvas-docs/save' && request.method === 'POST') {
+      return handleCanvasDocSave(request, env);
+    }
+
+    if (url.pathname === '/api/canvas-docs/load' && request.method === 'GET') {
+      return handleCanvasDocLoad(request, env);
+    }
+
+    if (url.pathname === '/api/canvas-docs/layout' && request.method === 'POST') {
+      return handleCanvasLayoutSave(request, env);
+    }
+
     // --- Workspace routes ---
 
     if (url.pathname === '/api/scenes/list' && request.method === 'GET') {
@@ -906,6 +920,84 @@ async function handleQuotaSummary(request: Request, env: Env): Promise<Response>
     });
   } catch (err) {
     return json({ error: 'Failed to fetch quota summary' }, 500);
+  }
+}
+
+// =============================================================================
+// Canvas Doc Handlers
+// =============================================================================
+
+async function handleCanvasDocSave(request: Request, env: Env): Promise<Response> {
+  try {
+    const body = await request.json() as {
+      sessionId: string;
+      encryptedData: string;
+    };
+
+    if (!body.sessionId || typeof body.encryptedData !== 'string') {
+      return json({ error: 'Missing sessionId or encryptedData' }, 400);
+    }
+
+    const sizeBytes = new Blob([body.encryptedData]).size;
+
+    await env.DB.prepare(
+      `INSERT INTO canvas_docs (session_id, encrypted_data, size_bytes, updated_at)
+       VALUES (?, ?, ?, datetime('now'))
+       ON CONFLICT(session_id) DO UPDATE SET
+         encrypted_data = excluded.encrypted_data,
+         size_bytes = excluded.size_bytes,
+         updated_at = datetime('now')`
+    ).bind(body.sessionId, body.encryptedData, sizeBytes).run();
+
+    return json({ ok: true });
+  } catch (err) {
+    return json({ error: 'Failed to save canvas doc' }, 500);
+  }
+}
+
+async function handleCanvasDocLoad(request: Request, env: Env): Promise<Response> {
+  try {
+    const url = new URL(request.url);
+    const sessionId = url.searchParams.get('sessionId');
+    if (!sessionId) return json({ error: 'Missing sessionId' }, 400);
+
+    const row = await env.DB.prepare(
+      `SELECT cd.encrypted_data, cd.updated_at, s.layout_mode
+       FROM canvas_docs cd
+       LEFT JOIN scenes s ON s.session_id = cd.session_id
+       WHERE cd.session_id = ?`
+    ).bind(sessionId).first<{ encrypted_data: string; updated_at: string; layout_mode: string | null }>();
+
+    if (!row) {
+      // No doc yet — still return any layout preference stored on the scene.
+      const scene = await env.DB.prepare(
+        `SELECT layout_mode FROM scenes WHERE session_id = ?`
+      ).bind(sessionId).first<{ layout_mode: string | null }>();
+      return json({ encryptedData: null, layoutMode: scene?.layout_mode || 'canvas' });
+    }
+
+    return json({
+      encryptedData: row.encrypted_data,
+      updatedAt: row.updated_at,
+      layoutMode: row.layout_mode || 'canvas',
+    });
+  } catch (err) {
+    return json({ error: 'Failed to load canvas doc' }, 500);
+  }
+}
+
+async function handleCanvasLayoutSave(request: Request, env: Env): Promise<Response> {
+  try {
+    const body = await request.json() as { sessionId: string; layoutMode: string };
+    if (!body.sessionId || !['canvas', 'split', 'docs'].includes(body.layoutMode)) {
+      return json({ error: 'Invalid sessionId or layoutMode' }, 400);
+    }
+    await env.DB.prepare(
+      `UPDATE scenes SET layout_mode = ? WHERE session_id = ?`
+    ).bind(body.layoutMode, body.sessionId).run();
+    return json({ ok: true });
+  } catch (err) {
+    return json({ error: 'Failed to save layout mode' }, 500);
   }
 }
 

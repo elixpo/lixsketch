@@ -199,6 +199,14 @@ const useSketchStore = create((set, get) => ({
     }
   },
   toggleZenMode: () => set((s) => ({ zenMode: !s.zenMode, viewMode: false })),
+
+  // --- Canvas/Docs split layout ---
+  // 'canvas' = sketch only, 'split' = side-by-side, 'docs' = doc only
+  layoutMode: 'canvas',
+  setLayoutMode: (mode) => {
+    if (!['canvas', 'split', 'docs'].includes(mode)) return
+    set({ layoutMode: mode })
+  },
   toggleToolLock: () => set((s) => ({ toolLock: !s.toolLock })),
   toggleSnapToObjects: () => set((s) => ({ snapToObjects: !s.snapToObjects })),
 

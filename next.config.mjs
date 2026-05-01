@@ -3,6 +3,7 @@ import { setupDevPlatform } from '@cloudflare/next-on-pages/next-dev'
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: false,
+  transpilePackages: ['@elixpo/lixeditor'],
   webpack: (config) => {
     config.module.rules.push({
       test: /\.md$/,

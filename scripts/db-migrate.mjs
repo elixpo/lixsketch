@@ -69,6 +69,21 @@ const files = (await readdir(MIGRATIONS_DIR))
 
 const pending = files.filter((f) => !applied.has(f))
 
+// Safety check: if _migrations is empty AND `scenes` already exists, the
+// caller probably ran migrations manually before adopting this tracker.
+// Abort with a clear message instead of attempting non-idempotent
+// ALTER TABLE statements.
+if (!INIT_MODE && applied.size === 0) {
+  const probe = await execSQL(`SELECT name FROM sqlite_master WHERE type='table' AND name='scenes';`)
+  if (/"name"\s*:\s*"scenes"/.test(probe)) {
+    console.error('\n✗ Schema already exists but _migrations history is empty.')
+    console.error('  This usually means migrations were applied manually before this tracker was added.')
+    console.error('  Run `npm run db:migrate -- --init` ONCE to seed history with every migration')
+    console.error('  file marked as applied. Then re-run this command for any new pending migrations.\n')
+    process.exit(1)
+  }
+}
+
 if (INIT_MODE) {
   console.log(`Init mode: marking ${files.length} migration(s) as applied without running them.`)
   for (const f of files) {

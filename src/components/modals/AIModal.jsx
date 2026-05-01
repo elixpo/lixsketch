@@ -10,19 +10,19 @@ import useUIStore from '@/store/useUIStore'
  * are also gated server-side (returns 503).
  */
 export default function AIModal() {
-  const isAIModalOpen = useUIStore((s) => s.isAIModalOpen)
+  const aiModalOpen = useUIStore((s) => s.aiModalOpen)
   const toggleAIModal = useUIStore((s) => s.toggleAIModal)
 
   useEffect(() => {
-    if (!isAIModalOpen) return
+    if (!aiModalOpen) return
     const onKey = (e) => {
       if (e.key === 'Escape') toggleAIModal()
     }
     document.addEventListener('keydown', onKey)
     return () => document.removeEventListener('keydown', onKey)
-  }, [isAIModalOpen, toggleAIModal])
+  }, [aiModalOpen, toggleAIModal])
 
-  if (!isAIModalOpen) return null
+  if (!aiModalOpen) return null
 
   return (
     <div

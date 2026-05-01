@@ -47,6 +47,9 @@ const DocsPanel = dynamic(() => import('@/components/docs/DocsPanel'), {
 export default function CanvasPage() {
   useEffect(() => {
     document.body.classList.add('canvas-mode')
+    // Restore the user's last-used layout mode (canvas / split / docs)
+    // before the editor or split layout decides to render.
+    useSketchStore.getState().hydrateLayoutMode?.()
     return () => document.body.classList.remove('canvas-mode')
   }, [])
 

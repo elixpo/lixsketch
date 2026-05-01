@@ -93,6 +93,26 @@
   color: #ffffff;
 }
 
+/* I-beam cursor on the editable surface. Sketch.elixpo's canvas-mode
+   doesn't set a body cursor, but the editor still inherits 'default'
+   from the page — force the text caret so typing feels right. Mirrors
+   the same rule shipped in @elixpo/lixeditor (post-republish this is
+   redundant but harmless). */
+.lix-sketch-theme,
+.lix-sketch-theme .bn-container,
+.lix-sketch-theme .bn-editor,
+.lix-sketch-theme [contenteditable="true"] {
+  cursor: text;
+}
+
+/* Drag handles, side menu, toolbar — keep pointer cursor */
+.lix-sketch-theme .bn-side-menu,
+.lix-sketch-theme .bn-side-menu *,
+.lix-sketch-theme .mantine-ActionIcon-root,
+.lix-sketch-theme .mantine-Button-root {
+  cursor: pointer;
+}
+
 /* Scrollbar — match canvas */
 .lix-editor-host::-webkit-scrollbar {
   width: 8px;

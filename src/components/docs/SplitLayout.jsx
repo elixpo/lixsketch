@@ -4,8 +4,8 @@ import { useEffect, useRef, useState, useCallback } from 'react'
 import useSketchStore from '@/store/useSketchStore'
 
 const STORAGE_KEY = 'lixsketch-split-ratio'
-const MIN_RATIO = 0.2
-const MAX_RATIO = 0.8
+const MIN_RATIO = 0.35
+const MAX_RATIO = 0.65
 
 export default function SplitLayout({ canvas, docs }) {
   const layoutMode = useSketchStore((s) => s.layoutMode)

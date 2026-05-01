@@ -211,6 +211,67 @@ export default function CanvasPropertiesModal() {
             )}
           </div>
 
+          {/* Document */}
+          <div className="p-3 rounded-xl border border-border-light bg-surface/50">
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-text-dim text-[10px] uppercase tracking-wider">Document</p>
+              <button
+                onClick={() => triggerDocCloudSync()}
+                title="Force sync the doc to cloud"
+                className="text-[10px] text-accent-blue hover:text-accent-blue-hover px-1.5 py-0.5 rounded hover:bg-accent-blue/10 cursor-pointer transition-all duration-200"
+              >
+                Sync now
+              </button>
+            </div>
+
+            {/* Layout mode pill toggle */}
+            <div className="flex items-center gap-1 bg-surface/60 border border-border-light rounded-lg p-0.5 mb-2">
+              {[
+                { key: 'canvas', icon: 'bx-pen', label: 'Canvas' },
+                { key: 'split', icon: 'bx-layout', label: 'Split' },
+                { key: 'docs', icon: 'bxs-notepad', label: 'Docs' },
+              ].map((m) => {
+                const active = layoutMode === m.key
+                return (
+                  <button
+                    key={m.key}
+                    onClick={() => handleSetLayout(m.key)}
+                    className={`flex-1 flex items-center justify-center gap-1 h-6 rounded-md text-[10.5px] transition-all duration-150 ${
+                      active
+                        ? 'bg-accent-blue text-text-primary'
+                        : 'text-text-muted hover:text-text-primary hover:bg-surface-hover'
+                    }`}
+                  >
+                    <i className={`bx ${m.icon} text-[11px]`} />
+                    {m.label}
+                  </button>
+                )
+              })}
+            </div>
+
+            <InfoRow label="Blocks" value={stats.docBlockCount || 0} icon="bx-list-ul" color="text-purple-400" />
+            <InfoRow label="Local size" value={stats.docSize || '0 B'} icon="bx-data" />
+            <InfoRow
+              label="Last local save"
+              value={
+                stats.docSavedAt
+                  ? new Date(stats.docSavedAt).toLocaleTimeString()
+                  : '—'
+              }
+              icon="bx-time"
+            />
+            <InfoRow
+              label="Last cloud sync"
+              value={
+                stats.docCloudUpdatedAt
+                  ? new Date(stats.docCloudUpdatedAt).toLocaleString()
+                  : '—'
+              }
+              icon="bx-cloud"
+              color={stats.docCloudUpdatedAt ? 'text-green-400' : 'text-text-muted'}
+            />
+          </div>
+
           {/* Save & Sync Status */}
           <div className="p-3 rounded-xl border border-border-light bg-surface/50">
             <p className="text-text-dim text-[10px] uppercase tracking-wider mb-2">Sync Status</p>

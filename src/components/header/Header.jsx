@@ -13,9 +13,9 @@ function LayoutModeToggle() {
   const setLayoutMode = useSketchStore((s) => s.setLayoutMode)
 
   const modes = [
-    { key: 'canvas', icon: 'bx-shape-square', title: 'Canvas only' },
-    { key: 'split', icon: 'bx-columns', title: 'Split: canvas + docs' },
-    { key: 'docs', icon: 'bx-file-blank', title: 'Document only' },
+    { key: 'canvas', icon: 'bx-pen', label: 'Canvas', title: 'Canvas only' },
+    { key: 'split', icon: 'bx-layout', label: 'Split', title: 'Split: canvas + docs' },
+    { key: 'docs', icon: 'bxs-notepad', label: 'Docs', title: 'Document only' },
   ]
 
   const onPick = (key) => {
@@ -25,21 +25,33 @@ function LayoutModeToggle() {
   }
 
   return (
-    <div className="flex items-center bg-surface rounded-lg border border-border p-0.5">
-      {modes.map((m) => (
-        <button
-          key={m.key}
-          onClick={() => onPick(m.key)}
-          title={m.title}
-          className={`w-7 h-7 flex items-center justify-center rounded-md transition-all duration-150 ${
-            layoutMode === m.key
-              ? 'bg-accent-blue text-text-primary'
-              : 'text-text-muted hover:text-text-primary hover:bg-surface-hover'
-          }`}
-        >
-          <i className={`bx ${m.icon} text-sm`} />
-        </button>
-      ))}
+    <div
+      className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center bg-surface/80 backdrop-blur-md rounded-lg border border-border-light p-0.5 shadow-lg"
+      role="tablist"
+      aria-label="Layout mode"
+    >
+      {modes.map((m) => {
+        const active = layoutMode === m.key
+        return (
+          <button
+            key={m.key}
+            onClick={() => onPick(m.key)}
+            title={m.title}
+            aria-selected={active}
+            role="tab"
+            className={`group flex items-center gap-1.5 h-7 px-2.5 rounded-md transition-all duration-150 ${
+              active
+                ? 'bg-accent-blue text-text-primary shadow-sm'
+                : 'text-text-muted hover:text-text-primary hover:bg-surface-hover'
+            }`}
+          >
+            <i className={`bx ${m.icon} text-base leading-none`} />
+            <span className="text-[11px] font-medium tracking-wide hidden md:inline">
+              {m.label}
+            </span>
+          </button>
+        )
+      })}
     </div>
   )
 }
@@ -228,6 +240,8 @@ export default function Header() {
 
   return (
     <header className="fixed top-0 left-0 right-0 h-12 bg-surface-dark border-b border-[#2c2c35] z-[1001] flex items-center justify-between px-3 font-[lixFont]">
+      {/* Centered layout-mode toggle (canvas / split / docs) */}
+      <LayoutModeToggle />
       {/* Left side */}
       <div className="flex items-center gap-3">
         {/* Logo */}
@@ -258,8 +272,6 @@ export default function Header() {
 
       {/* Right side */}
       <div className="flex items-center gap-2">
-        {/* Layout mode toggle (canvas / split / docs) */}
-        <LayoutModeToggle />
         {/* Save status dot */}
         <SaveStatusDot />
         {/* E2E Shield badge */}

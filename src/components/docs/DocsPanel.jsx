@@ -5,6 +5,10 @@ import { useEffect, useState, useRef } from 'react'
 import useSketchStore from '@/store/useSketchStore'
 import useDocAutoSave, { triggerDocSync } from '@/hooks/useDocAutoSave'
 
+// BlockNote ships its base styles separately; the lixeditor stylesheet
+// only contains overrides on top of these. All three are required.
+import '@blocknote/core/fonts/inter.css'
+import '@blocknote/mantine/style.css'
 import '@elixpo/lixeditor/styles'
 
 const LixEditor = dynamic(

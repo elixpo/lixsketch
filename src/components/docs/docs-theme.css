@@ -102,30 +102,32 @@
 }
 
 /* Mantine dropdowns render in a portal at <body> level — they ignore the
-   editor wrapper's width. Cap them so they never overflow narrow split
-   panes (≤35% of viewport) and so the help / link / suggestion menus
-   stay usable. */
-.mantine-Menu-dropdown,
+   editor wrapper's width. Cap the formatting/link toolbars (which are
+   horizontal) tightly, but give the slash suggestion menu room to lay
+   out its multi-line items (icon + title + subtitle + shortcut hint). */
 .mantine-Popover-dropdown,
-.bn-suggestion-menu,
 .bn-link-toolbar,
 .bn-formatting-toolbar {
   max-width: min(360px, 90vw) !important;
-  overflow: hidden;
 }
 
 .bn-suggestion-menu,
 .mantine-Menu-dropdown {
-  max-height: min(360px, 60vh) !important;
+  max-width: min(420px, 90vw) !important;
+  max-height: min(420px, 70vh) !important;
   overflow-y: auto !important;
+  overflow-x: hidden;
 }
 
-/* Truncate slash-menu item titles instead of wrapping into 3 lines */
-.bn-suggestion-menu-item,
-.mantine-Menu-item {
+/* Slash-menu items keep their native multi-row layout — only clamp the
+   subtitle to a single line so very long descriptions don't break the
+   menu. Title row stays untouched. */
+.bn-suggestion-menu-item .bn-suggestion-menu-item-subtitle,
+.mantine-Menu-item .bn-suggestion-menu-item-subtitle {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  max-width: 100%;
 }
 
 /* Floating toolbar buttons */

@@ -5,6 +5,7 @@ import useSketchStore, { TOOLS, SHORTCUT_MAP } from '@/store/useSketchStore'
 import useUIStore from '@/store/useUIStore'
 import { triggerCloudSync } from '@/hooks/useAutoSave'
 import { triggerDocCloudSync } from '@/hooks/useDocAutoSave'
+import { showToast } from '@/utils/toast'
 
 export default function useKeyboardShortcuts() {
   useEffect(() => {
@@ -114,6 +115,7 @@ export default function useKeyboardShortcuts() {
               // Trigger a re-render of the multi-selection bounds so
               // the user sees the group is now committed.
               if (typeof ms?.updateControls === 'function') ms.updateControls()
+              showToast(`Grouped ${targets.length} shapes`, { tone: 'success' })
             }
           } catch (err) {
             console.warn('[Group] failed:', err)
@@ -132,10 +134,12 @@ export default function useKeyboardShortcuts() {
               : (window.currentShape ? [window.currentShape] : [])
             const groupIds = new Set(targets.map(s => s.groupId).filter(Boolean))
             if (groupIds.size > 0 && Array.isArray(window.shapes)) {
+              let cleared = 0
               for (const s of window.shapes) {
-                if (s.groupId && groupIds.has(s.groupId)) s.groupId = null
+                if (s.groupId && groupIds.has(s.groupId)) { s.groupId = null; cleared++ }
               }
               if (typeof ms?.updateControls === 'function') ms.updateControls()
+              showToast(`Ungrouped ${cleared} shapes`, { tone: 'success' })
             }
           } catch (err) {
             console.warn('[Ungroup] failed:', err)

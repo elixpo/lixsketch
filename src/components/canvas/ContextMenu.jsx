@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import useSketchStore from '@/store/useSketchStore'
 import useUIStore from '@/store/useUIStore'
+import { showToast } from '@/utils/toast'
 
 // ── Helpers ──────────────────────────────────────────────────
 

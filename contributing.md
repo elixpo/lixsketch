@@ -8,7 +8,7 @@ This guide covers what you need to know to land a useful PR. Repo-specific archi
 
 ### 1. Find something to work on
 
-- Browse open issues: <https://github.com/elixpo/lixsketch/issues>
+- Browse open issues: <https://github.com/elixpo/sketch.elixpo/issues>
 - Look for `good first issue` or `help wanted` if you're new.
 - Triage labels (`FEATURE`, `BUG`, `DEV`, `DOCS`) tell you what kind of work each issue is.
 - If you want to propose something new, **open an issue first** and discuss the approach before writing code. The canvas engine has a lot of cross-shape state — design changes that look small often aren't.
@@ -143,7 +143,7 @@ We welcome PRs across the surface area:
 
 - Anything touching auth, sessions, encryption keys, or worker endpoints must be reviewed by a maintainer.
 - Don't commit secrets, tokens, or production database dumps. The committed `wrangler.toml` only contains public binding ids — secrets are set via `wrangler secret put`.
-- Found a vulnerability? Don't open a public issue. See [SECURITY.md](SECURITY.md) — short version: email **security@elixpo.com** or use GitHub's [private vulnerability reporting](https://github.com/elixpo/lixsketch/security/advisories/new).
+- Found a vulnerability? Don't open a public issue. See [SECURITY.md](SECURITY.md) — short version: email **security@elixpo.com** or use GitHub's [private vulnerability reporting](https://github.com/elixpo/sketch.elixpo/security/advisories/new).
 
 ### Database changes
 

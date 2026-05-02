@@ -1,6 +1,6 @@
 # Security Policy
 
-LixSketch is the canvas+docs application hosted at <https://sketch.elixpo.com> and the engine published as [`@elixpo/lixsketch`](https://www.npmjs.com/package/@elixpo/lixsketch). This document covers what we promise about handling user data, how to report a vulnerability, and what's currently *out* of scope so you know exactly where the boundaries are.
+LixSketch is the canvas+docs application hosted at <https://sketch.elixpo.com> and the engine published as [`@elixpo/sketch.elixpo`](https://www.npmjs.com/package/@elixpo/sketch.elixpo). This document covers what we promise about handling user data, how to report a vulnerability, and what's currently *out* of scope so you know exactly where the boundaries are.
 
 ## Reporting a Vulnerability
 
@@ -16,7 +16,7 @@ Email **security@elixpo.com** with:
 - Your assessment of impact (what an attacker could do).
 - Your name / handle if you'd like credit; we'll add you to the acknowledgements unless you prefer to stay anonymous.
 
-If email isn't an option, use GitHub's **[private vulnerability reporting](https://github.com/elixpo/lixsketch/security/advisories/new)** for this repo.
+If email isn't an option, use GitHub's **[private vulnerability reporting](https://github.com/elixpo/sketch.elixpo/security/advisories/new)** for this repo.
 
 Please **do not**:
 
@@ -40,7 +40,7 @@ If an issue can't be fixed within those windows we'll tell you why and agree on 
 **In scope:**
 
 - The deployed app at `sketch.elixpo.com` and its API endpoints (`/api/*`, the Cloudflare Worker at the same origin).
-- The published packages: `@elixpo/lixsketch` (engine) and the workspace's `@elixpo/lixeditor` integration.
+- The published packages: `@elixpo/sketch.elixpo` (engine) and the workspace's `@elixpo/lixeditor` integration.
 - The repository contents — code, migrations, worker logic, build pipeline.
 - Authentication / session handling for the LixSketch surface.
 
@@ -98,10 +98,10 @@ If you've responsibly reported a vulnerability that we shipped a fix for, we'll 
 
 Security-relevant fixes are released as patch versions of the npm package and as soon-as-possible deploys of the hosted app:
 
-- npm: `@elixpo/lixsketch` follows semver; patch releases for security fixes.
+- npm: `@elixpo/sketch.elixpo` follows semver; patch releases for security fixes.
 - App: deployed continuously from `main`. Critical fixes ship within hours; non-critical within the standard release cadence.
 
-Subscribe to the repo's [security advisories](https://github.com/elixpo/lixsketch/security/advisories) (Watch → Custom → Security alerts) to get notified.
+Subscribe to the repo's [security advisories](https://github.com/elixpo/sketch.elixpo/security/advisories) (Watch → Custom → Security alerts) to get notified.
 
 ## Questions
 

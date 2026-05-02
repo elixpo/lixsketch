@@ -155,6 +155,22 @@
   padding: 2px 0 !important;
 }
 
+/* Horizontal-rule (`---` markdown shortcut) — the package styles the
+   <hr> with `background: var(--border-default)` but never defines that
+   variable, so the line collapses to invisible and only the surrounding
+   margin/padding shows (looks like a big empty block). Force a color
+   here. Tighten the surrounding spacing too. */
+.lix-sketch-theme [data-content-type="divider"] {
+  margin: 8px 0 !important;
+  padding: 4px 0 !important;
+}
+.lix-sketch-theme [data-content-type="divider"] hr {
+  border: none !important;
+  height: 1px !important;
+  background: #3a3a50 !important;
+  width: 100%;
+}
+
 /* Block hover background */
 .lix-sketch-theme .bn-block-outer:hover > .bn-block {
   background: rgba(52, 52, 72, 0.35);

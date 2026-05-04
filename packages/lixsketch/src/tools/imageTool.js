@@ -134,7 +134,7 @@ document.getElementById("importImage")?.addEventListener('click', () => {
     // Create a file input element
     const fileInput = document.createElement('input');
     fileInput.type = 'file';
-    fileInput.accept = 'image/*'; // Accept all image types
+    fileInput.accept = IMAGE_ACCEPT_ATTR; // Static images only — see allowedImageTypes.js
     fileInput.style.display = 'none'; // Hide the input element
     
     // Add the input to the document temporarily
@@ -195,13 +195,16 @@ const loadHardcodedImage = (imagePath) => {
     img.src = imagePath;
 };
 
-const handleImageUpload = (file) => {
+const handleImageUpload = async (file) => {
     if (!file || !isImageToolActive) return;
 
-    // Validate file type
-    if (!file.type.startsWith('image/')) {
-        console.error('Selected file is not an image');
-        alert('Please select a valid image file.');
+    // Validate file type against the canonical allowlist (avif, jpeg, jpg,
+    // png, bmp, svg, webp). Animated GIF, HEIC, TIFF, video, audio, and
+    // arbitrary files are rejected here.
+    if (!isAllowedImage(file)) {
+        console.error('Rejected file type:', file.type, file.name);
+        alert('Unsupported file type. Allowed: AVIF, JPEG, PNG, BMP, SVG, WebP.');
+        isImageToolActive = false;
         return;
     }
 

@@ -43,6 +43,12 @@ export function createSketchEngine(svgElement, options = {}) {
     return new SketchEngine(svgElement, options);
 }
 
+// Scene serialization helpers — for embedded consumers (e.g. blogs.elixpo) that
+// need to round-trip a scene through their own storage. saveScene reads from
+// window.shapes (populated by an active engine); loadScene rebuilds shapes onto
+// the active engine's SVG. Both must be called after engine.init() completes.
+export { saveScene, loadScene } from './core/SceneSerializer.js';
+
 // Tool name constants
 export const TOOLS = {
     SELECT: 'select',

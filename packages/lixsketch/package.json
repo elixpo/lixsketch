@@ -7,12 +7,10 @@
   "exports": {
     ".": "./src/index.js",
     "./react": {
-      "import": "./dist/react/index.js"
+      "import": "./dist/react/index.js",
+      "default": "./dist/react/index.js"
     },
-    "./react/styles": {
-      "style": "./dist/react/styles.css",
-      "default": "./dist/react/styles.css"
-    },
+    "./react/styles": "./dist/react/styles.css",
     "./src/*": "./src/*",
     "./fonts": "./fonts/fonts.css",
     "./fonts/*": "./fonts/*"

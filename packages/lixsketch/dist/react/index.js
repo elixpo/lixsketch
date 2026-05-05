@@ -9,7 +9,7 @@ import {
 } from "./chunk-DNAG7ML6.js";
 
 // src/react/LixSketchCanvas.jsx
-import { useCallback as useCallback14, useEffect as useEffect13, useRef as useRef10, useState as useState18 } from "react";
+import { useCallback as useCallback15, useEffect as useEffect13, useRef as useRef10, useState as useState19 } from "react";
 
 // src/react/store/useSketchStore.js
 import { create } from "zustand";
@@ -156,7 +156,7 @@ var useSketchStore = create((set, get) => ({
   setIsPanning: (v) => set({ isPanning: v }),
   setPanStart: (p) => set({ panStart: p }),
   // --- Canvas background ---
-  canvasBackground: "var(--lixsketch-bg, #13171C)",
+  canvasBackground: "var(--lixsketch-bg, #ffffff)",
   setCanvasBackground: (color) => set({ canvasBackground: color }),
   // --- Grid ---
   gridEnabled: false,
@@ -208,230 +208,6 @@ var useSketchStore = create((set, get) => ({
   setRoughRefs: (canvas, generator) => set({ roughCanvas: canvas, roughGenerator: generator })
 }));
 var useSketchStore_default = useSketchStore;
-
-// src/react/components/canvas/SVGCanvas.jsx
-import { useRef as useRef2, useState, useEffect as useEffect2 } from "react";
-
-// src/react/hooks/useSketchEngine.js
-import { useEffect, useRef } from "react";
-
-// src/react/hooks/inertStores.js
-var noop = () => {
-};
-var inertAuth = {
-  isAuthenticated: false,
-  user: null,
-  setUser: noop,
-  setAuthenticated: noop,
-  logout: noop
-};
-var inertCollab = {
-  roomId: null,
-  connected: false,
-  setRoom: noop,
-  setConnected: noop
-};
-var inertProfile = {
-  profile: null,
-  setProfile: noop
-};
-function makeStore(state) {
-  function useStore(selector) {
-    return typeof selector === "function" ? selector(state) : state;
-  }
-  useStore.getState = () => state;
-  useStore.setState = noop;
-  useStore.subscribe = () => () => {
-  };
-  return useStore;
-}
-var useAuthStore = makeStore(inertAuth);
-var useCollabStore = makeStore(inertCollab);
-var useProfileStore = makeStore(inertProfile);
-var WORKER_URL = "";
-
-// src/react/hooks/useSketchEngine.js
-function useSketchEngine(svgRef, ready = true) {
-  const engineRef = useRef(null);
-  useEffect(() => {
-    if (!ready || !svgRef.current) return;
-    let cancelled = false;
-    async function initEngine() {
-      try {
-        const storeState = useSketchStore_default.getState();
-        window.__sketchStoreApi = {
-          setSelectedShapeSidebar: (sidebar) => useSketchStore_default.getState().setSelectedShapeSidebar(sidebar),
-          clearSelectedShapeSidebar: () => useSketchStore_default.getState().clearSelectedShapeSidebar(),
-          setActiveTool: (tool, opts) => useSketchStore_default.getState().setActiveTool(tool, opts),
-          setZoom: (zoom) => useSketchStore_default.setState({ zoom }),
-          getState: () => useSketchStore_default.getState()
-        };
-        const { SketchEngine } = await import("./SketchEngine-LZOBUGFH.js");
-        if (cancelled) return;
-        const engine = new SketchEngine(svgRef.current);
-        await engine.init();
-        engineRef.current = engine;
-        window.__sketchEngine = engine;
-        window.__WORKER_URL = WORKER_URL;
-        const currentTool = useSketchStore_default.getState().activeTool;
-        engine.setActiveTool(currentTool);
-      } catch (err) {
-        console.error("[useSketchEngine] Failed to initialize:", err);
-      }
-    }
-    initEngine();
-    return () => {
-      cancelled = true;
-      if (engineRef.current) {
-        engineRef.current.cleanup();
-        engineRef.current = null;
-      }
-    };
-  }, [svgRef, ready]);
-  useEffect(() => {
-    const unsub = useSketchStore_default.subscribe(
-      (state, prevState) => {
-        if (state.activeTool !== prevState?.activeTool && engineRef.current) {
-          engineRef.current.setActiveTool(state.activeTool);
-        }
-      }
-    );
-    return unsub;
-  }, []);
-  return engineRef;
-}
-
-// src/react/components/canvas/SVGCanvas.jsx
-import { jsx, jsxs } from "react/jsx-runtime";
-var GRID_SIZE = 20;
-function SVGCanvas() {
-  const [svgReady, setSvgReady] = useState(false);
-  const svgRef = useRef2(null);
-  const canvasBackground = useSketchStore_default((s) => s.canvasBackground);
-  const gridEnabled = useSketchStore_default((s) => s.gridEnabled);
-  const getCursor = useSketchStore_default((s) => s.getCursor);
-  const cursor = getCursor();
-  useEffect2(() => {
-    const applyImperative = (w, h) => {
-      const zoom = window.currentZoom || 1;
-      const cv = window.currentViewBox || { x: 0, y: 0 };
-      const vbW = w / zoom;
-      const vbH = h / zoom;
-      const x = cv.x || 0;
-      const y = cv.y || 0;
-      window.currentViewBox = { x, y, width: vbW, height: vbH };
-      const el = svgRef.current;
-      if (el) el.setAttribute("viewBox", `${x} ${y} ${vbW} ${vbH}`);
-    };
-    const sync = () => {
-      const el = svgRef.current;
-      if (!el) return;
-      const rect = el.getBoundingClientRect();
-      const w = Math.max(1, Math.round(rect.width));
-      const h = Math.max(1, Math.round(rect.height));
-      applyImperative(w, h);
-    };
-    sync();
-    setSvgReady(true);
-    window.addEventListener("resize", sync);
-    let ro;
-    if (typeof ResizeObserver !== "undefined" && svgRef.current) {
-      ro = new ResizeObserver(sync);
-      ro.observe(svgRef.current);
-    }
-    return () => {
-      window.removeEventListener("resize", sync);
-      if (ro) ro.disconnect();
-    };
-  }, []);
-  useEffect2(() => {
-    const svg = svgRef.current;
-    if (!svg) return;
-    const handleCanvasClick = () => {
-      const activeTool = useSketchStore_default.getState().activeTool;
-      if (activeTool === TOOLS.ICON && !window.isIconToolActive) {
-        useSketchStore_default.getState().setActiveTool(TOOLS.SELECT);
-      }
-    };
-    svg.addEventListener("pointerdown", handleCanvasClick);
-    return () => svg.removeEventListener("pointerdown", handleCanvasClick);
-  }, [svgReady]);
-  useSketchEngine(svgRef, svgReady);
-  useEffect2(() => {
-    window.__gridEnabled = gridEnabled;
-  }, [gridEnabled]);
-  return /* @__PURE__ */ jsxs(
-    "svg",
-    {
-      id: "freehand-canvas",
-      ref: svgRef,
-      className: "absolute inset-0 w-full h-full",
-      style: {
-        background: canvasBackground,
-        cursor,
-        userSelect: "none",
-        WebkitUserSelect: "none",
-        touchAction: "none"
-      },
-      preserveAspectRatio: "none",
-      suppressHydrationWarning: true,
-      children: [
-        gridEnabled && /* @__PURE__ */ jsxs("defs", { children: [
-          /* @__PURE__ */ jsx(
-            "pattern",
-            {
-              id: "grid-small",
-              width: GRID_SIZE,
-              height: GRID_SIZE,
-              patternUnits: "userSpaceOnUse",
-              children: /* @__PURE__ */ jsx(
-                "path",
-                {
-                  d: `M ${GRID_SIZE} 0 L 0 0 0 ${GRID_SIZE}`,
-                  fill: "none",
-                  stroke: "rgba(255,255,255,0.06)",
-                  strokeWidth: "0.5"
-                }
-              )
-            }
-          ),
-          /* @__PURE__ */ jsxs(
-            "pattern",
-            {
-              id: "grid-large",
-              width: GRID_SIZE * 5,
-              height: GRID_SIZE * 5,
-              patternUnits: "userSpaceOnUse",
-              children: [
-                /* @__PURE__ */ jsx("rect", { width: GRID_SIZE * 5, height: GRID_SIZE * 5, fill: "url(#grid-small)" }),
-                /* @__PURE__ */ jsx(
-                  "path",
-                  {
-                    d: `M ${GRID_SIZE * 5} 0 L 0 0 0 ${GRID_SIZE * 5}`,
-                    fill: "none",
-                    stroke: "rgba(255,255,255,0.12)",
-                    strokeWidth: "0.8"
-                  }
-                )
-              ]
-            }
-          )
-        ] }),
-        gridEnabled && /* @__PURE__ */ jsx(
-          "rect",
-          {
-            x: "-100000",
-            y: "-100000",
-            width: "200000",
-            height: "200000",
-            fill: "url(#grid-large)",
-            style: { pointerEvents: "none" }
-          }
-        )
-      ]
-    }
-  );
-}
 
 // src/react/store/useUIStore.js
 import { create as create2 } from "zustand";
@@ -617,6 +393,237 @@ var useUIStore = create2((set, get) => ({
 }));
 var useUIStore_default = useUIStore;
 
+// src/react/components/canvas/SVGCanvas.jsx
+import { useRef as useRef2, useState, useEffect as useEffect2 } from "react";
+
+// src/react/hooks/useSketchEngine.js
+import { useEffect, useRef } from "react";
+
+// src/react/hooks/inertStores.js
+var noop = () => {
+};
+var inertAuth = {
+  isAuthenticated: false,
+  user: null,
+  setUser: noop,
+  setAuthenticated: noop,
+  logout: noop
+};
+var inertCollab = {
+  roomId: null,
+  connected: false,
+  setRoom: noop,
+  setConnected: noop
+};
+var inertProfile = {
+  profile: null,
+  setProfile: noop
+};
+function makeStore(state) {
+  function useStore(selector) {
+    return typeof selector === "function" ? selector(state) : state;
+  }
+  useStore.getState = () => state;
+  useStore.setState = noop;
+  useStore.subscribe = () => () => {
+  };
+  return useStore;
+}
+var useAuthStore = makeStore(inertAuth);
+var useCollabStore = makeStore(inertCollab);
+var useProfileStore = makeStore(inertProfile);
+var WORKER_URL = "";
+async function triggerDocCloudSync() {
+}
+function persistLayoutMode() {
+}
+async function triggerCloudSync() {
+  return false;
+}
+
+// src/react/hooks/useSketchEngine.js
+function useSketchEngine(svgRef, ready = true) {
+  const engineRef = useRef(null);
+  useEffect(() => {
+    if (!ready || !svgRef.current) return;
+    let cancelled = false;
+    async function initEngine() {
+      try {
+        const storeState = useSketchStore_default.getState();
+        window.__sketchStoreApi = {
+          setSelectedShapeSidebar: (sidebar) => useSketchStore_default.getState().setSelectedShapeSidebar(sidebar),
+          clearSelectedShapeSidebar: () => useSketchStore_default.getState().clearSelectedShapeSidebar(),
+          setActiveTool: (tool, opts) => useSketchStore_default.getState().setActiveTool(tool, opts),
+          setZoom: (zoom) => useSketchStore_default.setState({ zoom }),
+          getState: () => useSketchStore_default.getState()
+        };
+        const { SketchEngine } = await import("./SketchEngine-LZOBUGFH.js");
+        if (cancelled) return;
+        const engine = new SketchEngine(svgRef.current);
+        await engine.init();
+        engineRef.current = engine;
+        window.__sketchEngine = engine;
+        window.__WORKER_URL = WORKER_URL;
+        const currentTool = useSketchStore_default.getState().activeTool;
+        engine.setActiveTool(currentTool);
+      } catch (err) {
+        console.error("[useSketchEngine] Failed to initialize:", err);
+      }
+    }
+    initEngine();
+    return () => {
+      cancelled = true;
+      if (engineRef.current) {
+        engineRef.current.cleanup();
+        engineRef.current = null;
+      }
+    };
+  }, [svgRef, ready]);
+  useEffect(() => {
+    const unsub = useSketchStore_default.subscribe(
+      (state, prevState) => {
+        if (state.activeTool !== prevState?.activeTool && engineRef.current) {
+          engineRef.current.setActiveTool(state.activeTool);
+        }
+      }
+    );
+    return unsub;
+  }, []);
+  return engineRef;
+}
+
+// src/react/components/canvas/SVGCanvas.jsx
+import { jsx, jsxs } from "react/jsx-runtime";
+var GRID_SIZE = 20;
+function SVGCanvas() {
+  const [svgReady, setSvgReady] = useState(false);
+  const svgRef = useRef2(null);
+  const canvasBackground = useSketchStore_default((s) => s.canvasBackground);
+  const gridEnabled = useSketchStore_default((s) => s.gridEnabled);
+  const getCursor = useSketchStore_default((s) => s.getCursor);
+  const cursor = getCursor();
+  useEffect2(() => {
+    const applyImperative = (w, h) => {
+      const zoom = window.currentZoom || 1;
+      const cv = window.currentViewBox || { x: 0, y: 0 };
+      const vbW = w / zoom;
+      const vbH = h / zoom;
+      const x = cv.x || 0;
+      const y = cv.y || 0;
+      window.currentViewBox = { x, y, width: vbW, height: vbH };
+      const el = svgRef.current;
+      if (el) el.setAttribute("viewBox", `${x} ${y} ${vbW} ${vbH}`);
+    };
+    const sync = () => {
+      const el = svgRef.current;
+      if (!el) return;
+      const rect = el.getBoundingClientRect();
+      const w = Math.max(1, Math.round(rect.width));
+      const h = Math.max(1, Math.round(rect.height));
+      applyImperative(w, h);
+    };
+    sync();
+    setSvgReady(true);
+    window.addEventListener("resize", sync);
+    let ro;
+    if (typeof ResizeObserver !== "undefined" && svgRef.current) {
+      ro = new ResizeObserver(sync);
+      ro.observe(svgRef.current);
+    }
+    return () => {
+      window.removeEventListener("resize", sync);
+      if (ro) ro.disconnect();
+    };
+  }, []);
+  useEffect2(() => {
+    const svg = svgRef.current;
+    if (!svg) return;
+    const handleCanvasClick = () => {
+      const activeTool = useSketchStore_default.getState().activeTool;
+      if (activeTool === TOOLS.ICON && !window.isIconToolActive) {
+        useSketchStore_default.getState().setActiveTool(TOOLS.SELECT);
+      }
+    };
+    svg.addEventListener("pointerdown", handleCanvasClick);
+    return () => svg.removeEventListener("pointerdown", handleCanvasClick);
+  }, [svgReady]);
+  useSketchEngine(svgRef, svgReady);
+  useEffect2(() => {
+    window.__gridEnabled = gridEnabled;
+  }, [gridEnabled]);
+  return /* @__PURE__ */ jsxs(
+    "svg",
+    {
+      id: "freehand-canvas",
+      ref: svgRef,
+      className: "absolute inset-0 w-full h-full",
+      style: {
+        background: canvasBackground,
+        cursor,
+        userSelect: "none",
+        WebkitUserSelect: "none",
+        touchAction: "none"
+      },
+      preserveAspectRatio: "none",
+      suppressHydrationWarning: true,
+      children: [
+        gridEnabled && /* @__PURE__ */ jsxs("defs", { children: [
+          /* @__PURE__ */ jsx(
+            "pattern",
+            {
+              id: "grid-small",
+              width: GRID_SIZE,
+              height: GRID_SIZE,
+              patternUnits: "userSpaceOnUse",
+              children: /* @__PURE__ */ jsx(
+                "path",
+                {
+                  d: `M ${GRID_SIZE} 0 L 0 0 0 ${GRID_SIZE}`,
+                  fill: "none",
+                  stroke: "rgba(255,255,255,0.06)",
+                  strokeWidth: "0.5"
+                }
+              )
+            }
+          ),
+          /* @__PURE__ */ jsxs(
+            "pattern",
+            {
+              id: "grid-large",
+              width: GRID_SIZE * 5,
+              height: GRID_SIZE * 5,
+              patternUnits: "userSpaceOnUse",
+              children: [
+                /* @__PURE__ */ jsx("rect", { width: GRID_SIZE * 5, height: GRID_SIZE * 5, fill: "url(#grid-small)" }),
+                /* @__PURE__ */ jsx(
+                  "path",
+                  {
+                    d: `M ${GRID_SIZE * 5} 0 L 0 0 0 ${GRID_SIZE * 5}`,
+                    fill: "none",
+                    stroke: "rgba(255,255,255,0.12)",
+                    strokeWidth: "0.8"
+                  }
+                )
+              ]
+            }
+          )
+        ] }),
+        gridEnabled && /* @__PURE__ */ jsx(
+          "rect",
+          {
+            x: "-100000",
+            y: "-100000",
+            width: "200000",
+            height: "200000",
+            fill: "url(#grid-large)",
+            style: { pointerEvents: "none" }
+          }
+        )
+      ]
+    }
+  );
+}
+
 // src/react/components/Toolbar.jsx
 import { Fragment, jsx as jsx2, jsxs as jsxs2 } from "react/jsx-runtime";
 function getViewModeItems() {
@@ -741,8 +748,92 @@ function Toolbar() {
   ] });
 }
 
-// src/react/components/sidebars/ShapeSidebar.jsx
-import { useState as useState2, useRef as useRef3, useEffect as useEffect3 } from "react";
+// src/react/components/Footer.jsx
+import { useCallback } from "react";
+import { jsx as jsx3, jsxs as jsxs3 } from "react/jsx-runtime";
+function Footer() {
+  const zoom = useSketchStore_default((s) => s.zoom);
+  const setZoom = useSketchStore_default((s) => s.setZoom);
+  const viewMode = useSketchStore_default((s) => s.viewMode);
+  const zenMode = useSketchStore_default((s) => s.zenMode);
+  const zoomPercent = Math.round(zoom * 100);
+  const handleZoomIn = useCallback(() => {
+    if (window.zoomFromCenter) window.zoomFromCenter(1);
+  }, []);
+  const handleZoomOut = useCallback(() => {
+    if (window.zoomFromCenter) window.zoomFromCenter(-1);
+  }, []);
+  const handleZoomReset = useCallback(() => {
+    if (window.zoomReset) window.zoomReset();
+  }, []);
+  const handleUndo = useCallback(() => {
+    if (window.undo) window.undo();
+  }, []);
+  const handleRedo = useCallback(() => {
+    if (window.redo) window.redo();
+  }, []);
+  if (viewMode || zenMode) return null;
+  return /* @__PURE__ */ jsxs3("div", { className: "absolute bottom-1 right-5 flex items-center gap-2.5 z-[1000] font-[lixFont]", children: [
+    /* @__PURE__ */ jsxs3("div", { className: "flex items-center bg-surface rounded-lg overflow-hidden", children: [
+      /* @__PURE__ */ jsx3(
+        "button",
+        {
+          onClick: handleUndo,
+          title: "Undo (Ctrl+Z)",
+          className: "w-9 h-9 flex items-center justify-center text-text-muted hover:text-text-primary hover:bg-surface-hover transition-all duration-200",
+          children: /* @__PURE__ */ jsx3("i", { className: "bx bx-undo text-lg" })
+        }
+      ),
+      /* @__PURE__ */ jsx3("div", { className: "w-px h-5 bg-border-light" }),
+      /* @__PURE__ */ jsx3(
+        "button",
+        {
+          onClick: handleRedo,
+          title: "Redo (Ctrl+Shift+Z)",
+          className: "w-9 h-9 flex items-center justify-center text-text-muted hover:text-text-primary hover:bg-surface-hover transition-all duration-200",
+          children: /* @__PURE__ */ jsx3("i", { className: "bx bx-redo text-lg" })
+        }
+      )
+    ] }),
+    /* @__PURE__ */ jsxs3("div", { className: "flex items-center bg-surface rounded-lg overflow-hidden", children: [
+      /* @__PURE__ */ jsx3(
+        "button",
+        {
+          onClick: handleZoomOut,
+          title: "Zoom Out (Ctrl+-)",
+          className: "w-9 h-9 flex items-center justify-center text-text-muted hover:text-text-primary hover:bg-surface-hover transition-all duration-200",
+          children: /* @__PURE__ */ jsx3("i", { className: "bx bx-minus text-lg" })
+        }
+      ),
+      /* @__PURE__ */ jsx3("div", { className: "w-px h-5 bg-border-light" }),
+      /* @__PURE__ */ jsxs3(
+        "button",
+        {
+          onClick: handleZoomReset,
+          title: "Reset Zoom (Ctrl+0)",
+          className: "min-w-[52px] h-9 flex items-center justify-center text-text-secondary text-sm px-2 hover:bg-surface-hover transition-all duration-200",
+          children: [
+            zoomPercent,
+            "%"
+          ]
+        }
+      ),
+      /* @__PURE__ */ jsx3("div", { className: "w-px h-5 bg-border-light" }),
+      /* @__PURE__ */ jsx3(
+        "button",
+        {
+          onClick: handleZoomIn,
+          title: "Zoom In (Ctrl++)",
+          className: "w-9 h-9 flex items-center justify-center text-text-muted hover:text-text-primary hover:bg-surface-hover transition-all duration-200",
+          children: /* @__PURE__ */ jsx3("i", { className: "bx bx-plus text-lg" })
+        }
+      )
+    ] })
+  ] });
+}
+
+// src/react/components/AppMenu.jsx
+import { useState as useState2 } from "react";
 
 // src/react/hooks/useTranslation.js
 function useTranslation() {
@@ -754,10 +845,467 @@ function useTranslation() {
   };
 }
 
+// src/react/components/AppMenu.jsx
+import { Fragment as Fragment2, jsx as jsx4, jsxs as jsxs4 } from "react/jsx-runtime";
+var CANVAS_BACKGROUNDS = [
+  { color: "#000", label: "menu.canvasBg.black" },
+  { color: "#161718", label: "menu.canvasBg.darkGray" },
+  { color: "#13171C", label: "menu.canvasBg.blueBlack" },
+  { color: "#181605", label: "menu.canvasBg.darkYellow" },
+  { color: "#1B1615", label: "menu.canvasBg.darkBrown" }
+];
+function AppMenu() {
+  const { t, language } = useTranslation();
+  const LINKS = [
+    { label: t("links.documentation"), icon: "bx-book-open", href: "/docs" },
+    { label: t("links.github"), icon: "bxl-github", href: "https://github.com/elixpo/sketch.elixpo" },
+    { label: t("links.reportIssue"), icon: "bx-bug", href: "https://github.com/elixpo/sketch.elixpo/issues" }
+  ];
+  const PREFERENCE_ITEMS = [
+    { label: t("prefs.toolLock"), shortcut: "Q", id: "toolLock" },
+    { label: t("prefs.snapObjects"), shortcut: "Alt+S", id: "snapObjects" },
+    { label: t("prefs.toggleGrid"), shortcut: "Ctrl+'", id: "toggleGrid" },
+    { label: t("prefs.zenMode"), shortcut: "Alt+Z", id: "zenMode" },
+    { label: t("prefs.viewMode"), shortcut: "Alt+R", id: "viewMode" },
+    { label: t("prefs.canvasShapeProps"), shortcut: "Alt+/", id: "properties" },
+    { label: t("prefs.arrowBinding"), id: "arrowBinding", toggle: true },
+    { label: t("prefs.snapMidpoints"), id: "snapMidpoints", toggle: true }
+  ];
+  const menuOpen = useUIStore_default((s) => s.menuOpen);
+  const closeMenu = useUIStore_default((s) => s.closeMenu);
+  const toggleSaveModal = useUIStore_default((s) => s.toggleSaveModal);
+  const toggleCommandPalette = useUIStore_default((s) => s.toggleCommandPalette);
+  const toggleHelpModal = useUIStore_default((s) => s.toggleHelpModal);
+  const toggleExportImageModal = useUIStore_default((s) => s.toggleExportImageModal);
+  const theme = useUIStore_default((s) => s.theme);
+  const setTheme = useUIStore_default((s) => s.setTheme);
+  const persistUIPrefs = useUIStore_default((s) => s.persistUIPrefs);
+  const canvasBackground = useSketchStore_default((s) => s.canvasBackground);
+  const setCanvasBackground = useSketchStore_default((s) => s.setCanvasBackground);
+  const clearShapes = useSketchStore_default((s) => s.clearShapes);
+  const clearHistory = useSketchStore_default((s) => s.clearHistory);
+  const gridEnabled = useSketchStore_default((s) => s.gridEnabled);
+  const toggleGrid = useSketchStore_default((s) => s.toggleGrid);
+  const viewMode = useSketchStore_default((s) => s.viewMode);
+  const zenMode = useSketchStore_default((s) => s.zenMode);
+  const toolLock = useSketchStore_default((s) => s.toolLock);
+  const snapToObjects = useSketchStore_default((s) => s.snapToObjects);
+  const toggleViewMode = useSketchStore_default((s) => s.toggleViewMode);
+  const toggleZenMode = useSketchStore_default((s) => s.toggleZenMode);
+  const toggleToolLock = useSketchStore_default((s) => s.toggleToolLock);
+  const toggleSnapToObjects = useSketchStore_default((s) => s.toggleSnapToObjects);
+  const layoutMode = useSketchStore_default((s) => s.layoutMode);
+  const setLayoutMode = useSketchStore_default((s) => s.setLayoutMode);
+  const handleSetLayout = (mode) => {
+    if (mode === layoutMode) return;
+    setLayoutMode(mode);
+    persistLayoutMode(mode);
+  };
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const authUser = useAuthStore((s) => s.user);
+  const login = useAuthStore((s) => s.login);
+  const logout = useAuthStore((s) => s.logout);
+  const [prefsOpen, setPrefsOpen] = useState2(false);
+  const handleOpen = () => {
+    const serializer = window.__sceneSerializer;
+    if (serializer) {
+      serializer.upload().then((result) => {
+        if (result && result.success) closeMenu();
+        else if (result && result.error) {
+          console.warn("[Open] Invalid scene file:", result.error);
+        }
+      });
+    }
+    closeMenu();
+  };
+  return /* @__PURE__ */ jsxs4(Fragment2, { children: [
+    menuOpen && /* @__PURE__ */ jsx4(
+      "div",
+      {
+        className: "fixed inset-0 z-[999]",
+        onClick: () => {
+          closeMenu();
+          setPrefsOpen(false);
+        }
+      }
+    ),
+    /* @__PURE__ */ jsxs4(
+      "div",
+      {
+        className: `absolute top-14 right-4 w-[230px] max-h-[calc(100vh-140px)] overflow-y-auto no-scrollbar bg-surface/75 backdrop-blur-lg rounded-2xl z-[1000] border border-border-light p-1.5 font-[lixFont] text-[13px] transition-all duration-200 ${menuOpen ? "opacity-100 blur-0 pointer-events-auto" : "opacity-0 blur-[20px] pointer-events-none"}`,
+        children: [
+          /* @__PURE__ */ jsxs4(
+            "button",
+            {
+              onClick: handleOpen,
+              className: "w-full flex items-center justify-between px-3 py-1.5 rounded-lg text-text-secondary text-[12.5px] hover:bg-surface-hover cursor-pointer transition-all duration-200",
+              children: [
+                /* @__PURE__ */ jsxs4("span", { className: "flex items-center gap-2", children: [
+                  /* @__PURE__ */ jsx4("i", { className: "bx bx-folder-open text-sm" }),
+                  t("menu.open")
+                ] }),
+                /* @__PURE__ */ jsx4("span", { className: "text-text-dim text-xs", children: "Ctrl+O" })
+              ]
+            }
+          ),
+          /* @__PURE__ */ jsxs4(
+            "button",
+            {
+              onClick: () => {
+                const serializer = window.__sceneSerializer;
+                if (serializer) {
+                  const workspaceName = useUIStore_default.getState().workspaceName || "Untitled";
+                  const sceneData = serializer.save(workspaceName);
+                  const sessionId = window.__sessionID;
+                  const key = sessionId ? `lixsketch-autosave-${sessionId}` : "lixsketch-autosave";
+                  localStorage.setItem(key, JSON.stringify(sceneData));
+                  useUIStore_default.getState().setSaveStatus("local");
+                  triggerCloudSync();
+                }
+                closeMenu();
+              },
+              className: "w-full flex items-center justify-between px-3 py-1.5 rounded-lg text-text-secondary text-[12.5px] hover:bg-surface-hover cursor-pointer transition-all duration-200",
+              children: [
+                /* @__PURE__ */ jsxs4("span", { className: "flex items-center gap-2", children: [
+                  /* @__PURE__ */ jsx4("i", { className: "bx bx-check-circle text-sm" }),
+                  t("menu.quickSave")
+                ] }),
+                /* @__PURE__ */ jsx4("span", { className: "text-text-dim text-xs", children: "Ctrl+S" })
+              ]
+            }
+          ),
+          /* @__PURE__ */ jsxs4(
+            "button",
+            {
+              onClick: () => {
+                toggleSaveModal();
+                closeMenu();
+              },
+              className: "w-full flex items-center justify-between px-3 py-1.5 rounded-lg text-text-secondary text-[12.5px] hover:bg-surface-hover cursor-pointer transition-all duration-200",
+              children: [
+                /* @__PURE__ */ jsxs4("span", { className: "flex items-center gap-2", children: [
+                  /* @__PURE__ */ jsx4("i", { className: "bx bx-save text-sm" }),
+                  t("menu.saveShare")
+                ] }),
+                /* @__PURE__ */ jsx4("span", { className: "text-text-dim text-xs", children: "Ctrl+Shift+S" })
+              ]
+            }
+          ),
+          /* @__PURE__ */ jsxs4(
+            "button",
+            {
+              onClick: () => {
+                toggleExportImageModal();
+                closeMenu();
+              },
+              className: "w-full flex items-center justify-between px-3 py-1.5 rounded-lg text-text-secondary text-[12.5px] hover:bg-surface-hover cursor-pointer transition-all duration-200",
+              children: [
+                /* @__PURE__ */ jsxs4("span", { className: "flex items-center gap-2", children: [
+                  /* @__PURE__ */ jsx4("i", { className: "bx bx-image text-sm" }),
+                  t("menu.exportImage")
+                ] }),
+                /* @__PURE__ */ jsx4("span", { className: "text-text-dim text-xs", children: "Ctrl+Shift+E" })
+              ]
+            }
+          ),
+          /* @__PURE__ */ jsx4("hr", { className: "border-border-light my-1" }),
+          /* @__PURE__ */ jsxs4(
+            "button",
+            {
+              onClick: () => {
+                toggleCommandPalette();
+                closeMenu();
+              },
+              className: "w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs transition-all duration-200 text-accent-blue bg-accent-blue/10 hover:bg-accent-blue/20 cursor-pointer",
+              children: [
+                /* @__PURE__ */ jsxs4("span", { className: "flex items-center gap-2", children: [
+                  /* @__PURE__ */ jsx4("i", { className: "bx bx-command text-sm" }),
+                  t("menu.commands")
+                ] }),
+                /* @__PURE__ */ jsx4("span", { className: "text-text-dim text-xs", children: "Ctrl+/" })
+              ]
+            }
+          ),
+          /* @__PURE__ */ jsxs4(
+            "button",
+            {
+              onClick: () => {
+                useUIStore_default.getState().toggleFindBar();
+                closeMenu();
+              },
+              className: "w-full flex items-center justify-between px-3 py-1.5 rounded-lg text-text-secondary text-[12.5px] hover:bg-surface-hover cursor-pointer transition-all duration-200",
+              children: [
+                /* @__PURE__ */ jsxs4("span", { className: "flex items-center gap-2", children: [
+                  /* @__PURE__ */ jsx4("i", { className: "bx bx-search text-sm" }),
+                  t("menu.findText")
+                ] }),
+                /* @__PURE__ */ jsx4("span", { className: "text-text-dim text-xs", children: "Ctrl+F" })
+              ]
+            }
+          ),
+          /* @__PURE__ */ jsx4(
+            "button",
+            {
+              onClick: () => {
+                useUIStore_default.getState().toggleCanvasProperties();
+                closeMenu();
+              },
+              className: "w-full flex items-center justify-between px-3 py-1.5 rounded-lg text-text-secondary text-[12.5px] hover:bg-surface-hover cursor-pointer transition-all duration-200",
+              children: /* @__PURE__ */ jsxs4("span", { className: "flex items-center gap-2", children: [
+                /* @__PURE__ */ jsx4("i", { className: "bx bx-info-circle text-sm" }),
+                t("menu.canvasProperties")
+              ] })
+            }
+          ),
+          /* @__PURE__ */ jsx4(
+            "button",
+            {
+              onClick: () => {
+                toggleHelpModal();
+                closeMenu();
+              },
+              className: "w-full flex items-center justify-between px-3 py-1.5 rounded-lg text-text-secondary text-[12.5px] hover:bg-surface-hover cursor-pointer transition-all duration-200",
+              children: /* @__PURE__ */ jsxs4("span", { className: "flex items-center gap-2", children: [
+                /* @__PURE__ */ jsx4("i", { className: "bx bx-help-circle text-sm" }),
+                t("menu.help")
+              ] })
+            }
+          ),
+          /* @__PURE__ */ jsx4("hr", { className: "border-border-light my-1" }),
+          /* @__PURE__ */ jsxs4("div", { className: "px-3 py-1.5", children: [
+            /* @__PURE__ */ jsxs4("p", { className: "text-text-dim text-[10px] uppercase tracking-wider mb-1.5 flex items-center gap-1.5", children: [
+              /* @__PURE__ */ jsx4("i", { className: "bx bx-file-blank text-[11px]" }),
+              "Document"
+            ] }),
+            /* @__PURE__ */ jsx4("div", { className: "flex items-center gap-1 bg-surface/60 border border-border-light rounded-lg p-0.5", children: [
+              { key: "canvas", icon: "bx-pen", label: "Canvas" },
+              { key: "split", icon: "bx-layout", label: "Split" },
+              { key: "docs", icon: "bxs-notepad", label: "Docs" }
+            ].map((m) => {
+              const active = layoutMode === m.key;
+              return /* @__PURE__ */ jsxs4(
+                "button",
+                {
+                  onClick: () => handleSetLayout(m.key),
+                  title: m.label,
+                  className: `flex-1 flex items-center justify-center gap-1 h-6 rounded-md text-[10.5px] transition-all duration-150 ${active ? "bg-accent-blue text-text-primary" : "text-text-muted hover:text-text-primary hover:bg-surface-hover"}`,
+                  children: [
+                    /* @__PURE__ */ jsx4("i", { className: `bx ${m.icon} text-[11px]` }),
+                    m.label
+                  ]
+                },
+                m.key
+              );
+            }) })
+          ] }),
+          /* @__PURE__ */ jsxs4(
+            "button",
+            {
+              onClick: () => {
+                triggerCloudSync();
+                triggerDocCloudSync();
+                closeMenu();
+              },
+              className: "w-full flex items-center justify-between px-3 py-1.5 rounded-lg text-text-secondary text-[12.5px] hover:bg-surface-hover cursor-pointer transition-all duration-200",
+              children: [
+                /* @__PURE__ */ jsxs4("span", { className: "flex items-center gap-2", children: [
+                  /* @__PURE__ */ jsx4("i", { className: "bx bx-cloud-upload text-sm" }),
+                  "Sync canvas + doc"
+                ] }),
+                /* @__PURE__ */ jsx4("span", { className: "text-text-dim text-xs", children: "Ctrl+S" })
+              ]
+            }
+          ),
+          /* @__PURE__ */ jsx4("hr", { className: "border-border-light my-1" }),
+          /* @__PURE__ */ jsxs4(
+            "button",
+            {
+              onClick: () => setPrefsOpen((p) => !p),
+              className: `w-full flex items-center justify-between px-3 py-1.5 rounded-lg text-text-secondary text-[12.5px] hover:bg-surface-hover cursor-pointer transition-all duration-200 ${prefsOpen ? "bg-surface-hover" : ""}`,
+              children: [
+                /* @__PURE__ */ jsxs4("span", { className: "flex items-center gap-2", children: [
+                  /* @__PURE__ */ jsx4("i", { className: "bx bx-cog text-sm" }),
+                  t("menu.preferences")
+                ] }),
+                /* @__PURE__ */ jsx4("i", { className: `bx bx-chevron-down text-sm text-text-dim transition-transform duration-150 ${prefsOpen ? "rotate-180" : ""}` })
+              ]
+            }
+          ),
+          prefsOpen && /* @__PURE__ */ jsxs4("div", { className: "ml-2 border-l border-border-light pl-1", children: [
+            /* @__PURE__ */ jsxs4("div", { className: "w-full flex items-center justify-between px-3 py-1.5 rounded-lg text-text-secondary text-[11px] transition-all duration-200", children: [
+              /* @__PURE__ */ jsx4("span", { className: "flex items-center gap-2", children: t("prefs.language") }),
+              /* @__PURE__ */ jsxs4(
+                "select",
+                {
+                  className: "bg-surface-hover text-text-primary text-[10px] rounded px-1 outline-none border border-border-light",
+                  value: language,
+                  onChange: (e) => persistUIPrefs({ language: e.target.value }),
+                  children: [
+                    /* @__PURE__ */ jsx4("option", { value: "en", children: "English" }),
+                    /* @__PURE__ */ jsx4("option", { value: "bg", children: "\u0411\u044A\u043B\u0433\u0430\u0440\u0441\u043A\u0438" }),
+                    /* @__PURE__ */ jsx4("option", { value: "de", children: "Deutsch" })
+                  ]
+                }
+              )
+            ] }),
+            PREFERENCE_ITEMS.map((item) => {
+              const isActive = item.id === "toolLock" && toolLock || item.id === "snapObjects" && snapToObjects || item.id === "toggleGrid" && gridEnabled || item.id === "zenMode" && zenMode || item.id === "viewMode" && viewMode || item.toggle;
+              const handleClick = () => {
+                if (item.id === "toolLock") toggleToolLock();
+                else if (item.id === "snapObjects") toggleSnapToObjects();
+                else if (item.id === "toggleGrid") toggleGrid();
+                else if (item.id === "zenMode") {
+                  toggleZenMode();
+                  closeMenu();
+                } else if (item.id === "viewMode") {
+                  toggleViewMode();
+                  closeMenu();
+                }
+              };
+              return /* @__PURE__ */ jsxs4(
+                "button",
+                {
+                  onClick: handleClick,
+                  className: "w-full flex items-center justify-between px-3 py-1.5 rounded-lg text-text-secondary text-[11px] hover:bg-surface-hover cursor-pointer transition-all duration-200",
+                  children: [
+                    /* @__PURE__ */ jsxs4("span", { className: "flex items-center gap-2", children: [
+                      isActive && /* @__PURE__ */ jsx4("i", { className: "bx bx-check text-sm text-accent-blue" }),
+                      item.label
+                    ] }),
+                    item.shortcut && /* @__PURE__ */ jsx4("span", { className: "text-text-dim text-[10px]", children: item.shortcut })
+                  ]
+                },
+                item.id
+              );
+            })
+          ] }),
+          /* @__PURE__ */ jsxs4(
+            "button",
+            {
+              onClick: toggleGrid,
+              className: "w-full flex items-center justify-between px-3 py-1.5 rounded-lg text-text-secondary text-[12.5px] hover:bg-surface-hover cursor-pointer transition-all duration-200",
+              children: [
+                /* @__PURE__ */ jsxs4("span", { className: "flex items-center gap-2", children: [
+                  /* @__PURE__ */ jsx4("i", { className: "bx bx-grid-alt text-sm" }),
+                  t("menu.showGrid")
+                ] }),
+                /* @__PURE__ */ jsx4("div", { className: `w-7 h-4 rounded-full transition-all duration-150 relative ${gridEnabled ? "bg-accent-blue" : "bg-white/10"}`, children: /* @__PURE__ */ jsx4("div", { className: `absolute top-0.5 w-3 h-3 rounded-full bg-white transition-all duration-150 ${gridEnabled ? "left-3.5" : "left-0.5"}` }) })
+              ]
+            }
+          ),
+          /* @__PURE__ */ jsx4(
+            "button",
+            {
+              onClick: () => {
+                const serializer = window.__sceneSerializer;
+                if (serializer?.resetCanvas) serializer.resetCanvas();
+                clearShapes();
+                clearHistory();
+                closeMenu();
+              },
+              className: "w-full flex items-center justify-between px-3 py-2 rounded-lg text-red-400 text-xs hover:bg-red-500/10 cursor-pointer transition-all duration-200",
+              children: /* @__PURE__ */ jsxs4("span", { className: "flex items-center gap-2", children: [
+                /* @__PURE__ */ jsx4("i", { className: "bx bx-reset text-sm" }),
+                t("menu.resetCanvas")
+              ] })
+            }
+          ),
+          /* @__PURE__ */ jsx4("hr", { className: "border-border-light my-1" }),
+          LINKS.map((link) => {
+            const isExternal = link.href.startsWith("http");
+            return /* @__PURE__ */ jsxs4(
+              "a",
+              {
+                href: link.href,
+                ...isExternal ? { target: "_blank", rel: "noopener noreferrer" } : {},
+                onClick: closeMenu,
+                className: "w-full flex items-center gap-2 px-3 py-1.5 rounded-lg text-text-secondary text-[12.5px] hover:bg-surface-hover cursor-pointer transition-all duration-200",
+                children: [
+                  /* @__PURE__ */ jsx4("i", { className: `bx ${link.icon} text-sm` }),
+                  link.label
+                ]
+              },
+              link.label
+            );
+          }),
+          /* @__PURE__ */ jsx4("hr", { className: "border-border-light my-1" }),
+          isAuthenticated ? /* @__PURE__ */ jsxs4(Fragment2, { children: [
+            /* @__PURE__ */ jsxs4("div", { className: "px-3 py-2 flex items-center gap-2", children: [
+              authUser?.avatar ? /* @__PURE__ */ jsx4("img", { src: authUser.avatar, alt: "", className: "w-5 h-5 rounded-full" }) : /* @__PURE__ */ jsx4("i", { className: "bx bx-user-circle text-sm text-accent-blue" }),
+              /* @__PURE__ */ jsx4("span", { className: "text-text-secondary text-xs truncate flex-1", children: authUser?.displayName || authUser?.email })
+            ] }),
+            /* @__PURE__ */ jsx4(
+              "button",
+              {
+                onClick: () => {
+                  logout();
+                  closeMenu();
+                },
+                className: "w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs transition-all duration-200 text-red-400 hover:bg-red-500/10 cursor-pointer",
+                children: /* @__PURE__ */ jsxs4("span", { className: "flex items-center gap-2", children: [
+                  /* @__PURE__ */ jsx4("i", { className: "bx bx-log-out text-sm" }),
+                  t("menu.signOut")
+                ] })
+              }
+            )
+          ] }) : /* @__PURE__ */ jsxs4(
+            "button",
+            {
+              onClick: () => {
+                login();
+                closeMenu();
+              },
+              className: "w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs transition-all duration-200 text-text-secondary hover:bg-surface-hover",
+              children: [
+                /* @__PURE__ */ jsxs4("span", { className: "flex items-center gap-2", children: [
+                  /* @__PURE__ */ jsx4("i", { className: "bx bx-log-in text-sm" }),
+                  t("menu.signIn")
+                ] }),
+                /* @__PURE__ */ jsx4("span", { className: "text-text-dim text-[10px] px-1.5 py-0.5 rounded bg-accent-blue/15 text-accent-blue", children: "Elixpo" })
+              ]
+            }
+          ),
+          /* @__PURE__ */ jsx4("hr", { className: "border-border-light my-1" }),
+          /* @__PURE__ */ jsxs4("div", { className: "px-3 py-2", children: [
+            /* @__PURE__ */ jsx4("p", { className: "text-text-dim text-xs uppercase tracking-wider mb-2", children: t("menu.theme") }),
+            /* @__PURE__ */ jsx4("div", { className: "flex items-center gap-1", children: [
+              { value: "light", icon: "bxs-sun" },
+              { value: "dark", icon: "bxs-moon" },
+              { value: "system", icon: "bx-laptop" }
+            ].map((t2) => /* @__PURE__ */ jsx4(
+              "button",
+              {
+                onClick: () => setTheme(t2.value),
+                className: `flex-1 flex items-center justify-center py-1.5 rounded-lg text-xs cursor-pointer transition-all duration-200 ${theme === t2.value ? "bg-accent text-text-primary" : "text-text-muted hover:bg-surface-hover"}`,
+                children: /* @__PURE__ */ jsx4("i", { className: `bx ${t2.icon} text-sm` })
+              },
+              t2.value
+            )) })
+          ] }),
+          /* @__PURE__ */ jsxs4("div", { className: "px-3 py-2", children: [
+            /* @__PURE__ */ jsx4("p", { className: "text-text-dim text-xs uppercase tracking-wider mb-2", children: t("menu.canvasBackground") }),
+            /* @__PURE__ */ jsx4("div", { className: "flex items-center gap-1.5", children: CANVAS_BACKGROUNDS.map((bg) => /* @__PURE__ */ jsx4(
+              "button",
+              {
+                onClick: () => setCanvasBackground(bg.color),
+                title: t(bg.label),
+                className: `w-7 h-7 rounded-full border-2 cursor-pointer transition-all duration-200 ${canvasBackground === bg.color ? "border-accent scale-110" : "border-border hover:border-border-light"}`,
+                style: { backgroundColor: bg.color }
+              },
+              bg.color
+            )) })
+          ] })
+        ]
+      }
+    )
+  ] });
+}
+
 // src/react/components/sidebars/ShapeSidebar.jsx
-import { jsx as jsx3, jsxs as jsxs3 } from "react/jsx-runtime";
+import { useState as useState3, useRef as useRef3, useEffect as useEffect3 } from "react";
+import { jsx as jsx5, jsxs as jsxs5 } from "react/jsx-runtime";
 function ToolbarButton({ icon, preview, children, tooltip }) {
-  const [open, setOpen] = useState2(false);
+  const [open, setOpen] = useState3(false);
   const ref = useRef3(null);
   useEffect3(() => {
     if (!open) return;
@@ -767,36 +1315,36 @@ function ToolbarButton({ icon, preview, children, tooltip }) {
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, [open]);
-  return /* @__PURE__ */ jsxs3("div", { ref, className: "relative flex items-center", children: [
-    /* @__PURE__ */ jsxs3(
+  return /* @__PURE__ */ jsxs5("div", { ref, className: "relative flex items-center", children: [
+    /* @__PURE__ */ jsxs5(
       "button",
       {
         onClick: () => setOpen(!open),
         title: tooltip,
         className: `h-9 flex items-center gap-1.5 px-3 rounded-lg transition-all duration-100 ${open ? "bg-white/[0.12] text-white" : "text-text-muted hover:text-white hover:bg-white/[0.06]"}`,
         children: [
-          preview || icon && /* @__PURE__ */ jsx3("i", { className: `bx ${icon} text-base` }),
-          /* @__PURE__ */ jsx3("svg", { className: `w-2 h-2 opacity-40 transition-transform duration-100 ${open ? "rotate-180" : ""}`, viewBox: "0 0 8 5", fill: "none", stroke: "currentColor", strokeWidth: "1.5", children: /* @__PURE__ */ jsx3("path", { d: "M1 1l3 3 3-3" }) })
+          preview || icon && /* @__PURE__ */ jsx5("i", { className: `bx ${icon} text-base` }),
+          /* @__PURE__ */ jsx5("svg", { className: `w-2 h-2 opacity-40 transition-transform duration-100 ${open ? "rotate-180" : ""}`, viewBox: "0 0 8 5", fill: "none", stroke: "currentColor", strokeWidth: "1.5", children: /* @__PURE__ */ jsx5("path", { d: "M1 1l3 3 3-3" }) })
         ]
       }
     ),
-    open && /* @__PURE__ */ jsxs3("div", { className: "absolute bottom-full left-1/2 -translate-x-1/2 mb-3 z-20", children: [
-      /* @__PURE__ */ jsx3("div", { className: "bg-[#252525] border border-white/[0.1] rounded-xl p-3 shadow-xl shadow-black/50 min-w-max", children }),
-      /* @__PURE__ */ jsx3("div", { className: "absolute -bottom-[5px] left-1/2 -translate-x-1/2 w-2.5 h-2.5 rotate-45 bg-[#252525] border-r border-b border-white/[0.1]" })
+    open && /* @__PURE__ */ jsxs5("div", { className: "absolute bottom-full left-1/2 -translate-x-1/2 mb-3 z-20", children: [
+      /* @__PURE__ */ jsx5("div", { className: "bg-[#252525] border border-white/[0.1] rounded-xl p-3 shadow-xl shadow-black/50 min-w-max", children }),
+      /* @__PURE__ */ jsx5("div", { className: "absolute -bottom-[5px] left-1/2 -translate-x-1/2 w-2.5 h-2.5 rotate-45 bg-[#252525] border-r border-b border-white/[0.1]" })
     ] })
   ] });
 }
 function Divider() {
-  return /* @__PURE__ */ jsx3("div", { className: "w-px h-5 bg-white/[0.08] mx-0.5 shrink-0" });
+  return /* @__PURE__ */ jsx5("div", { className: "w-px h-5 bg-white/[0.08] mx-0.5 shrink-0" });
 }
 function ShapeSidebar({ visible, children }) {
   const viewMode = useSketchStore_default((s) => s.viewMode);
   const show = visible && !viewMode;
-  return /* @__PURE__ */ jsx3(
+  return /* @__PURE__ */ jsx5(
     "div",
     {
       className: `absolute bottom-14 left-1/2 -translate-x-1/2 bg-[#1c1c1c] border border-white/[0.1] rounded-xl px-2 py-1.5 z-[999] font-[lixFont] transition-all duration-200 ${show ? "opacity-100 pointer-events-auto translate-y-0" : "opacity-0 pointer-events-none translate-y-2"}`,
-      children: /* @__PURE__ */ jsx3("div", { className: "flex items-center gap-0.5", children })
+      children: /* @__PURE__ */ jsx5("div", { className: "flex items-center gap-0.5", children })
     }
   );
 }
@@ -807,49 +1355,49 @@ function LayerControls() {
     if (!shape || !window.__layerOrder) return;
     window.__layerOrder[method](shape);
   };
-  return /* @__PURE__ */ jsxs3("div", { className: "flex items-center gap-0.5", children: [
-    /* @__PURE__ */ jsx3(
+  return /* @__PURE__ */ jsxs5("div", { className: "flex items-center gap-0.5", children: [
+    /* @__PURE__ */ jsx5(
       "button",
       {
         onClick: () => doLayer("sendToBack"),
         title: t("sidebar.sendToBack", { defaultValue: "Send to back" }),
         className: "h-9 w-8 flex items-center justify-center rounded-lg text-text-muted hover:text-white hover:bg-white/[0.06] transition-all duration-100",
-        children: /* @__PURE__ */ jsx3("i", { className: "bx bx-chevrons-down text-base" })
+        children: /* @__PURE__ */ jsx5("i", { className: "bx bx-chevrons-down text-base" })
       }
     ),
-    /* @__PURE__ */ jsx3(
+    /* @__PURE__ */ jsx5(
       "button",
       {
         onClick: () => doLayer("sendBackward"),
         title: t("sidebar.sendBackward"),
         className: "h-9 w-8 flex items-center justify-center rounded-lg text-text-muted hover:text-white hover:bg-white/[0.06] transition-all duration-100",
-        children: /* @__PURE__ */ jsx3("i", { className: "bx bx-chevron-down text-base" })
+        children: /* @__PURE__ */ jsx5("i", { className: "bx bx-chevron-down text-base" })
       }
     ),
-    /* @__PURE__ */ jsx3(
+    /* @__PURE__ */ jsx5(
       "button",
       {
         onClick: () => doLayer("bringForward"),
         title: t("sidebar.bringForward"),
         className: "h-9 w-8 flex items-center justify-center rounded-lg text-text-muted hover:text-white hover:bg-white/[0.06] transition-all duration-100",
-        children: /* @__PURE__ */ jsx3("i", { className: "bx bx-chevron-up text-base" })
+        children: /* @__PURE__ */ jsx5("i", { className: "bx bx-chevron-up text-base" })
       }
     ),
-    /* @__PURE__ */ jsx3(
+    /* @__PURE__ */ jsx5(
       "button",
       {
         onClick: () => doLayer("bringToFront"),
         title: t("sidebar.bringToFront", { defaultValue: "Bring to front" }),
         className: "h-9 w-8 flex items-center justify-center rounded-lg text-text-muted hover:text-white hover:bg-white/[0.06] transition-all duration-100",
-        children: /* @__PURE__ */ jsx3("i", { className: "bx bx-chevrons-up text-base" })
+        children: /* @__PURE__ */ jsx5("i", { className: "bx bx-chevrons-up text-base" })
       }
     )
   ] });
 }
 
 // src/react/components/sidebars/RectangleSidebar.jsx
-import { useState as useState3, useCallback } from "react";
-import { jsx as jsx4, jsxs as jsxs4 } from "react/jsx-runtime";
+import { useState as useState4, useCallback as useCallback2 } from "react";
+import { jsx as jsx6, jsxs as jsxs6 } from "react/jsx-runtime";
 var STROKE_COLORS = ["#fff", "#FF8383", "#3A994C", "#56A2E8", "#FFD700", "#FF69B4", "#A855F7"];
 var BG_COLORS = ["transparent", "#f0f0f0", "#ffcccb", "#90ee90", "#add8e6", "#FFE4B5", "#DDA0DD", "#2d2d2d"];
 var FILLS = [
@@ -860,15 +1408,15 @@ var FILLS = [
   { value: "transparent", label: "sidebar.fill.none" }
 ];
 function ColorGrid({ colors, selected, onSelect }) {
-  return /* @__PURE__ */ jsx4("div", { className: "grid grid-cols-4 gap-1.5", children: colors.map((c) => {
+  return /* @__PURE__ */ jsx6("div", { className: "grid grid-cols-4 gap-1.5", children: colors.map((c) => {
     const isTrans = c === "transparent";
-    return /* @__PURE__ */ jsx4(
+    return /* @__PURE__ */ jsx6(
       "button",
       {
         onClick: () => onSelect(c),
         className: `w-7 h-7 rounded-md border-[1.5px] transition-all duration-100 ${selected === c ? "border-[#5B57D1] scale-110" : "border-white/[0.08] hover:border-white/20"}`,
         style: !isTrans ? { backgroundColor: c } : void 0,
-        children: isTrans && /* @__PURE__ */ jsx4("svg", { className: "w-full h-full text-text-dim", viewBox: "0 0 20 20", children: /* @__PURE__ */ jsx4("line", { x1: "4", y1: "16", x2: "16", y2: "4", stroke: "currentColor", strokeWidth: "2" }) })
+        children: isTrans && /* @__PURE__ */ jsx6("svg", { className: "w-full h-full text-text-dim", viewBox: "0 0 20 20", children: /* @__PURE__ */ jsx6("line", { x1: "4", y1: "16", x2: "16", y2: "4", stroke: "currentColor", strokeWidth: "2" }) })
       },
       c
     );
@@ -878,282 +1426,36 @@ function RectangleSidebar() {
   const { t } = useTranslation();
   const activeTool = useSketchStore_default((s) => s.activeTool);
   const selectedShapeSidebar = useSketchStore_default((s) => s.selectedShapeSidebar);
-  const [strokeColor, setStrokeColor] = useState3("#fff");
-  const [bgColor, setBgColor] = useState3("transparent");
-  const [thickness, setThickness] = useState3(2);
-  const [lineStyle, setLineStyle] = useState3("solid");
-  const [fillStyle, setFillStyle] = useState3("hachure");
-  const update = useCallback((changes, localSetters) => {
-    Object.entries(localSetters).forEach(([, fn]) => fn());
-    if (window.updateSelectedRectStyle) window.updateSelectedRectStyle(changes);
-  }, []);
-  const updateStroke = useCallback((v) => {
-    setStrokeColor(v);
-    if (window.updateSelectedRectStyle) window.updateSelectedRectStyle({ stroke: v });
-  }, []);
-  const updateBg = useCallback((v) => {
-    setBgColor(v);
-    if (window.updateSelectedRectStyle) window.updateSelectedRectStyle({ fill: v });
-  }, []);
-  const updateThickness = useCallback((v) => {
-    setThickness(v);
-    if (window.updateSelectedRectStyle) window.updateSelectedRectStyle({ strokeWidth: v });
-  }, []);
-  const updateStyle = useCallback((v) => {
-    setLineStyle(v);
-    if (window.updateSelectedRectStyle) window.updateSelectedRectStyle({ outlineStyle: v });
-  }, []);
-  const updateFill = useCallback((v) => {
-    setFillStyle(v);
-    if (window.updateSelectedRectStyle) window.updateSelectedRectStyle({ fillStyle: v });
-  }, []);
-  return /* @__PURE__ */ jsxs4(ShapeSidebar, { visible: activeTool === TOOLS.RECTANGLE || selectedShapeSidebar === "rectangle", children: [
-    /* @__PURE__ */ jsxs4(
-      ToolbarButton,
-      {
-        tooltip: t("sidebar.strokeColor"),
-        preview: /* @__PURE__ */ jsx4("span", { className: "w-4 h-4 rounded-md border border-white/20", style: { backgroundColor: strokeColor } }),
-        children: [
-          /* @__PURE__ */ jsx4("p", { className: "text-xs text-text-muted uppercase tracking-wider mb-2", children: t("sidebar.sectionHeader.stroke") }),
-          /* @__PURE__ */ jsx4(ColorGrid, { colors: STROKE_COLORS, selected: strokeColor, onSelect: updateStroke })
-        ]
-      }
-    ),
-    /* @__PURE__ */ jsx4(Divider, {}),
-    /* @__PURE__ */ jsxs4(
-      ToolbarButton,
-      {
-        tooltip: t("sidebar.fillColor"),
-        preview: /* @__PURE__ */ jsx4("span", { className: "w-4 h-4 rounded-md border border-white/20", style: { backgroundColor: bgColor === "transparent" ? "transparent" : bgColor }, children: bgColor === "transparent" && /* @__PURE__ */ jsx4("svg", { className: "w-full h-full text-text-dim", viewBox: "0 0 16 16", children: /* @__PURE__ */ jsx4("line", { x1: "2", y1: "14", x2: "14", y2: "2", stroke: "currentColor", strokeWidth: "1.5" }) }) }),
-        children: [
-          /* @__PURE__ */ jsx4("p", { className: "text-xs text-text-muted uppercase tracking-wider mb-2", children: t("sidebar.sectionHeader.background") }),
-          /* @__PURE__ */ jsx4(ColorGrid, { colors: BG_COLORS, selected: bgColor, onSelect: updateBg })
-        ]
-      }
-    ),
-    /* @__PURE__ */ jsx4(Divider, {}),
-    /* @__PURE__ */ jsxs4(ToolbarButton, { icon: "bxs-edit-alt", tooltip: t("sidebar.strokeWidth"), children: [
-      /* @__PURE__ */ jsx4("p", { className: "text-xs text-text-muted uppercase tracking-wider mb-2", children: t("sidebar.sectionHeader.width") }),
-      /* @__PURE__ */ jsx4("div", { className: "flex items-center gap-1", children: [1, 2, 4, 7].map((w) => /* @__PURE__ */ jsx4(
-        "button",
-        {
-          onClick: () => updateThickness(w),
-          className: `w-9 h-8 flex items-center justify-center rounded-lg transition-all duration-100 ${thickness === w ? "bg-[#5B57D1]/20 text-[#5B57D1]" : "text-text-muted hover:bg-white/[0.06]"}`,
-          children: /* @__PURE__ */ jsx4("div", { className: "w-5 rounded-full bg-current", style: { height: Math.max(1, w) } })
-        },
-        w
-      )) })
-    ] }),
-    /* @__PURE__ */ jsx4(Divider, {}),
-    /* @__PURE__ */ jsxs4(ToolbarButton, { icon: "bxs-minus-circle", tooltip: "Stroke style", children: [
-      /* @__PURE__ */ jsx4("p", { className: "text-xs text-text-muted uppercase tracking-wider mb-2", children: t("sidebar.style") }),
-      /* @__PURE__ */ jsx4("div", { className: "flex items-center gap-1", children: [
-        { v: "solid", d: "" },
-        { v: "dashed", d: "6 4" },
-        { v: "dotted", d: "2 3" }
-      ].map((s) => /* @__PURE__ */ jsx4(
-        "button",
-        {
-          onClick: () => updateStyle(s.v),
-          className: `w-11 h-8 flex items-center justify-center rounded-lg transition-all duration-100 ${lineStyle === s.v ? "bg-[#5B57D1]/20" : "hover:bg-white/[0.06]"}`,
-          children: /* @__PURE__ */ jsx4("svg", { width: "28", height: "4", viewBox: "0 0 28 4", children: /* @__PURE__ */ jsx4("line", { x1: "0", y1: "2", x2: "28", y2: "2", stroke: "#fff", strokeWidth: "2", strokeDasharray: s.d, strokeLinecap: "round" }) })
-        },
-        s.v
-      )) })
-    ] }),
-    /* @__PURE__ */ jsx4(Divider, {}),
-    /* @__PURE__ */ jsxs4(ToolbarButton, { icon: "bxs-brush", tooltip: "Fill style", children: [
-      /* @__PURE__ */ jsx4("p", { className: "text-xs text-text-muted uppercase tracking-wider mb-2", children: t("sidebar.sectionHeader.fill") }),
-      /* @__PURE__ */ jsx4("div", { className: "flex flex-col gap-0.5", children: FILLS.map((f) => /* @__PURE__ */ jsxs4(
-        "button",
-        {
-          onClick: () => updateFill(f.value),
-          className: `flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs transition-all duration-100 ${fillStyle === f.value ? "bg-[#5B57D1] text-white" : "text-text-secondary hover:bg-white/[0.06]"}`,
-          children: [
-            /* @__PURE__ */ jsx4("span", { className: "w-1.5 h-1.5 rounded-full bg-current" }),
-            t(f.label)
-          ]
-        },
-        f.value
-      )) })
-    ] }),
-    /* @__PURE__ */ jsx4(Divider, {}),
-    /* @__PURE__ */ jsx4(LayerControls, {})
-  ] });
-}
-
-// src/react/components/sidebars/CircleSidebar.jsx
-import { useState as useState4, useCallback as useCallback2 } from "react";
-import { jsx as jsx5, jsxs as jsxs5 } from "react/jsx-runtime";
-var STROKE_COLORS2 = ["#fff", "#FF8383", "#3A994C", "#56A2E8", "#FFD700", "#FF69B4", "#A855F7"];
-var BG_COLORS2 = ["transparent", "#f0f0f0", "#ffcccb", "#90ee90", "#add8e6", "#FFE4B5", "#DDA0DD", "#2d2d2d"];
-var FILLS2 = [
-  { value: "hachure", label: "sidebar.fill.hachure" },
-  { value: "solid", label: "sidebar.fill.solid" },
-  { value: "dots", label: "sidebar.fill.dots" },
-  { value: "cross-hatch", label: "sidebar.fill.cross" },
-  { value: "transparent", label: "sidebar.fill.none" }
-];
-function ColorGrid2({ colors, selected, onSelect }) {
-  return /* @__PURE__ */ jsx5("div", { className: "grid grid-cols-4 gap-1.5", children: colors.map((c) => {
-    const isTrans = c === "transparent";
-    return /* @__PURE__ */ jsx5(
-      "button",
-      {
-        onClick: () => onSelect(c),
-        className: `w-7 h-7 rounded-md border-[1.5px] transition-all duration-100 ${selected === c ? "border-accent-blue scale-110" : "border-white/[0.08] hover:border-white/20"}`,
-        style: !isTrans ? { backgroundColor: c } : void 0,
-        children: isTrans && /* @__PURE__ */ jsx5("svg", { className: "w-full h-full text-text-dim", viewBox: "0 0 20 20", children: /* @__PURE__ */ jsx5("line", { x1: "4", y1: "16", x2: "16", y2: "4", stroke: "currentColor", strokeWidth: "2" }) })
-      },
-      c
-    );
-  }) });
-}
-function CircleSidebar() {
-  const { t } = useTranslation();
-  const activeTool = useSketchStore_default((s) => s.activeTool);
-  const selectedShapeSidebar = useSketchStore_default((s) => s.selectedShapeSidebar);
   const [strokeColor, setStrokeColor] = useState4("#fff");
   const [bgColor, setBgColor] = useState4("transparent");
   const [thickness, setThickness] = useState4(2);
   const [lineStyle, setLineStyle] = useState4("solid");
   const [fillStyle, setFillStyle] = useState4("hachure");
+  const update = useCallback2((changes, localSetters) => {
+    Object.entries(localSetters).forEach(([, fn]) => fn());
+    if (window.updateSelectedRectStyle) window.updateSelectedRectStyle(changes);
+  }, []);
   const updateStroke = useCallback2((v) => {
     setStrokeColor(v);
-    if (window.updateSelectedCircleStyle) window.updateSelectedCircleStyle({ stroke: v });
+    if (window.updateSelectedRectStyle) window.updateSelectedRectStyle({ stroke: v });
   }, []);
   const updateBg = useCallback2((v) => {
     setBgColor(v);
-    if (window.updateSelectedCircleStyle) window.updateSelectedCircleStyle({ fill: v });
+    if (window.updateSelectedRectStyle) window.updateSelectedRectStyle({ fill: v });
   }, []);
   const updateThickness = useCallback2((v) => {
     setThickness(v);
-    if (window.updateSelectedCircleStyle) window.updateSelectedCircleStyle({ strokeWidth: v });
+    if (window.updateSelectedRectStyle) window.updateSelectedRectStyle({ strokeWidth: v });
   }, []);
   const updateStyle = useCallback2((v) => {
     setLineStyle(v);
-    if (window.updateSelectedCircleStyle) window.updateSelectedCircleStyle({ outlineStyle: v });
+    if (window.updateSelectedRectStyle) window.updateSelectedRectStyle({ outlineStyle: v });
   }, []);
   const updateFill = useCallback2((v) => {
     setFillStyle(v);
-    if (window.updateSelectedCircleStyle) window.updateSelectedCircleStyle({ fillStyle: v });
+    if (window.updateSelectedRectStyle) window.updateSelectedRectStyle({ fillStyle: v });
   }, []);
-  return /* @__PURE__ */ jsxs5(ShapeSidebar, { visible: activeTool === TOOLS.CIRCLE || selectedShapeSidebar === "circle", children: [
-    /* @__PURE__ */ jsxs5(
-      ToolbarButton,
-      {
-        tooltip: t("sidebar.strokeColor"),
-        preview: /* @__PURE__ */ jsx5("span", { className: "w-4 h-4 rounded-md border border-white/20", style: { backgroundColor: strokeColor } }),
-        children: [
-          /* @__PURE__ */ jsx5("p", { className: "text-xs text-text-muted uppercase tracking-wider mb-2", children: t("sidebar.sectionHeader.stroke") }),
-          /* @__PURE__ */ jsx5(ColorGrid2, { colors: STROKE_COLORS2, selected: strokeColor, onSelect: updateStroke })
-        ]
-      }
-    ),
-    /* @__PURE__ */ jsx5(Divider, {}),
-    /* @__PURE__ */ jsxs5(
-      ToolbarButton,
-      {
-        tooltip: t("sidebar.fillColor"),
-        preview: /* @__PURE__ */ jsx5("span", { className: "w-4 h-4 rounded-md border border-white/20", style: { backgroundColor: bgColor === "transparent" ? "transparent" : bgColor }, children: bgColor === "transparent" && /* @__PURE__ */ jsx5("svg", { className: "w-full h-full text-text-dim", viewBox: "0 0 16 16", children: /* @__PURE__ */ jsx5("line", { x1: "2", y1: "14", x2: "14", y2: "2", stroke: "currentColor", strokeWidth: "1.5" }) }) }),
-        children: [
-          /* @__PURE__ */ jsx5("p", { className: "text-xs text-text-muted uppercase tracking-wider mb-2", children: t("sidebar.sectionHeader.background") }),
-          /* @__PURE__ */ jsx5(ColorGrid2, { colors: BG_COLORS2, selected: bgColor, onSelect: updateBg })
-        ]
-      }
-    ),
-    /* @__PURE__ */ jsx5(Divider, {}),
-    /* @__PURE__ */ jsxs5(ToolbarButton, { icon: "bxs-edit-alt", tooltip: t("sidebar.strokeWidth"), children: [
-      /* @__PURE__ */ jsx5("p", { className: "text-xs text-text-muted uppercase tracking-wider mb-2", children: t("sidebar.sectionHeader.width") }),
-      /* @__PURE__ */ jsx5("div", { className: "flex items-center gap-1", children: [1, 2, 4, 7].map((w) => /* @__PURE__ */ jsx5(
-        "button",
-        {
-          onClick: () => updateThickness(w),
-          className: `w-9 h-8 flex items-center justify-center rounded-lg transition-all duration-100 ${thickness === w ? "bg-[#5B57D1]/20 text-[#5B57D1]" : "text-text-muted hover:bg-white/[0.06]"}`,
-          children: /* @__PURE__ */ jsx5("div", { className: "w-5 rounded-full bg-current", style: { height: Math.max(1, w) } })
-        },
-        w
-      )) })
-    ] }),
-    /* @__PURE__ */ jsx5(Divider, {}),
-    /* @__PURE__ */ jsxs5(ToolbarButton, { icon: "bxs-minus-circle", tooltip: "Stroke style", children: [
-      /* @__PURE__ */ jsx5("p", { className: "text-xs text-text-muted uppercase tracking-wider mb-2", children: t("sidebar.style") }),
-      /* @__PURE__ */ jsx5("div", { className: "flex items-center gap-1", children: [{ v: "solid", d: "" }, { v: "dashed", d: "6 4" }, { v: "dotted", d: "2 3" }].map((s) => /* @__PURE__ */ jsx5(
-        "button",
-        {
-          onClick: () => updateStyle(s.v),
-          className: `w-11 h-8 flex items-center justify-center rounded-lg transition-all duration-100 ${lineStyle === s.v ? "bg-[#5B57D1]/20" : "hover:bg-white/[0.06]"}`,
-          children: /* @__PURE__ */ jsx5("svg", { width: "28", height: "4", viewBox: "0 0 28 4", children: /* @__PURE__ */ jsx5("line", { x1: "0", y1: "2", x2: "28", y2: "2", stroke: "#fff", strokeWidth: "2", strokeDasharray: s.d, strokeLinecap: "round" }) })
-        },
-        s.v
-      )) })
-    ] }),
-    /* @__PURE__ */ jsx5(Divider, {}),
-    /* @__PURE__ */ jsxs5(ToolbarButton, { icon: "bxs-brush", tooltip: "Fill style", children: [
-      /* @__PURE__ */ jsx5("p", { className: "text-xs text-text-muted uppercase tracking-wider mb-2", children: t("sidebar.sectionHeader.fill") }),
-      /* @__PURE__ */ jsx5("div", { className: "flex flex-col gap-0.5", children: FILLS2.map((f) => /* @__PURE__ */ jsxs5(
-        "button",
-        {
-          onClick: () => updateFill(f.value),
-          className: `flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs transition-all duration-100 ${fillStyle === f.value ? "bg-[#5B57D1] text-white" : "text-text-secondary hover:bg-white/[0.06]"}`,
-          children: [
-            /* @__PURE__ */ jsx5("span", { className: "w-1.5 h-1.5 rounded-full bg-current" }),
-            t(f.label)
-          ]
-        },
-        f.value
-      )) })
-    ] }),
-    /* @__PURE__ */ jsx5(Divider, {}),
-    /* @__PURE__ */ jsx5(LayerControls, {})
-  ] });
-}
-
-// src/react/components/sidebars/LineSidebar.jsx
-import { useState as useState5, useCallback as useCallback3 } from "react";
-import { jsx as jsx6, jsxs as jsxs6 } from "react/jsx-runtime";
-var STROKE_COLORS3 = ["#fff", "#FF8383", "#3A994C", "#56A2E8", "#FFD700", "#FF69B4", "#A855F7"];
-function ColorGrid3({ colors, selected, onSelect }) {
-  return /* @__PURE__ */ jsx6("div", { className: "grid grid-cols-4 gap-1.5", children: colors.map((c) => /* @__PURE__ */ jsx6(
-    "button",
-    {
-      onClick: () => onSelect(c),
-      className: `w-7 h-7 rounded-md border-[1.5px] transition-all duration-100 ${selected === c ? "border-[#5B57D1] scale-110" : "border-white/[0.08] hover:border-white/20"}`,
-      style: { backgroundColor: c }
-    },
-    c
-  )) });
-}
-function LineSidebar() {
-  const { t } = useTranslation();
-  const activeTool = useSketchStore_default((s) => s.activeTool);
-  const selectedShapeSidebar = useSketchStore_default((s) => s.selectedShapeSidebar);
-  const [strokeColor, setStrokeColor] = useState5("#fff");
-  const [thickness, setThickness] = useState5(2);
-  const [lineStyle, setLineStyle] = useState5("solid");
-  const [sloppiness, setSloppiness] = useState5(0);
-  const [edge, setEdge] = useState5("smooth");
-  const updateStroke = useCallback3((v) => {
-    setStrokeColor(v);
-    if (window.updateSelectedLineStyle) window.updateSelectedLineStyle({ stroke: v });
-  }, []);
-  const updateThickness = useCallback3((v) => {
-    setThickness(v);
-    if (window.updateSelectedLineStyle) window.updateSelectedLineStyle({ strokeWidth: v });
-  }, []);
-  const updateStyle = useCallback3((v) => {
-    setLineStyle(v);
-    if (window.updateSelectedLineStyle) window.updateSelectedLineStyle({ strokeStyle: v });
-  }, []);
-  const updateSloppiness = useCallback3((v) => {
-    setSloppiness(v);
-    if (window.updateSelectedLineStyle) window.updateSelectedLineStyle({ sloppiness: v });
-  }, []);
-  const updateEdge = useCallback3((v) => {
-    setEdge(v);
-    if (window.updateSelectedLineStyle) window.updateSelectedLineStyle({ edge: v === "smooth" ? 1 : 5 });
-  }, []);
-  return /* @__PURE__ */ jsxs6(ShapeSidebar, { visible: activeTool === TOOLS.LINE || selectedShapeSidebar === "line", children: [
+  return /* @__PURE__ */ jsxs6(ShapeSidebar, { visible: activeTool === TOOLS.RECTANGLE || selectedShapeSidebar === "rectangle", children: [
     /* @__PURE__ */ jsxs6(
       ToolbarButton,
       {
@@ -1161,7 +1463,19 @@ function LineSidebar() {
         preview: /* @__PURE__ */ jsx6("span", { className: "w-4 h-4 rounded-md border border-white/20", style: { backgroundColor: strokeColor } }),
         children: [
           /* @__PURE__ */ jsx6("p", { className: "text-xs text-text-muted uppercase tracking-wider mb-2", children: t("sidebar.sectionHeader.stroke") }),
-          /* @__PURE__ */ jsx6(ColorGrid3, { colors: STROKE_COLORS3, selected: strokeColor, onSelect: updateStroke })
+          /* @__PURE__ */ jsx6(ColorGrid, { colors: STROKE_COLORS, selected: strokeColor, onSelect: updateStroke })
+        ]
+      }
+    ),
+    /* @__PURE__ */ jsx6(Divider, {}),
+    /* @__PURE__ */ jsxs6(
+      ToolbarButton,
+      {
+        tooltip: t("sidebar.fillColor"),
+        preview: /* @__PURE__ */ jsx6("span", { className: "w-4 h-4 rounded-md border border-white/20", style: { backgroundColor: bgColor === "transparent" ? "transparent" : bgColor }, children: bgColor === "transparent" && /* @__PURE__ */ jsx6("svg", { className: "w-full h-full text-text-dim", viewBox: "0 0 16 16", children: /* @__PURE__ */ jsx6("line", { x1: "2", y1: "14", x2: "14", y2: "2", stroke: "currentColor", strokeWidth: "1.5" }) }) }),
+        children: [
+          /* @__PURE__ */ jsx6("p", { className: "text-xs text-text-muted uppercase tracking-wider mb-2", children: t("sidebar.sectionHeader.background") }),
+          /* @__PURE__ */ jsx6(ColorGrid, { colors: BG_COLORS, selected: bgColor, onSelect: updateBg })
         ]
       }
     ),
@@ -1181,7 +1495,11 @@ function LineSidebar() {
     /* @__PURE__ */ jsx6(Divider, {}),
     /* @__PURE__ */ jsxs6(ToolbarButton, { icon: "bxs-minus-circle", tooltip: "Stroke style", children: [
       /* @__PURE__ */ jsx6("p", { className: "text-xs text-text-muted uppercase tracking-wider mb-2", children: t("sidebar.style") }),
-      /* @__PURE__ */ jsx6("div", { className: "flex items-center gap-1", children: [{ v: "solid", d: "" }, { v: "dashed", d: "6 4" }, { v: "dotted", d: "2 3" }].map((s) => /* @__PURE__ */ jsx6(
+      /* @__PURE__ */ jsx6("div", { className: "flex items-center gap-1", children: [
+        { v: "solid", d: "" },
+        { v: "dashed", d: "6 4" },
+        { v: "dotted", d: "2 3" }
+      ].map((s) => /* @__PURE__ */ jsx6(
         "button",
         {
           onClick: () => updateStyle(s.v),
@@ -1192,33 +1510,19 @@ function LineSidebar() {
       )) })
     ] }),
     /* @__PURE__ */ jsx6(Divider, {}),
-    /* @__PURE__ */ jsxs6(ToolbarButton, { icon: "bxs-shape-polygon", tooltip: "Sloppiness", children: [
-      /* @__PURE__ */ jsx6("p", { className: "text-xs text-text-muted uppercase tracking-wider mb-2", children: t("sidebar.sectionHeader.sloppiness") }),
-      /* @__PURE__ */ jsx6("div", { className: "flex items-center gap-1", children: [{ v: 0, l: "0" }, { v: 2, l: "2" }, { v: 4, l: "4" }].map((s) => /* @__PURE__ */ jsx6(
+    /* @__PURE__ */ jsxs6(ToolbarButton, { icon: "bxs-brush", tooltip: "Fill style", children: [
+      /* @__PURE__ */ jsx6("p", { className: "text-xs text-text-muted uppercase tracking-wider mb-2", children: t("sidebar.sectionHeader.fill") }),
+      /* @__PURE__ */ jsx6("div", { className: "flex flex-col gap-0.5", children: FILLS.map((f) => /* @__PURE__ */ jsxs6(
         "button",
         {
-          onClick: () => updateSloppiness(s.v),
-          className: `w-8 h-8 flex items-center justify-center rounded-lg text-xs transition-all duration-100 ${sloppiness === s.v ? "bg-[#5B57D1]/20 text-accent-blue" : "text-text-muted hover:bg-white/6"}`,
-          children: s.l
-        },
-        s.v
-      )) })
-    ] }),
-    /* @__PURE__ */ jsx6(Divider, {}),
-    /* @__PURE__ */ jsxs6(ToolbarButton, { icon: "bxs-landscape", tooltip: "Edge", children: [
-      /* @__PURE__ */ jsx6("p", { className: "text-xs text-text-muted uppercase tracking-wider mb-2", children: t("sidebar.sectionHeader.edge") }),
-      /* @__PURE__ */ jsx6("div", { className: "flex flex-col gap-0.5", children: [{ v: "smooth", i: "bxs-droplet", l: "Smooth" }, { v: "rough", i: "bxs-bolt", l: "Rough" }].map((e) => /* @__PURE__ */ jsxs6(
-        "button",
-        {
-          onClick: () => updateEdge(e.v),
-          className: `flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs transition-all duration-100 ${edge === e.v ? "bg-accent-blue text-white" : "text-text-secondary hover:bg-white/6"}`,
+          onClick: () => updateFill(f.value),
+          className: `flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs transition-all duration-100 ${fillStyle === f.value ? "bg-[#5B57D1] text-white" : "text-text-secondary hover:bg-white/[0.06]"}`,
           children: [
-            /* @__PURE__ */ jsx6("i", { className: `bx ${e.i} text-sm` }),
-            " ",
-            e.l
+            /* @__PURE__ */ jsx6("span", { className: "w-1.5 h-1.5 rounded-full bg-current" }),
+            t(f.label)
           ]
         },
-        e.v
+        f.value
       )) })
     ] }),
     /* @__PURE__ */ jsx6(Divider, {}),
@@ -1226,103 +1530,94 @@ function LineSidebar() {
   ] });
 }
 
-// src/react/components/sidebars/ArrowSidebar.jsx
-import { useState as useState6, useCallback as useCallback4 } from "react";
-import { Fragment as Fragment2, jsx as jsx7, jsxs as jsxs7 } from "react/jsx-runtime";
-var STROKE_COLORS4 = ["#fff", "#FF8383", "#3A994C", "#56A2E8", "#FFD700", "#FF69B4", "#A855F7"];
-var HEAD_STYLES = [
-  { value: "default", svg: '<svg width="22" height="12" viewBox="0 0 24 14"><line x1="2" y1="7" x2="16" y2="7" stroke="#fff" stroke-width="2"/><polyline points="13,2 19,7 13,12" fill="none" stroke="#fff" stroke-width="2" stroke-linejoin="round"/></svg>' },
-  { value: "square", svg: '<svg width="22" height="12" viewBox="0 0 24 14"><line x1="2" y1="7" x2="14" y2="7" stroke="#fff" stroke-width="2"/><rect x="14" y="3" width="6" height="8" fill="none" stroke="#fff" stroke-width="1.5"/></svg>' },
-  { value: "outline", svg: '<svg width="22" height="12" viewBox="0 0 24 14"><line x1="2" y1="7" x2="13" y2="7" stroke="#fff" stroke-width="2"/><polygon points="13,2 21,7 13,12" fill="none" stroke="#fff" stroke-width="1.5"/></svg>' },
-  { value: "solid", svg: '<svg width="22" height="12" viewBox="0 0 24 14"><line x1="2" y1="7" x2="13" y2="7" stroke="#fff" stroke-width="2"/><polygon points="13,2 21,7 13,12" fill="#fff"/></svg>' }
+// src/react/components/sidebars/CircleSidebar.jsx
+import { useState as useState5, useCallback as useCallback3 } from "react";
+import { jsx as jsx7, jsxs as jsxs7 } from "react/jsx-runtime";
+var STROKE_COLORS2 = ["#fff", "#FF8383", "#3A994C", "#56A2E8", "#FFD700", "#FF69B4", "#A855F7"];
+var BG_COLORS2 = ["transparent", "#f0f0f0", "#ffcccb", "#90ee90", "#add8e6", "#FFE4B5", "#DDA0DD", "#2d2d2d"];
+var FILLS2 = [
+  { value: "hachure", label: "sidebar.fill.hachure" },
+  { value: "solid", label: "sidebar.fill.solid" },
+  { value: "dots", label: "sidebar.fill.dots" },
+  { value: "cross-hatch", label: "sidebar.fill.cross" },
+  { value: "transparent", label: "sidebar.fill.none" }
 ];
-function SvgIcon({ svg }) {
-  return /* @__PURE__ */ jsx7("span", { dangerouslySetInnerHTML: { __html: svg } });
+function ColorGrid2({ colors, selected, onSelect }) {
+  return /* @__PURE__ */ jsx7("div", { className: "grid grid-cols-4 gap-1.5", children: colors.map((c) => {
+    const isTrans = c === "transparent";
+    return /* @__PURE__ */ jsx7(
+      "button",
+      {
+        onClick: () => onSelect(c),
+        className: `w-7 h-7 rounded-md border-[1.5px] transition-all duration-100 ${selected === c ? "border-accent-blue scale-110" : "border-white/[0.08] hover:border-white/20"}`,
+        style: !isTrans ? { backgroundColor: c } : void 0,
+        children: isTrans && /* @__PURE__ */ jsx7("svg", { className: "w-full h-full text-text-dim", viewBox: "0 0 20 20", children: /* @__PURE__ */ jsx7("line", { x1: "4", y1: "16", x2: "16", y2: "4", stroke: "currentColor", strokeWidth: "2" }) })
+      },
+      c
+    );
+  }) });
 }
-function ColorGrid4({ colors, selected, onSelect }) {
-  return /* @__PURE__ */ jsx7("div", { className: "grid grid-cols-4 gap-1.5", children: colors.map((c) => /* @__PURE__ */ jsx7(
-    "button",
-    {
-      onClick: () => onSelect(c),
-      className: `w-7 h-7 rounded-md border-[1.5px] transition-all duration-100 ${selected === c ? "border-[#5B57D1] scale-110" : "border-white/[0.08] hover:border-white/20"}`,
-      style: { backgroundColor: c }
-    },
-    c
-  )) });
-}
-function ArrowSidebar() {
+function CircleSidebar() {
   const { t } = useTranslation();
   const activeTool = useSketchStore_default((s) => s.activeTool);
   const selectedShapeSidebar = useSketchStore_default((s) => s.selectedShapeSidebar);
-  const [headStyle, setHeadStyle] = useState6("default");
-  const [strokeColor, setStrokeColor] = useState6("#fff");
-  const [thickness, setThickness] = useState6(2);
-  const [outlineStyle, setOutlineStyle] = useState6("solid");
-  const [arrowType, setArrowType] = useState6("straight");
-  const [curvature, setCurvature] = useState6(20);
-  const updateHead = useCallback4((v) => {
-    setHeadStyle(v);
-    if (window.arrowToolSettings) window.arrowToolSettings.headStyle = v;
-    if (window.updateSelectedArrowStyle) window.updateSelectedArrowStyle({ arrowHeadStyle: v });
-  }, []);
-  const updateStroke = useCallback4((v) => {
+  const [strokeColor, setStrokeColor] = useState5("#fff");
+  const [bgColor, setBgColor] = useState5("transparent");
+  const [thickness, setThickness] = useState5(2);
+  const [lineStyle, setLineStyle] = useState5("solid");
+  const [fillStyle, setFillStyle] = useState5("hachure");
+  const updateStroke = useCallback3((v) => {
     setStrokeColor(v);
-    if (window.arrowToolSettings) window.arrowToolSettings.strokeColor = v;
-    if (window.updateSelectedArrowStyle) window.updateSelectedArrowStyle({ stroke: v });
+    if (window.updateSelectedCircleStyle) window.updateSelectedCircleStyle({ stroke: v });
   }, []);
-  const updateThickness = useCallback4((v) => {
+  const updateBg = useCallback3((v) => {
+    setBgColor(v);
+    if (window.updateSelectedCircleStyle) window.updateSelectedCircleStyle({ fill: v });
+  }, []);
+  const updateThickness = useCallback3((v) => {
     setThickness(v);
-    if (window.arrowToolSettings) window.arrowToolSettings.strokeWidth = v;
-    if (window.updateSelectedArrowStyle) window.updateSelectedArrowStyle({ strokeWidth: v });
+    if (window.updateSelectedCircleStyle) window.updateSelectedCircleStyle({ strokeWidth: v });
   }, []);
-  const updateOutline = useCallback4((v) => {
-    setOutlineStyle(v);
-    if (window.arrowToolSettings) window.arrowToolSettings.outlineStyle = v;
-    if (window.updateSelectedArrowStyle) window.updateSelectedArrowStyle({ arrowOutlineStyle: v });
+  const updateStyle = useCallback3((v) => {
+    setLineStyle(v);
+    if (window.updateSelectedCircleStyle) window.updateSelectedCircleStyle({ outlineStyle: v });
   }, []);
-  const updateType = useCallback4((v) => {
-    setArrowType(v);
-    if (window.arrowToolSettings) window.arrowToolSettings.arrowCurved = v;
-    if (window.updateSelectedArrowStyle) window.updateSelectedArrowStyle({ arrowCurved: v });
+  const updateFill = useCallback3((v) => {
+    setFillStyle(v);
+    if (window.updateSelectedCircleStyle) window.updateSelectedCircleStyle({ fillStyle: v });
   }, []);
-  const updateCurvature = useCallback4((v) => {
-    setCurvature(v);
-    if (window.arrowToolSettings) window.arrowToolSettings.curveAmount = v;
-    if (window.updateSelectedArrowStyle) window.updateSelectedArrowStyle({ arrowCurveAmount: v });
-  }, []);
-  return /* @__PURE__ */ jsxs7(ShapeSidebar, { visible: activeTool === TOOLS.ARROW || selectedShapeSidebar === "arrow", children: [
-    /* @__PURE__ */ jsxs7(ToolbarButton, { icon: "bxs-right-arrow", tooltip: "Arrow head", children: [
-      /* @__PURE__ */ jsx7("p", { className: "text-xs text-text-secondary uppercase tracking-wider mb-2", children: t("sidebar.sectionHeader.head") }),
-      /* @__PURE__ */ jsx7("div", { className: "flex items-center gap-1", children: HEAD_STYLES.map((h) => /* @__PURE__ */ jsx7(
-        "button",
-        {
-          onClick: () => updateHead(h.value),
-          className: `w-10 h-8 flex items-center justify-center rounded-lg transition-all duration-100 ${headStyle === h.value ? "bg-[#5B57D1]/20 text-[#5B57D1]" : "text-text-secondary hover:bg-white/[0.06]"}`,
-          children: /* @__PURE__ */ jsx7(SvgIcon, { svg: h.svg })
-        },
-        h.value
-      )) })
-    ] }),
-    /* @__PURE__ */ jsx7(Divider, {}),
+  return /* @__PURE__ */ jsxs7(ShapeSidebar, { visible: activeTool === TOOLS.CIRCLE || selectedShapeSidebar === "circle", children: [
     /* @__PURE__ */ jsxs7(
       ToolbarButton,
       {
         tooltip: t("sidebar.strokeColor"),
         preview: /* @__PURE__ */ jsx7("span", { className: "w-4 h-4 rounded-md border border-white/20", style: { backgroundColor: strokeColor } }),
         children: [
-          /* @__PURE__ */ jsx7("p", { className: "text-xs text-text-secondary uppercase tracking-wider mb-2", children: t("sidebar.sectionHeader.stroke") }),
-          /* @__PURE__ */ jsx7(ColorGrid4, { colors: STROKE_COLORS4, selected: strokeColor, onSelect: updateStroke })
+          /* @__PURE__ */ jsx7("p", { className: "text-xs text-text-muted uppercase tracking-wider mb-2", children: t("sidebar.sectionHeader.stroke") }),
+          /* @__PURE__ */ jsx7(ColorGrid2, { colors: STROKE_COLORS2, selected: strokeColor, onSelect: updateStroke })
+        ]
+      }
+    ),
+    /* @__PURE__ */ jsx7(Divider, {}),
+    /* @__PURE__ */ jsxs7(
+      ToolbarButton,
+      {
+        tooltip: t("sidebar.fillColor"),
+        preview: /* @__PURE__ */ jsx7("span", { className: "w-4 h-4 rounded-md border border-white/20", style: { backgroundColor: bgColor === "transparent" ? "transparent" : bgColor }, children: bgColor === "transparent" && /* @__PURE__ */ jsx7("svg", { className: "w-full h-full text-text-dim", viewBox: "0 0 16 16", children: /* @__PURE__ */ jsx7("line", { x1: "2", y1: "14", x2: "14", y2: "2", stroke: "currentColor", strokeWidth: "1.5" }) }) }),
+        children: [
+          /* @__PURE__ */ jsx7("p", { className: "text-xs text-text-muted uppercase tracking-wider mb-2", children: t("sidebar.sectionHeader.background") }),
+          /* @__PURE__ */ jsx7(ColorGrid2, { colors: BG_COLORS2, selected: bgColor, onSelect: updateBg })
         ]
       }
     ),
     /* @__PURE__ */ jsx7(Divider, {}),
     /* @__PURE__ */ jsxs7(ToolbarButton, { icon: "bxs-edit-alt", tooltip: t("sidebar.strokeWidth"), children: [
-      /* @__PURE__ */ jsx7("p", { className: "text-xs text-text-secondary uppercase tracking-wider mb-2", children: t("sidebar.sectionHeader.width") }),
+      /* @__PURE__ */ jsx7("p", { className: "text-xs text-text-muted uppercase tracking-wider mb-2", children: t("sidebar.sectionHeader.width") }),
       /* @__PURE__ */ jsx7("div", { className: "flex items-center gap-1", children: [1, 2, 4, 7].map((w) => /* @__PURE__ */ jsx7(
         "button",
         {
           onClick: () => updateThickness(w),
-          className: `w-9 h-8 flex items-center justify-center rounded-lg transition-all duration-100 ${thickness === w ? "bg-[#5B57D1]/20 text-[#5B57D1]" : "text-text-secondary hover:bg-white/[0.06]"}`,
+          className: `w-9 h-8 flex items-center justify-center rounded-lg transition-all duration-100 ${thickness === w ? "bg-[#5B57D1]/20 text-[#5B57D1]" : "text-text-muted hover:bg-white/[0.06]"}`,
           children: /* @__PURE__ */ jsx7("div", { className: "w-5 rounded-full bg-current", style: { height: Math.max(1, w) } })
         },
         w
@@ -1330,64 +1625,43 @@ function ArrowSidebar() {
     ] }),
     /* @__PURE__ */ jsx7(Divider, {}),
     /* @__PURE__ */ jsxs7(ToolbarButton, { icon: "bxs-minus-circle", tooltip: "Stroke style", children: [
-      /* @__PURE__ */ jsx7("p", { className: "text-xs text-text-secondary uppercase tracking-wider mb-2", children: t("sidebar.style") }),
+      /* @__PURE__ */ jsx7("p", { className: "text-xs text-text-muted uppercase tracking-wider mb-2", children: t("sidebar.style") }),
       /* @__PURE__ */ jsx7("div", { className: "flex items-center gap-1", children: [{ v: "solid", d: "" }, { v: "dashed", d: "6 4" }, { v: "dotted", d: "2 3" }].map((s) => /* @__PURE__ */ jsx7(
         "button",
         {
-          onClick: () => updateOutline(s.v),
-          className: `w-11 h-8 flex items-center justify-center rounded-lg transition-all duration-100 ${outlineStyle === s.v ? "bg-[#5B57D1]/20" : "hover:bg-white/[0.06]"}`,
+          onClick: () => updateStyle(s.v),
+          className: `w-11 h-8 flex items-center justify-center rounded-lg transition-all duration-100 ${lineStyle === s.v ? "bg-[#5B57D1]/20" : "hover:bg-white/[0.06]"}`,
           children: /* @__PURE__ */ jsx7("svg", { width: "28", height: "4", viewBox: "0 0 28 4", children: /* @__PURE__ */ jsx7("line", { x1: "0", y1: "2", x2: "28", y2: "2", stroke: "#fff", strokeWidth: "2", strokeDasharray: s.d, strokeLinecap: "round" }) })
         },
         s.v
       )) })
     ] }),
     /* @__PURE__ */ jsx7(Divider, {}),
-    /* @__PURE__ */ jsxs7(ToolbarButton, { icon: "bxs-share-alt", tooltip: "Arrow type", children: [
-      /* @__PURE__ */ jsx7("p", { className: "text-xs text-text-secondary uppercase tracking-wider mb-2", children: t("sidebar.sectionHeader.type") }),
-      /* @__PURE__ */ jsxs7("div", { className: "flex flex-col gap-0.5", children: [
-        [
-          { v: "straight", i: "bxs-right-arrow-alt", l: "Straight" },
-          { v: "curved", i: "bxs-analyse", l: "Curved" },
-          { v: "elbow", i: "bxs-network-chart", l: "Elbow" }
-        ].map((a) => /* @__PURE__ */ jsxs7(
-          "button",
-          {
-            onClick: () => updateType(a.v),
-            className: `flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs transition-all duration-100 ${arrowType === a.v ? "bg-[#5B57D1] text-white" : "text-text-secondary hover:bg-white/[0.06]"}`,
-            children: [
-              /* @__PURE__ */ jsx7("i", { className: `bx ${a.i} text-sm` }),
-              " ",
-              a.l
-            ]
-          },
-          a.v
-        )),
-        arrowType === "curved" && /* @__PURE__ */ jsxs7(Fragment2, { children: [
-          /* @__PURE__ */ jsx7("div", { className: "w-full h-px bg-white/[0.08] my-1" }),
-          /* @__PURE__ */ jsx7("p", { className: "text-[9px] text-text-dim uppercase tracking-wider mb-1", children: "Curvature" }),
-          /* @__PURE__ */ jsx7("div", { className: "flex items-center gap-1", children: [{ v: 8, l: "Lo" }, { v: 20, l: "Md" }, { v: 40, l: "Hi" }].map((c) => /* @__PURE__ */ jsx7(
-            "button",
-            {
-              onClick: () => updateCurvature(c.v),
-              className: `flex-1 py-1 rounded-md text-xs text-center transition-all duration-100 ${curvature === c.v ? "bg-[#5B57D1]/20 text-[#5B57D1]" : "text-text-secondary hover:bg-white/[0.06]"}`,
-              children: c.l
-            },
-            c.v
-          )) })
-        ] })
-      ] })
+    /* @__PURE__ */ jsxs7(ToolbarButton, { icon: "bxs-brush", tooltip: "Fill style", children: [
+      /* @__PURE__ */ jsx7("p", { className: "text-xs text-text-muted uppercase tracking-wider mb-2", children: t("sidebar.sectionHeader.fill") }),
+      /* @__PURE__ */ jsx7("div", { className: "flex flex-col gap-0.5", children: FILLS2.map((f) => /* @__PURE__ */ jsxs7(
+        "button",
+        {
+          onClick: () => updateFill(f.value),
+          className: `flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs transition-all duration-100 ${fillStyle === f.value ? "bg-[#5B57D1] text-white" : "text-text-secondary hover:bg-white/[0.06]"}`,
+          children: [
+            /* @__PURE__ */ jsx7("span", { className: "w-1.5 h-1.5 rounded-full bg-current" }),
+            t(f.label)
+          ]
+        },
+        f.value
+      )) })
     ] }),
     /* @__PURE__ */ jsx7(Divider, {}),
     /* @__PURE__ */ jsx7(LayerControls, {})
   ] });
 }
 
-// src/react/components/sidebars/PaintbrushSidebar.jsx
-import { useState as useState7, useCallback as useCallback5 } from "react";
+// src/react/components/sidebars/LineSidebar.jsx
+import { useState as useState6, useCallback as useCallback4 } from "react";
 import { jsx as jsx8, jsxs as jsxs8 } from "react/jsx-runtime";
-var STROKE_COLORS5 = ["#fff", "#FF8383", "#3A994C", "#56A2E8", "#FFD700", "#FF69B4", "#A855F7"];
-var TAPER_MAP = { uniform: 0, pen: 0.5, brush: 0.8 };
-function ColorGrid5({ colors, selected, onSelect }) {
+var STROKE_COLORS3 = ["#fff", "#FF8383", "#3A994C", "#56A2E8", "#FFD700", "#FF69B4", "#A855F7"];
+function ColorGrid3({ colors, selected, onSelect }) {
   return /* @__PURE__ */ jsx8("div", { className: "grid grid-cols-4 gap-1.5", children: colors.map((c) => /* @__PURE__ */ jsx8(
     "button",
     {
@@ -1398,37 +1672,36 @@ function ColorGrid5({ colors, selected, onSelect }) {
     c
   )) });
 }
-function PaintbrushSidebar() {
+function LineSidebar() {
   const { t } = useTranslation();
   const activeTool = useSketchStore_default((s) => s.activeTool);
   const selectedShapeSidebar = useSketchStore_default((s) => s.selectedShapeSidebar);
-  const [strokeColor, setStrokeColor] = useState7("#fff");
-  const [thickness, setThickness] = useState7(2);
-  const [lineStyle, setLineStyle] = useState7("solid");
-  const [taper, setTaper] = useState7("uniform");
-  const [roughness, setRoughness] = useState7("smooth");
-  const [opacity, setOpacity] = useState7(1);
-  const updateStroke = useCallback5((v) => {
+  const [strokeColor, setStrokeColor] = useState6("#fff");
+  const [thickness, setThickness] = useState6(2);
+  const [lineStyle, setLineStyle] = useState6("solid");
+  const [sloppiness, setSloppiness] = useState6(0);
+  const [edge, setEdge] = useState6("smooth");
+  const updateStroke = useCallback4((v) => {
     setStrokeColor(v);
-    if (window.updateSelectedFreehandStyle) window.updateSelectedFreehandStyle({ stroke: v });
+    if (window.updateSelectedLineStyle) window.updateSelectedLineStyle({ stroke: v });
   }, []);
-  const updateThickness = useCallback5((v) => {
+  const updateThickness = useCallback4((v) => {
     setThickness(v);
-    if (window.updateSelectedFreehandStyle) window.updateSelectedFreehandStyle({ strokeWidth: v });
+    if (window.updateSelectedLineStyle) window.updateSelectedLineStyle({ strokeWidth: v });
   }, []);
-  const updateTaper = useCallback5((v) => {
-    setTaper(v);
-    if (window.updateSelectedFreehandStyle) window.updateSelectedFreehandStyle({ thinning: TAPER_MAP[v] });
+  const updateStyle = useCallback4((v) => {
+    setLineStyle(v);
+    if (window.updateSelectedLineStyle) window.updateSelectedLineStyle({ strokeStyle: v });
   }, []);
-  const updateRoughness = useCallback5((v) => {
-    setRoughness(v);
-    if (window.updateSelectedFreehandStyle) window.updateSelectedFreehandStyle({ roughness: v });
+  const updateSloppiness = useCallback4((v) => {
+    setSloppiness(v);
+    if (window.updateSelectedLineStyle) window.updateSelectedLineStyle({ sloppiness: v });
   }, []);
-  const updateOpacity = useCallback5((v) => {
-    setOpacity(v);
-    if (window.updateSelectedFreehandStyle) window.updateSelectedFreehandStyle({ opacity: v });
+  const updateEdge = useCallback4((v) => {
+    setEdge(v);
+    if (window.updateSelectedLineStyle) window.updateSelectedLineStyle({ edge: v === "smooth" ? 1 : 5 });
   }, []);
-  return /* @__PURE__ */ jsxs8(ShapeSidebar, { visible: activeTool === TOOLS.FREEHAND || selectedShapeSidebar === "paintbrush", children: [
+  return /* @__PURE__ */ jsxs8(ShapeSidebar, { visible: activeTool === TOOLS.LINE || selectedShapeSidebar === "line", children: [
     /* @__PURE__ */ jsxs8(
       ToolbarButton,
       {
@@ -1436,7 +1709,7 @@ function PaintbrushSidebar() {
         preview: /* @__PURE__ */ jsx8("span", { className: "w-4 h-4 rounded-md border border-white/20", style: { backgroundColor: strokeColor } }),
         children: [
           /* @__PURE__ */ jsx8("p", { className: "text-xs text-text-muted uppercase tracking-wider mb-2", children: t("sidebar.sectionHeader.stroke") }),
-          /* @__PURE__ */ jsx8(ColorGrid5, { colors: STROKE_COLORS5, selected: strokeColor, onSelect: updateStroke })
+          /* @__PURE__ */ jsx8(ColorGrid3, { colors: STROKE_COLORS3, selected: strokeColor, onSelect: updateStroke })
         ]
       }
     ),
@@ -1454,19 +1727,294 @@ function PaintbrushSidebar() {
       )) })
     ] }),
     /* @__PURE__ */ jsx8(Divider, {}),
-    /* @__PURE__ */ jsxs8(ToolbarButton, { icon: "bxs-pen", tooltip: "Taper", children: [
-      /* @__PURE__ */ jsx8("p", { className: "text-xs text-text-muted uppercase tracking-wider mb-2", children: t("sidebar.sectionHeader.taper") }),
-      /* @__PURE__ */ jsx8("div", { className: "flex flex-col gap-0.5", children: [
+    /* @__PURE__ */ jsxs8(ToolbarButton, { icon: "bxs-minus-circle", tooltip: "Stroke style", children: [
+      /* @__PURE__ */ jsx8("p", { className: "text-xs text-text-muted uppercase tracking-wider mb-2", children: t("sidebar.style") }),
+      /* @__PURE__ */ jsx8("div", { className: "flex items-center gap-1", children: [{ v: "solid", d: "" }, { v: "dashed", d: "6 4" }, { v: "dotted", d: "2 3" }].map((s) => /* @__PURE__ */ jsx8(
+        "button",
+        {
+          onClick: () => updateStyle(s.v),
+          className: `w-11 h-8 flex items-center justify-center rounded-lg transition-all duration-100 ${lineStyle === s.v ? "bg-[#5B57D1]/20" : "hover:bg-white/[0.06]"}`,
+          children: /* @__PURE__ */ jsx8("svg", { width: "28", height: "4", viewBox: "0 0 28 4", children: /* @__PURE__ */ jsx8("line", { x1: "0", y1: "2", x2: "28", y2: "2", stroke: "#fff", strokeWidth: "2", strokeDasharray: s.d, strokeLinecap: "round" }) })
+        },
+        s.v
+      )) })
+    ] }),
+    /* @__PURE__ */ jsx8(Divider, {}),
+    /* @__PURE__ */ jsxs8(ToolbarButton, { icon: "bxs-shape-polygon", tooltip: "Sloppiness", children: [
+      /* @__PURE__ */ jsx8("p", { className: "text-xs text-text-muted uppercase tracking-wider mb-2", children: t("sidebar.sectionHeader.sloppiness") }),
+      /* @__PURE__ */ jsx8("div", { className: "flex items-center gap-1", children: [{ v: 0, l: "0" }, { v: 2, l: "2" }, { v: 4, l: "4" }].map((s) => /* @__PURE__ */ jsx8(
+        "button",
+        {
+          onClick: () => updateSloppiness(s.v),
+          className: `w-8 h-8 flex items-center justify-center rounded-lg text-xs transition-all duration-100 ${sloppiness === s.v ? "bg-[#5B57D1]/20 text-accent-blue" : "text-text-muted hover:bg-white/6"}`,
+          children: s.l
+        },
+        s.v
+      )) })
+    ] }),
+    /* @__PURE__ */ jsx8(Divider, {}),
+    /* @__PURE__ */ jsxs8(ToolbarButton, { icon: "bxs-landscape", tooltip: "Edge", children: [
+      /* @__PURE__ */ jsx8("p", { className: "text-xs text-text-muted uppercase tracking-wider mb-2", children: t("sidebar.sectionHeader.edge") }),
+      /* @__PURE__ */ jsx8("div", { className: "flex flex-col gap-0.5", children: [{ v: "smooth", i: "bxs-droplet", l: "Smooth" }, { v: "rough", i: "bxs-bolt", l: "Rough" }].map((e) => /* @__PURE__ */ jsxs8(
+        "button",
+        {
+          onClick: () => updateEdge(e.v),
+          className: `flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs transition-all duration-100 ${edge === e.v ? "bg-accent-blue text-white" : "text-text-secondary hover:bg-white/6"}`,
+          children: [
+            /* @__PURE__ */ jsx8("i", { className: `bx ${e.i} text-sm` }),
+            " ",
+            e.l
+          ]
+        },
+        e.v
+      )) })
+    ] }),
+    /* @__PURE__ */ jsx8(Divider, {}),
+    /* @__PURE__ */ jsx8(LayerControls, {})
+  ] });
+}
+
+// src/react/components/sidebars/ArrowSidebar.jsx
+import { useState as useState7, useCallback as useCallback5 } from "react";
+import { Fragment as Fragment3, jsx as jsx9, jsxs as jsxs9 } from "react/jsx-runtime";
+var STROKE_COLORS4 = ["#fff", "#FF8383", "#3A994C", "#56A2E8", "#FFD700", "#FF69B4", "#A855F7"];
+var HEAD_STYLES = [
+  { value: "default", svg: '<svg width="22" height="12" viewBox="0 0 24 14"><line x1="2" y1="7" x2="16" y2="7" stroke="#fff" stroke-width="2"/><polyline points="13,2 19,7 13,12" fill="none" stroke="#fff" stroke-width="2" stroke-linejoin="round"/></svg>' },
+  { value: "square", svg: '<svg width="22" height="12" viewBox="0 0 24 14"><line x1="2" y1="7" x2="14" y2="7" stroke="#fff" stroke-width="2"/><rect x="14" y="3" width="6" height="8" fill="none" stroke="#fff" stroke-width="1.5"/></svg>' },
+  { value: "outline", svg: '<svg width="22" height="12" viewBox="0 0 24 14"><line x1="2" y1="7" x2="13" y2="7" stroke="#fff" stroke-width="2"/><polygon points="13,2 21,7 13,12" fill="none" stroke="#fff" stroke-width="1.5"/></svg>' },
+  { value: "solid", svg: '<svg width="22" height="12" viewBox="0 0 24 14"><line x1="2" y1="7" x2="13" y2="7" stroke="#fff" stroke-width="2"/><polygon points="13,2 21,7 13,12" fill="#fff"/></svg>' }
+];
+function SvgIcon({ svg }) {
+  return /* @__PURE__ */ jsx9("span", { dangerouslySetInnerHTML: { __html: svg } });
+}
+function ColorGrid4({ colors, selected, onSelect }) {
+  return /* @__PURE__ */ jsx9("div", { className: "grid grid-cols-4 gap-1.5", children: colors.map((c) => /* @__PURE__ */ jsx9(
+    "button",
+    {
+      onClick: () => onSelect(c),
+      className: `w-7 h-7 rounded-md border-[1.5px] transition-all duration-100 ${selected === c ? "border-[#5B57D1] scale-110" : "border-white/[0.08] hover:border-white/20"}`,
+      style: { backgroundColor: c }
+    },
+    c
+  )) });
+}
+function ArrowSidebar() {
+  const { t } = useTranslation();
+  const activeTool = useSketchStore_default((s) => s.activeTool);
+  const selectedShapeSidebar = useSketchStore_default((s) => s.selectedShapeSidebar);
+  const [headStyle, setHeadStyle] = useState7("default");
+  const [strokeColor, setStrokeColor] = useState7("#fff");
+  const [thickness, setThickness] = useState7(2);
+  const [outlineStyle, setOutlineStyle] = useState7("solid");
+  const [arrowType, setArrowType] = useState7("straight");
+  const [curvature, setCurvature] = useState7(20);
+  const updateHead = useCallback5((v) => {
+    setHeadStyle(v);
+    if (window.arrowToolSettings) window.arrowToolSettings.headStyle = v;
+    if (window.updateSelectedArrowStyle) window.updateSelectedArrowStyle({ arrowHeadStyle: v });
+  }, []);
+  const updateStroke = useCallback5((v) => {
+    setStrokeColor(v);
+    if (window.arrowToolSettings) window.arrowToolSettings.strokeColor = v;
+    if (window.updateSelectedArrowStyle) window.updateSelectedArrowStyle({ stroke: v });
+  }, []);
+  const updateThickness = useCallback5((v) => {
+    setThickness(v);
+    if (window.arrowToolSettings) window.arrowToolSettings.strokeWidth = v;
+    if (window.updateSelectedArrowStyle) window.updateSelectedArrowStyle({ strokeWidth: v });
+  }, []);
+  const updateOutline = useCallback5((v) => {
+    setOutlineStyle(v);
+    if (window.arrowToolSettings) window.arrowToolSettings.outlineStyle = v;
+    if (window.updateSelectedArrowStyle) window.updateSelectedArrowStyle({ arrowOutlineStyle: v });
+  }, []);
+  const updateType = useCallback5((v) => {
+    setArrowType(v);
+    if (window.arrowToolSettings) window.arrowToolSettings.arrowCurved = v;
+    if (window.updateSelectedArrowStyle) window.updateSelectedArrowStyle({ arrowCurved: v });
+  }, []);
+  const updateCurvature = useCallback5((v) => {
+    setCurvature(v);
+    if (window.arrowToolSettings) window.arrowToolSettings.curveAmount = v;
+    if (window.updateSelectedArrowStyle) window.updateSelectedArrowStyle({ arrowCurveAmount: v });
+  }, []);
+  return /* @__PURE__ */ jsxs9(ShapeSidebar, { visible: activeTool === TOOLS.ARROW || selectedShapeSidebar === "arrow", children: [
+    /* @__PURE__ */ jsxs9(ToolbarButton, { icon: "bxs-right-arrow", tooltip: "Arrow head", children: [
+      /* @__PURE__ */ jsx9("p", { className: "text-xs text-text-secondary uppercase tracking-wider mb-2", children: t("sidebar.sectionHeader.head") }),
+      /* @__PURE__ */ jsx9("div", { className: "flex items-center gap-1", children: HEAD_STYLES.map((h) => /* @__PURE__ */ jsx9(
+        "button",
+        {
+          onClick: () => updateHead(h.value),
+          className: `w-10 h-8 flex items-center justify-center rounded-lg transition-all duration-100 ${headStyle === h.value ? "bg-[#5B57D1]/20 text-[#5B57D1]" : "text-text-secondary hover:bg-white/[0.06]"}`,
+          children: /* @__PURE__ */ jsx9(SvgIcon, { svg: h.svg })
+        },
+        h.value
+      )) })
+    ] }),
+    /* @__PURE__ */ jsx9(Divider, {}),
+    /* @__PURE__ */ jsxs9(
+      ToolbarButton,
+      {
+        tooltip: t("sidebar.strokeColor"),
+        preview: /* @__PURE__ */ jsx9("span", { className: "w-4 h-4 rounded-md border border-white/20", style: { backgroundColor: strokeColor } }),
+        children: [
+          /* @__PURE__ */ jsx9("p", { className: "text-xs text-text-secondary uppercase tracking-wider mb-2", children: t("sidebar.sectionHeader.stroke") }),
+          /* @__PURE__ */ jsx9(ColorGrid4, { colors: STROKE_COLORS4, selected: strokeColor, onSelect: updateStroke })
+        ]
+      }
+    ),
+    /* @__PURE__ */ jsx9(Divider, {}),
+    /* @__PURE__ */ jsxs9(ToolbarButton, { icon: "bxs-edit-alt", tooltip: t("sidebar.strokeWidth"), children: [
+      /* @__PURE__ */ jsx9("p", { className: "text-xs text-text-secondary uppercase tracking-wider mb-2", children: t("sidebar.sectionHeader.width") }),
+      /* @__PURE__ */ jsx9("div", { className: "flex items-center gap-1", children: [1, 2, 4, 7].map((w) => /* @__PURE__ */ jsx9(
+        "button",
+        {
+          onClick: () => updateThickness(w),
+          className: `w-9 h-8 flex items-center justify-center rounded-lg transition-all duration-100 ${thickness === w ? "bg-[#5B57D1]/20 text-[#5B57D1]" : "text-text-secondary hover:bg-white/[0.06]"}`,
+          children: /* @__PURE__ */ jsx9("div", { className: "w-5 rounded-full bg-current", style: { height: Math.max(1, w) } })
+        },
+        w
+      )) })
+    ] }),
+    /* @__PURE__ */ jsx9(Divider, {}),
+    /* @__PURE__ */ jsxs9(ToolbarButton, { icon: "bxs-minus-circle", tooltip: "Stroke style", children: [
+      /* @__PURE__ */ jsx9("p", { className: "text-xs text-text-secondary uppercase tracking-wider mb-2", children: t("sidebar.style") }),
+      /* @__PURE__ */ jsx9("div", { className: "flex items-center gap-1", children: [{ v: "solid", d: "" }, { v: "dashed", d: "6 4" }, { v: "dotted", d: "2 3" }].map((s) => /* @__PURE__ */ jsx9(
+        "button",
+        {
+          onClick: () => updateOutline(s.v),
+          className: `w-11 h-8 flex items-center justify-center rounded-lg transition-all duration-100 ${outlineStyle === s.v ? "bg-[#5B57D1]/20" : "hover:bg-white/[0.06]"}`,
+          children: /* @__PURE__ */ jsx9("svg", { width: "28", height: "4", viewBox: "0 0 28 4", children: /* @__PURE__ */ jsx9("line", { x1: "0", y1: "2", x2: "28", y2: "2", stroke: "#fff", strokeWidth: "2", strokeDasharray: s.d, strokeLinecap: "round" }) })
+        },
+        s.v
+      )) })
+    ] }),
+    /* @__PURE__ */ jsx9(Divider, {}),
+    /* @__PURE__ */ jsxs9(ToolbarButton, { icon: "bxs-share-alt", tooltip: "Arrow type", children: [
+      /* @__PURE__ */ jsx9("p", { className: "text-xs text-text-secondary uppercase tracking-wider mb-2", children: t("sidebar.sectionHeader.type") }),
+      /* @__PURE__ */ jsxs9("div", { className: "flex flex-col gap-0.5", children: [
+        [
+          { v: "straight", i: "bxs-right-arrow-alt", l: "Straight" },
+          { v: "curved", i: "bxs-analyse", l: "Curved" },
+          { v: "elbow", i: "bxs-network-chart", l: "Elbow" }
+        ].map((a) => /* @__PURE__ */ jsxs9(
+          "button",
+          {
+            onClick: () => updateType(a.v),
+            className: `flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs transition-all duration-100 ${arrowType === a.v ? "bg-[#5B57D1] text-white" : "text-text-secondary hover:bg-white/[0.06]"}`,
+            children: [
+              /* @__PURE__ */ jsx9("i", { className: `bx ${a.i} text-sm` }),
+              " ",
+              a.l
+            ]
+          },
+          a.v
+        )),
+        arrowType === "curved" && /* @__PURE__ */ jsxs9(Fragment3, { children: [
+          /* @__PURE__ */ jsx9("div", { className: "w-full h-px bg-white/[0.08] my-1" }),
+          /* @__PURE__ */ jsx9("p", { className: "text-[9px] text-text-dim uppercase tracking-wider mb-1", children: "Curvature" }),
+          /* @__PURE__ */ jsx9("div", { className: "flex items-center gap-1", children: [{ v: 8, l: "Lo" }, { v: 20, l: "Md" }, { v: 40, l: "Hi" }].map((c) => /* @__PURE__ */ jsx9(
+            "button",
+            {
+              onClick: () => updateCurvature(c.v),
+              className: `flex-1 py-1 rounded-md text-xs text-center transition-all duration-100 ${curvature === c.v ? "bg-[#5B57D1]/20 text-[#5B57D1]" : "text-text-secondary hover:bg-white/[0.06]"}`,
+              children: c.l
+            },
+            c.v
+          )) })
+        ] })
+      ] })
+    ] }),
+    /* @__PURE__ */ jsx9(Divider, {}),
+    /* @__PURE__ */ jsx9(LayerControls, {})
+  ] });
+}
+
+// src/react/components/sidebars/PaintbrushSidebar.jsx
+import { useState as useState8, useCallback as useCallback6 } from "react";
+import { jsx as jsx10, jsxs as jsxs10 } from "react/jsx-runtime";
+var STROKE_COLORS5 = ["#fff", "#FF8383", "#3A994C", "#56A2E8", "#FFD700", "#FF69B4", "#A855F7"];
+var TAPER_MAP = { uniform: 0, pen: 0.5, brush: 0.8 };
+function ColorGrid5({ colors, selected, onSelect }) {
+  return /* @__PURE__ */ jsx10("div", { className: "grid grid-cols-4 gap-1.5", children: colors.map((c) => /* @__PURE__ */ jsx10(
+    "button",
+    {
+      onClick: () => onSelect(c),
+      className: `w-7 h-7 rounded-md border-[1.5px] transition-all duration-100 ${selected === c ? "border-[#5B57D1] scale-110" : "border-white/[0.08] hover:border-white/20"}`,
+      style: { backgroundColor: c }
+    },
+    c
+  )) });
+}
+function PaintbrushSidebar() {
+  const { t } = useTranslation();
+  const activeTool = useSketchStore_default((s) => s.activeTool);
+  const selectedShapeSidebar = useSketchStore_default((s) => s.selectedShapeSidebar);
+  const [strokeColor, setStrokeColor] = useState8("#fff");
+  const [thickness, setThickness] = useState8(2);
+  const [lineStyle, setLineStyle] = useState8("solid");
+  const [taper, setTaper] = useState8("uniform");
+  const [roughness, setRoughness] = useState8("smooth");
+  const [opacity, setOpacity] = useState8(1);
+  const updateStroke = useCallback6((v) => {
+    setStrokeColor(v);
+    if (window.updateSelectedFreehandStyle) window.updateSelectedFreehandStyle({ stroke: v });
+  }, []);
+  const updateThickness = useCallback6((v) => {
+    setThickness(v);
+    if (window.updateSelectedFreehandStyle) window.updateSelectedFreehandStyle({ strokeWidth: v });
+  }, []);
+  const updateTaper = useCallback6((v) => {
+    setTaper(v);
+    if (window.updateSelectedFreehandStyle) window.updateSelectedFreehandStyle({ thinning: TAPER_MAP[v] });
+  }, []);
+  const updateRoughness = useCallback6((v) => {
+    setRoughness(v);
+    if (window.updateSelectedFreehandStyle) window.updateSelectedFreehandStyle({ roughness: v });
+  }, []);
+  const updateOpacity = useCallback6((v) => {
+    setOpacity(v);
+    if (window.updateSelectedFreehandStyle) window.updateSelectedFreehandStyle({ opacity: v });
+  }, []);
+  return /* @__PURE__ */ jsxs10(ShapeSidebar, { visible: activeTool === TOOLS.FREEHAND || selectedShapeSidebar === "paintbrush", children: [
+    /* @__PURE__ */ jsxs10(
+      ToolbarButton,
+      {
+        tooltip: t("sidebar.strokeColor"),
+        preview: /* @__PURE__ */ jsx10("span", { className: "w-4 h-4 rounded-md border border-white/20", style: { backgroundColor: strokeColor } }),
+        children: [
+          /* @__PURE__ */ jsx10("p", { className: "text-xs text-text-muted uppercase tracking-wider mb-2", children: t("sidebar.sectionHeader.stroke") }),
+          /* @__PURE__ */ jsx10(ColorGrid5, { colors: STROKE_COLORS5, selected: strokeColor, onSelect: updateStroke })
+        ]
+      }
+    ),
+    /* @__PURE__ */ jsx10(Divider, {}),
+    /* @__PURE__ */ jsxs10(ToolbarButton, { icon: "bxs-edit-alt", tooltip: t("sidebar.strokeWidth"), children: [
+      /* @__PURE__ */ jsx10("p", { className: "text-xs text-text-muted uppercase tracking-wider mb-2", children: t("sidebar.sectionHeader.width") }),
+      /* @__PURE__ */ jsx10("div", { className: "flex items-center gap-1", children: [1, 2, 4, 7].map((w) => /* @__PURE__ */ jsx10(
+        "button",
+        {
+          onClick: () => updateThickness(w),
+          className: `w-9 h-8 flex items-center justify-center rounded-lg transition-all duration-100 ${thickness === w ? "bg-[#5B57D1]/20 text-[#5B57D1]" : "text-text-muted hover:bg-white/[0.06]"}`,
+          children: /* @__PURE__ */ jsx10("div", { className: "w-5 rounded-full bg-current", style: { height: Math.max(1, w) } })
+        },
+        w
+      )) })
+    ] }),
+    /* @__PURE__ */ jsx10(Divider, {}),
+    /* @__PURE__ */ jsxs10(ToolbarButton, { icon: "bxs-pen", tooltip: "Taper", children: [
+      /* @__PURE__ */ jsx10("p", { className: "text-xs text-text-muted uppercase tracking-wider mb-2", children: t("sidebar.sectionHeader.taper") }),
+      /* @__PURE__ */ jsx10("div", { className: "flex flex-col gap-0.5", children: [
         { v: "uniform", i: "bxs-minus-circle", l: "Uniform" },
         { v: "pen", i: "bxs-pen", l: "Pen" },
         { v: "brush", i: "bxs-brush", l: "Brush" }
-      ].map((t2) => /* @__PURE__ */ jsxs8(
+      ].map((t2) => /* @__PURE__ */ jsxs10(
         "button",
         {
           onClick: () => updateTaper(t2.v),
           className: `flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs transition-all duration-100 ${taper === t2.v ? "bg-[#5B57D1] text-white" : "text-text-secondary hover:bg-white/[0.06]"}`,
           children: [
-            /* @__PURE__ */ jsx8("i", { className: `bx ${t2.i} text-sm` }),
+            /* @__PURE__ */ jsx10("i", { className: `bx ${t2.i} text-sm` }),
             " ",
             t2.l
           ]
@@ -1474,20 +2022,20 @@ function PaintbrushSidebar() {
         t2.v
       )) })
     ] }),
-    /* @__PURE__ */ jsx8(Divider, {}),
-    /* @__PURE__ */ jsxs8(ToolbarButton, { icon: "bxs-shape-polygon", tooltip: "Roughness", children: [
-      /* @__PURE__ */ jsx8("p", { className: "text-xs text-text-muted uppercase tracking-wider mb-2", children: t("sidebar.sectionHeader.roughness") }),
-      /* @__PURE__ */ jsx8("div", { className: "flex flex-col gap-0.5", children: [
+    /* @__PURE__ */ jsx10(Divider, {}),
+    /* @__PURE__ */ jsxs10(ToolbarButton, { icon: "bxs-shape-polygon", tooltip: "Roughness", children: [
+      /* @__PURE__ */ jsx10("p", { className: "text-xs text-text-muted uppercase tracking-wider mb-2", children: t("sidebar.sectionHeader.roughness") }),
+      /* @__PURE__ */ jsx10("div", { className: "flex flex-col gap-0.5", children: [
         { v: "smooth", i: "bxs-droplet", l: "Smooth" },
         { v: "medium", i: "bxs-leaf", l: "Medium" },
         { v: "rough", i: "bxs-bolt", l: "Rough" }
-      ].map((r) => /* @__PURE__ */ jsxs8(
+      ].map((r) => /* @__PURE__ */ jsxs10(
         "button",
         {
           onClick: () => updateRoughness(r.v),
           className: `flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs transition-all duration-100 ${roughness === r.v ? "bg-[#5B57D1] text-white" : "text-text-secondary hover:bg-white/[0.06]"}`,
           children: [
-            /* @__PURE__ */ jsx8("i", { className: `bx ${r.i} text-sm` }),
+            /* @__PURE__ */ jsx10("i", { className: `bx ${r.i} text-sm` }),
             " ",
             r.l
           ]
@@ -1495,14 +2043,14 @@ function PaintbrushSidebar() {
         r.v
       )) })
     ] }),
-    /* @__PURE__ */ jsx8(Divider, {}),
-    /* @__PURE__ */ jsxs8(ToolbarButton, { icon: "bxs-sun", tooltip: t("sidebar.opacity"), children: [
-      /* @__PURE__ */ jsxs8("p", { className: "text-xs text-text-muted uppercase tracking-wider mb-2", children: [
+    /* @__PURE__ */ jsx10(Divider, {}),
+    /* @__PURE__ */ jsxs10(ToolbarButton, { icon: "bxs-sun", tooltip: t("sidebar.opacity"), children: [
+      /* @__PURE__ */ jsxs10("p", { className: "text-xs text-text-muted uppercase tracking-wider mb-2", children: [
         "Opacity ",
         Math.round(opacity * 100),
         "%"
       ] }),
-      /* @__PURE__ */ jsx8(
+      /* @__PURE__ */ jsx10(
         "input",
         {
           type: "range",
@@ -1515,14 +2063,14 @@ function PaintbrushSidebar() {
         }
       )
     ] }),
-    /* @__PURE__ */ jsx8(Divider, {}),
-    /* @__PURE__ */ jsx8(LayerControls, {})
+    /* @__PURE__ */ jsx10(Divider, {}),
+    /* @__PURE__ */ jsx10(LayerControls, {})
   ] });
 }
 
 // src/react/components/sidebars/TextSidebar.jsx
-import { useState as useState8, useCallback as useCallback6, useEffect as useEffect4 } from "react";
-import { Fragment as Fragment3, jsx as jsx9, jsxs as jsxs9 } from "react/jsx-runtime";
+import { useState as useState9, useCallback as useCallback7, useEffect as useEffect4 } from "react";
+import { Fragment as Fragment4, jsx as jsx11, jsxs as jsxs11 } from "react/jsx-runtime";
 var TEXT_COLORS = ["#fff", "#FF8383", "#3A994C", "#56A2E8", "#FFD700", "#FF69B4", "#A855F7"];
 var FONTS = [
   { value: "lixFont", label: "Lix" },
@@ -1557,11 +2105,11 @@ function TextSidebar() {
   const { t } = useTranslation();
   const activeTool = useSketchStore_default((s) => s.activeTool);
   const selectedShapeSidebar = useSketchStore_default((s) => s.selectedShapeSidebar);
-  const [textColor, setTextColor] = useState8("#fff");
-  const [fontSize, setFontSize] = useState8("M");
-  const [font, setFont] = useState8("lixFont");
-  const [codeMode, setCodeMode] = useState8(false);
-  const [language, setLanguage] = useState8("javascript");
+  const [textColor, setTextColor] = useState9("#fff");
+  const [fontSize, setFontSize] = useState9("M");
+  const [font, setFont] = useState9("lixFont");
+  const [codeMode, setCodeMode] = useState9(false);
+  const [language, setLanguage] = useState9("javascript");
   useEffect4(() => {
     window.__onCodeModeChanged = (isCode) => {
       setCodeMode(isCode);
@@ -1571,19 +2119,19 @@ function TextSidebar() {
       window.__onCodeModeChanged = null;
     };
   }, []);
-  const updateColor = useCallback6((c) => {
+  const updateColor = useCallback7((c) => {
     setTextColor(c);
     if (window.updateSelectedTextStyle) window.updateSelectedTextStyle({ color: c });
   }, []);
-  const updateFont = useCallback6((f) => {
+  const updateFont = useCallback7((f) => {
     setFont(f);
     if (window.updateSelectedTextStyle) window.updateSelectedTextStyle({ font: f });
   }, []);
-  const updateSize = useCallback6((s) => {
+  const updateSize = useCallback7((s) => {
     setFontSize(s);
     if (window.updateSelectedTextStyle) window.updateSelectedTextStyle({ fontSize: SIZE_MAP[s] });
   }, []);
-  const toggleCodeMode = useCallback6(() => {
+  const toggleCodeMode = useCallback7(() => {
     const next = !codeMode;
     setCodeMode(next);
     window.isTextInCodeMode = next;
@@ -1593,21 +2141,21 @@ function TextSidebar() {
       if (window.__convertCodeToText) window.__convertCodeToText();
     }
   }, [codeMode]);
-  const updateLanguage = useCallback6((lang) => {
+  const updateLanguage = useCallback7((lang) => {
     setLanguage(lang);
     if (window.__setCodeLanguage) window.__setCodeLanguage(lang);
   }, []);
   const visible = activeTool === TOOLS.TEXT || activeTool === TOOLS.CODE || selectedShapeSidebar === "text";
-  return /* @__PURE__ */ jsxs9(Fragment3, { children: [
-    /* @__PURE__ */ jsxs9(ShapeSidebar, { visible, children: [
-      /* @__PURE__ */ jsxs9(
+  return /* @__PURE__ */ jsxs11(Fragment4, { children: [
+    /* @__PURE__ */ jsxs11(ShapeSidebar, { visible, children: [
+      /* @__PURE__ */ jsxs11(
         ToolbarButton,
         {
           tooltip: t("sidebar.textColor"),
-          preview: /* @__PURE__ */ jsx9("span", { className: "w-4 h-4 rounded-md border border-white/20", style: { backgroundColor: textColor } }),
+          preview: /* @__PURE__ */ jsx11("span", { className: "w-4 h-4 rounded-md border border-white/20", style: { backgroundColor: textColor } }),
           children: [
-            /* @__PURE__ */ jsx9("p", { className: "text-xs text-text-muted uppercase tracking-wider mb-2", children: t("sidebar.color") }),
-            /* @__PURE__ */ jsx9("div", { className: "grid grid-cols-4 gap-1.5", children: TEXT_COLORS.map((c) => /* @__PURE__ */ jsx9(
+            /* @__PURE__ */ jsx11("p", { className: "text-xs text-text-muted uppercase tracking-wider mb-2", children: t("sidebar.color") }),
+            /* @__PURE__ */ jsx11("div", { className: "grid grid-cols-4 gap-1.5", children: TEXT_COLORS.map((c) => /* @__PURE__ */ jsx11(
               "button",
               {
                 onClick: () => updateColor(c),
@@ -1619,11 +2167,11 @@ function TextSidebar() {
           ]
         }
       ),
-      !codeMode && /* @__PURE__ */ jsxs9(Fragment3, { children: [
-        /* @__PURE__ */ jsx9(Divider, {}),
-        /* @__PURE__ */ jsxs9(ToolbarButton, { icon: "bxs-font-family", tooltip: t("sidebar.font"), children: [
-          /* @__PURE__ */ jsx9("p", { className: "text-xs text-text-muted uppercase tracking-wider mb-2", children: t("sidebar.font") }),
-          /* @__PURE__ */ jsx9("div", { className: "flex flex-col gap-0.5", children: FONTS.map((f) => /* @__PURE__ */ jsx9(
+      !codeMode && /* @__PURE__ */ jsxs11(Fragment4, { children: [
+        /* @__PURE__ */ jsx11(Divider, {}),
+        /* @__PURE__ */ jsxs11(ToolbarButton, { icon: "bxs-font-family", tooltip: t("sidebar.font"), children: [
+          /* @__PURE__ */ jsx11("p", { className: "text-xs text-text-muted uppercase tracking-wider mb-2", children: t("sidebar.font") }),
+          /* @__PURE__ */ jsx11("div", { className: "flex flex-col gap-0.5", children: FONTS.map((f) => /* @__PURE__ */ jsx11(
             "button",
             {
               onClick: () => updateFont(f.value),
@@ -1635,10 +2183,10 @@ function TextSidebar() {
           )) })
         ] })
       ] }),
-      /* @__PURE__ */ jsx9(Divider, {}),
-      /* @__PURE__ */ jsxs9(ToolbarButton, { icon: "bxs-chevrons-up", tooltip: t("sidebar.size"), children: [
-        /* @__PURE__ */ jsx9("p", { className: "text-xs text-text-muted uppercase tracking-wider mb-2", children: t("sidebar.size") }),
-        /* @__PURE__ */ jsx9("div", { className: "flex items-center gap-1", children: ["S", "M", "L", "XL"].map((s) => /* @__PURE__ */ jsx9(
+      /* @__PURE__ */ jsx11(Divider, {}),
+      /* @__PURE__ */ jsxs11(ToolbarButton, { icon: "bxs-chevrons-up", tooltip: t("sidebar.size"), children: [
+        /* @__PURE__ */ jsx11("p", { className: "text-xs text-text-muted uppercase tracking-wider mb-2", children: t("sidebar.size") }),
+        /* @__PURE__ */ jsx11("div", { className: "flex items-center gap-1", children: ["S", "M", "L", "XL"].map((s) => /* @__PURE__ */ jsx11(
           "button",
           {
             onClick: () => updateSize(s),
@@ -1648,22 +2196,22 @@ function TextSidebar() {
           s
         )) })
       ] }),
-      /* @__PURE__ */ jsx9(Divider, {}),
-      /* @__PURE__ */ jsxs9(ToolbarButton, { icon: "bxs-terminal", tooltip: t("sidebar.codeMode"), children: [
-        /* @__PURE__ */ jsx9("p", { className: "text-xs text-text-muted uppercase tracking-wider mb-2", children: t("sidebar.code") }),
-        /* @__PURE__ */ jsxs9("div", { className: "flex flex-col gap-2", children: [
-          /* @__PURE__ */ jsxs9(
+      /* @__PURE__ */ jsx11(Divider, {}),
+      /* @__PURE__ */ jsxs11(ToolbarButton, { icon: "bxs-terminal", tooltip: t("sidebar.codeMode"), children: [
+        /* @__PURE__ */ jsx11("p", { className: "text-xs text-text-muted uppercase tracking-wider mb-2", children: t("sidebar.code") }),
+        /* @__PURE__ */ jsxs11("div", { className: "flex flex-col gap-2", children: [
+          /* @__PURE__ */ jsxs11(
             "button",
             {
               onClick: toggleCodeMode,
               className: `flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs transition-all duration-100 ${codeMode ? "bg-[#5B57D1] text-white" : "text-text-secondary hover:bg-white/[0.06]"}`,
               children: [
-                /* @__PURE__ */ jsx9("div", { className: `w-6 h-3 rounded-full transition-all duration-150 relative ${codeMode ? "bg-white/30" : "bg-white/10"}`, children: /* @__PURE__ */ jsx9("div", { className: `absolute top-0.5 w-2 h-2 rounded-full bg-white transition-all duration-150 ${codeMode ? "left-3.5" : "left-0.5"}` }) }),
+                /* @__PURE__ */ jsx11("div", { className: `w-6 h-3 rounded-full transition-all duration-150 relative ${codeMode ? "bg-white/30" : "bg-white/10"}`, children: /* @__PURE__ */ jsx11("div", { className: `absolute top-0.5 w-2 h-2 rounded-full bg-white transition-all duration-150 ${codeMode ? "left-3.5" : "left-0.5"}` }) }),
                 codeMode ? t("sidebar.on") : t("sidebar.off")
               ]
             }
           ),
-          codeMode && /* @__PURE__ */ jsx9("div", { className: "flex flex-wrap gap-1 max-w-[180px]", children: LANGUAGES.map((lang) => /* @__PURE__ */ jsx9(
+          codeMode && /* @__PURE__ */ jsx11("div", { className: "flex flex-wrap gap-1 max-w-[180px]", children: LANGUAGES.map((lang) => /* @__PURE__ */ jsx11(
             "button",
             {
               onClick: () => updateLanguage(lang),
@@ -1674,21 +2222,21 @@ function TextSidebar() {
           )) })
         ] })
       ] }),
-      /* @__PURE__ */ jsx9(Divider, {}),
-      /* @__PURE__ */ jsx9(LayerControls, {})
+      /* @__PURE__ */ jsx11(Divider, {}),
+      /* @__PURE__ */ jsx11(LayerControls, {})
     ] }),
-    /* @__PURE__ */ jsx9(
+    /* @__PURE__ */ jsx11(
       "div",
       {
         className: `absolute bottom-7 left-1/2 -translate-x-1/2 z-[998] font-[lixFont] transition-all duration-200 ${visible ? "opacity-100 translate-y-0" : "opacity-0 pointer-events-none translate-y-2"}`,
-        children: /* @__PURE__ */ jsxs9("p", { className: "text-[10px] text-white/30 leading-relaxed text-center whitespace-nowrap", children: [
-          /* @__PURE__ */ jsx9("span", { className: "text-white/50", children: "Ctrl+Enter" }),
+        children: /* @__PURE__ */ jsxs11("p", { className: "text-[10px] text-white/30 leading-relaxed text-center whitespace-nowrap", children: [
+          /* @__PURE__ */ jsx11("span", { className: "text-white/50", children: "Ctrl+Enter" }),
           " / ",
-          /* @__PURE__ */ jsx9("span", { className: "text-white/50", children: "Enter" }),
+          /* @__PURE__ */ jsx11("span", { className: "text-white/50", children: "Enter" }),
           " \u2014 ",
           t("sidebar.renderText"),
           " \xA0\xA0",
-          /* @__PURE__ */ jsx9("span", { className: "text-white/50", children: "Shift+Enter" }),
+          /* @__PURE__ */ jsx11("span", { className: "text-white/50", children: "Shift+Enter" }),
           " \u2014 ",
           t("sidebar.newLine")
         ] })
@@ -1698,8 +2246,8 @@ function TextSidebar() {
 }
 
 // src/react/components/sidebars/FrameSidebar.jsx
-import { useState as useState9, useCallback as useCallback7, useEffect as useEffect5 } from "react";
-import { Fragment as Fragment4, jsx as jsx10, jsxs as jsxs10 } from "react/jsx-runtime";
+import { useState as useState10, useCallback as useCallback8, useEffect as useEffect5 } from "react";
+import { Fragment as Fragment5, jsx as jsx12, jsxs as jsxs12 } from "react/jsx-runtime";
 var FILL_STYLES = [
   { id: "transparent", label: "None", icon: "bx-x" },
   { id: "solid", label: "Solid", icon: "bxs-square" },
@@ -1718,10 +2266,10 @@ function FrameSidebar() {
   const activeTool = useSketchStore_default((s) => s.activeTool);
   const selectedShapeSidebar = useSketchStore_default((s) => s.selectedShapeSidebar);
   const toggleAIModal = useUIStore_default((s) => s.toggleAIModal);
-  const [frameName, setFrameName] = useState9("Frame 1");
-  const [isGraph, setIsGraph] = useState9(false);
-  const [fillStyle, setFillStyle] = useState9("transparent");
-  const [fillColor, setFillColor] = useState9("#1e1e28");
+  const [frameName, setFrameName] = useState10("Frame 1");
+  const [isGraph, setIsGraph] = useState10(false);
+  const [fillStyle, setFillStyle] = useState10("transparent");
+  const [fillColor, setFillColor] = useState10("#1e1e28");
   useEffect5(() => {
     if (selectedShapeSidebar === "frame" || activeTool === TOOLS.FRAME) {
       const shape = typeof window !== "undefined" ? window.currentShape : null;
@@ -1737,7 +2285,7 @@ function FrameSidebar() {
       }
     }
   }, [selectedShapeSidebar, activeTool]);
-  const updateName = useCallback7((e) => {
+  const updateName = useCallback8((e) => {
     const name = e.target.value;
     setFrameName(name);
     const shape = window.currentShape;
@@ -1746,7 +2294,7 @@ function FrameSidebar() {
       shape.draw();
     }
   }, []);
-  const updateFillStyle = useCallback7((style) => {
+  const updateFillStyle = useCallback8((style) => {
     setFillStyle(style);
     const shape = window.currentShape;
     if (shape && shape.shapeName === "frame") {
@@ -1754,7 +2302,7 @@ function FrameSidebar() {
       shape.draw();
     }
   }, []);
-  const updateFillColor = useCallback7((color) => {
+  const updateFillColor = useCallback8((color) => {
     setFillColor(color);
     const shape = window.currentShape;
     if (shape && shape.shapeName === "frame") {
@@ -1762,23 +2310,23 @@ function FrameSidebar() {
       shape.draw();
     }
   }, []);
-  const resizeToFit = useCallback7(() => {
+  const resizeToFit = useCallback8(() => {
     const shape = window.currentShape;
     if (shape && shape.shapeName === "frame" && typeof shape.resizeToFitContents === "function") {
       shape.resizeToFitContents();
     }
   }, []);
-  const handleAIEdit = useCallback7(() => {
+  const handleAIEdit = useCallback8(() => {
     const shape = window.currentShape;
     if (shape && shape.shapeName === "frame") {
       window.__aiEditTargetFrame = shape;
       toggleAIModal();
     }
   }, [toggleAIModal]);
-  return /* @__PURE__ */ jsxs10(ShapeSidebar, { visible: activeTool === TOOLS.FRAME || selectedShapeSidebar === "frame", children: [
-    /* @__PURE__ */ jsxs10(ToolbarButton, { icon: "bxs-rename", tooltip: "Frame name", children: [
-      /* @__PURE__ */ jsx10("p", { className: "text-xs text-text-muted uppercase tracking-wider mb-2", children: t("sidebar.sectionHeader.name") }),
-      /* @__PURE__ */ jsx10(
+  return /* @__PURE__ */ jsxs12(ShapeSidebar, { visible: activeTool === TOOLS.FRAME || selectedShapeSidebar === "frame", children: [
+    /* @__PURE__ */ jsxs12(ToolbarButton, { icon: "bxs-rename", tooltip: "Frame name", children: [
+      /* @__PURE__ */ jsx12("p", { className: "text-xs text-text-muted uppercase tracking-wider mb-2", children: t("sidebar.sectionHeader.name") }),
+      /* @__PURE__ */ jsx12(
         "input",
         {
           type: "text",
@@ -1789,26 +2337,26 @@ function FrameSidebar() {
         }
       )
     ] }),
-    /* @__PURE__ */ jsx10(Divider, {}),
-    /* @__PURE__ */ jsxs10(ToolbarButton, { icon: "bxs-palette", tooltip: "Fill style", children: [
-      /* @__PURE__ */ jsx10("p", { className: "text-xs text-text-muted uppercase tracking-wider mb-2", children: t("sidebar.sectionHeader.background") }),
-      /* @__PURE__ */ jsx10("div", { className: "flex gap-1 mb-2.5", children: FILL_STYLES.map((s) => /* @__PURE__ */ jsxs10(
+    /* @__PURE__ */ jsx12(Divider, {}),
+    /* @__PURE__ */ jsxs12(ToolbarButton, { icon: "bxs-palette", tooltip: "Fill style", children: [
+      /* @__PURE__ */ jsx12("p", { className: "text-xs text-text-muted uppercase tracking-wider mb-2", children: t("sidebar.sectionHeader.background") }),
+      /* @__PURE__ */ jsx12("div", { className: "flex gap-1 mb-2.5", children: FILL_STYLES.map((s) => /* @__PURE__ */ jsxs12(
         "button",
         {
           onClick: () => updateFillStyle(s.id),
           title: s.label,
           className: `flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs transition-all duration-100 ${fillStyle === s.id ? "bg-white/[0.12] text-white" : "text-text-muted hover:text-white hover:bg-white/[0.06]"}`,
           children: [
-            /* @__PURE__ */ jsx10("i", { className: `bx ${s.icon} text-sm` }),
+            /* @__PURE__ */ jsx12("i", { className: `bx ${s.icon} text-sm` }),
             s.label
           ]
         },
         s.id
       )) }),
-      fillStyle !== "transparent" && /* @__PURE__ */ jsxs10(Fragment4, { children: [
-        /* @__PURE__ */ jsx10("p", { className: "text-xs text-text-muted uppercase tracking-wider mb-1.5", children: t("sidebar.sectionHeader.color") }),
-        /* @__PURE__ */ jsxs10("div", { className: "flex items-center gap-1.5", children: [
-          FILL_COLORS.map((c) => /* @__PURE__ */ jsx10(
+      fillStyle !== "transparent" && /* @__PURE__ */ jsxs12(Fragment5, { children: [
+        /* @__PURE__ */ jsx12("p", { className: "text-xs text-text-muted uppercase tracking-wider mb-1.5", children: t("sidebar.sectionHeader.color") }),
+        /* @__PURE__ */ jsxs12("div", { className: "flex items-center gap-1.5", children: [
+          FILL_COLORS.map((c) => /* @__PURE__ */ jsx12(
             "button",
             {
               onClick: () => updateFillColor(c),
@@ -1818,8 +2366,8 @@ function FrameSidebar() {
             },
             c
           )),
-          /* @__PURE__ */ jsxs10("label", { className: "w-6 h-6 rounded-md border-2 border-white/10 hover:border-white/30 cursor-pointer overflow-hidden relative transition-all duration-100", title: "Custom color", children: [
-            /* @__PURE__ */ jsx10(
+          /* @__PURE__ */ jsxs12("label", { className: "w-6 h-6 rounded-md border-2 border-white/10 hover:border-white/30 cursor-pointer overflow-hidden relative transition-all duration-100", title: "Custom color", children: [
+            /* @__PURE__ */ jsx12(
               "input",
               {
                 type: "color",
@@ -1828,16 +2376,16 @@ function FrameSidebar() {
                 className: "absolute inset-0 opacity-0 cursor-pointer"
               }
             ),
-            /* @__PURE__ */ jsx10("i", { className: "bx bx-palette text-xs text-text-muted absolute inset-0 flex items-center justify-center" })
+            /* @__PURE__ */ jsx12("i", { className: "bx bx-palette text-xs text-text-muted absolute inset-0 flex items-center justify-center" })
           ] })
         ] })
       ] })
     ] }),
-    /* @__PURE__ */ jsx10(Divider, {}),
-    /* @__PURE__ */ jsxs10(ToolbarButton, { icon: "bx-image-alt", tooltip: "Background image", children: [
-      /* @__PURE__ */ jsx10("p", { className: "text-xs text-text-muted uppercase tracking-wider mb-2", children: t("sidebar.sectionHeader.backgroundImage") }),
-      /* @__PURE__ */ jsxs10("div", { className: "flex gap-1.5 mb-2", children: [
-        /* @__PURE__ */ jsxs10(
+    /* @__PURE__ */ jsx12(Divider, {}),
+    /* @__PURE__ */ jsxs12(ToolbarButton, { icon: "bx-image-alt", tooltip: "Background image", children: [
+      /* @__PURE__ */ jsx12("p", { className: "text-xs text-text-muted uppercase tracking-wider mb-2", children: t("sidebar.sectionHeader.backgroundImage") }),
+      /* @__PURE__ */ jsxs12("div", { className: "flex gap-1.5 mb-2", children: [
+        /* @__PURE__ */ jsxs12(
           "button",
           {
             onClick: () => {
@@ -1868,12 +2416,12 @@ function FrameSidebar() {
             },
             className: "flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-text-secondary text-xs hover:bg-white/[0.06] hover:text-white transition-all duration-100",
             children: [
-              /* @__PURE__ */ jsx10("i", { className: "bx bx-upload text-sm" }),
+              /* @__PURE__ */ jsx12("i", { className: "bx bx-upload text-sm" }),
               "Set Image"
             ]
           }
         ),
-        /* @__PURE__ */ jsxs10(
+        /* @__PURE__ */ jsxs12(
           "button",
           {
             onClick: () => {
@@ -1885,7 +2433,7 @@ function FrameSidebar() {
             },
             className: "flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-text-secondary text-xs hover:bg-white/[0.06] hover:text-red-400 transition-all duration-100",
             children: [
-              /* @__PURE__ */ jsx10("i", { className: "bx bx-x text-sm" }),
+              /* @__PURE__ */ jsx12("i", { className: "bx bx-x text-sm" }),
               "Remove"
             ]
           }
@@ -1894,13 +2442,13 @@ function FrameSidebar() {
       (() => {
         const shape = typeof window !== "undefined" ? window.currentShape : null;
         if (!shape?.shapeName === "frame" || !shape?._frameImageURL) return null;
-        return /* @__PURE__ */ jsxs10(Fragment4, { children: [
-          /* @__PURE__ */ jsx10("p", { className: "text-xs text-text-muted uppercase tracking-wider mb-1.5", children: t("sidebar.sectionHeader.fit") }),
-          /* @__PURE__ */ jsx10("div", { className: "flex gap-1", children: [
+        return /* @__PURE__ */ jsxs12(Fragment5, { children: [
+          /* @__PURE__ */ jsx12("p", { className: "text-xs text-text-muted uppercase tracking-wider mb-1.5", children: t("sidebar.sectionHeader.fit") }),
+          /* @__PURE__ */ jsx12("div", { className: "flex gap-1", children: [
             { id: "cover", label: "Cover" },
             { id: "contain", label: "Contain" },
             { id: "fill", label: "Stretch" }
-          ].map((f) => /* @__PURE__ */ jsx10(
+          ].map((f) => /* @__PURE__ */ jsx12(
             "button",
             {
               onClick: () => {
@@ -1917,19 +2465,19 @@ function FrameSidebar() {
         ] });
       })()
     ] }),
-    /* @__PURE__ */ jsx10(Divider, {}),
-    /* @__PURE__ */ jsx10(ToolbarButton, { icon: "bxs-expand", tooltip: "Actions", children: /* @__PURE__ */ jsxs10("button", { onClick: resizeToFit, className: "flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-text-secondary text-xs hover:bg-white/[0.06] hover:text-white transition-all duration-100", children: [
-      /* @__PURE__ */ jsx10("i", { className: "bx bxs-expand text-sm" }),
+    /* @__PURE__ */ jsx12(Divider, {}),
+    /* @__PURE__ */ jsx12(ToolbarButton, { icon: "bxs-expand", tooltip: "Actions", children: /* @__PURE__ */ jsxs12("button", { onClick: resizeToFit, className: "flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-text-secondary text-xs hover:bg-white/[0.06] hover:text-white transition-all duration-100", children: [
+      /* @__PURE__ */ jsx12("i", { className: "bx bxs-expand text-sm" }),
       "Resize to Fit"
     ] }) }),
-    /* @__PURE__ */ jsx10(Divider, {}),
-    /* @__PURE__ */ jsx10(LayerControls, {})
+    /* @__PURE__ */ jsx12(Divider, {}),
+    /* @__PURE__ */ jsx12(LayerControls, {})
   ] });
 }
 
 // src/react/components/sidebars/IconSidebar.jsx
-import { useState as useState10, useEffect as useEffect6, useCallback as useCallback8, useRef as useRef4 } from "react";
-import { jsx as jsx11, jsxs as jsxs11 } from "react/jsx-runtime";
+import { useState as useState11, useEffect as useEffect6, useCallback as useCallback9, useRef as useRef4 } from "react";
+import { jsx as jsx13, jsxs as jsxs13 } from "react/jsx-runtime";
 var iconResultCache = /* @__PURE__ */ new Map();
 var CATEGORIES = [
   { value: null, label: "All", icon: "bxs-grid-alt" },
@@ -1959,20 +2507,20 @@ function normalizeSvg(raw) {
 function IconCell({ icon, onClick }) {
   const name = icon.filename?.replace(".svg", "").replace(/_/g, " ") || "";
   const normalizedSvg = typeof document !== "undefined" && icon.svg ? normalizeSvg(icon.svg) : icon.svg;
-  return /* @__PURE__ */ jsx11(
+  return /* @__PURE__ */ jsx13(
     "button",
     {
       onClick,
       title: name,
       style: { width: "44px", height: "44px", overflow: "hidden", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "8px", cursor: "pointer", background: "transparent", border: "none", padding: 0 },
       className: "hover:bg-white/10 transition-colors duration-100",
-      children: normalizedSvg ? /* @__PURE__ */ jsx11(
+      children: normalizedSvg ? /* @__PURE__ */ jsx13(
         "div",
         {
           style: { width: "24px", height: "24px", overflow: "visible", flexShrink: 0, pointerEvents: "none", filter: "brightness(0) invert(1)" },
           dangerouslySetInnerHTML: { __html: normalizedSvg }
         }
-      ) : /* @__PURE__ */ jsx11(
+      ) : /* @__PURE__ */ jsx13(
         "img",
         {
           src: `/icons/${encodeURIComponent(icon.filename)}`,
@@ -1989,10 +2537,10 @@ function IconSidebar() {
   const activeTool = useSketchStore_default((s) => s.activeTool);
   const setActiveTool = useSketchStore_default((s) => s.setActiveTool);
   const visible = activeTool === TOOLS.ICON;
-  const [query, setQuery] = useState10("");
-  const [category, setCategory] = useState10(null);
-  const [icons, setIcons] = useState10([]);
-  const [loading, setLoading] = useState10(false);
+  const [query, setQuery] = useState11("");
+  const [category, setCategory] = useState11(null);
+  const [icons, setIcons] = useState11([]);
+  const [loading, setLoading] = useState11(false);
   const debounceRef = useRef4(null);
   useEffect6(() => {
     if (!visible) return;
@@ -2013,7 +2561,7 @@ function IconSidebar() {
     svgEl.addEventListener("mousedown", handleCanvasClick);
     return () => svgEl.removeEventListener("mousedown", handleCanvasClick);
   }, [visible, setActiveTool]);
-  const fetchIcons = useCallback8(async (searchQuery, cat) => {
+  const fetchIcons = useCallback9(async (searchQuery, cat) => {
     const params = new URLSearchParams();
     if (searchQuery) params.set("q", searchQuery);
     if (cat) params.set("category", cat);
@@ -2062,7 +2610,7 @@ function IconSidebar() {
       }
     });
   }, [visible]);
-  const handleIconClick = useCallback8((icon) => {
+  const handleIconClick = useCallback9((icon) => {
     if (typeof window === "undefined") return;
     const place = (svgContent) => {
       if (window.prepareIconPlacement) {
@@ -2078,27 +2626,27 @@ function IconSidebar() {
       });
     }
   }, []);
-  return /* @__PURE__ */ jsxs11(
+  return /* @__PURE__ */ jsxs13(
     "div",
     {
       className: `absolute top-[60px] right-2 bottom-[56px] w-[300px] bg-[#18181c] border border-white/[0.06] rounded-2xl z-[999] font-[lixFont] flex flex-col transition-transform duration-200 ${visible ? "translate-x-0" : "translate-x-full"}`,
       children: [
-        /* @__PURE__ */ jsxs11("div", { className: "px-3.5 pt-3.5 pb-2 shrink-0", children: [
-          /* @__PURE__ */ jsxs11("div", { className: "flex items-center justify-between mb-2.5", children: [
-            /* @__PURE__ */ jsx11("h3", { className: "text-white/90 text-sm font-medium", children: "Icons" }),
-            /* @__PURE__ */ jsx11(
+        /* @__PURE__ */ jsxs13("div", { className: "px-3.5 pt-3.5 pb-2 shrink-0", children: [
+          /* @__PURE__ */ jsxs13("div", { className: "flex items-center justify-between mb-2.5", children: [
+            /* @__PURE__ */ jsx13("h3", { className: "text-white/90 text-sm font-medium", children: "Icons" }),
+            /* @__PURE__ */ jsx13(
               "button",
               {
                 onClick: () => setActiveTool(TOOLS.SELECT),
                 className: "w-6 h-6 flex items-center justify-center rounded-md text-white/40 hover:text-white/80 hover:bg-white/10 transition-colors duration-100",
                 title: "Close (Esc)",
-                children: /* @__PURE__ */ jsx11("i", { className: "bx bx-x text-lg" })
+                children: /* @__PURE__ */ jsx13("i", { className: "bx bx-x text-lg" })
               }
             )
           ] }),
-          /* @__PURE__ */ jsxs11("div", { className: "flex items-center gap-2 bg-white/[0.06] border border-white/[0.08] rounded-lg px-2.5 py-2", children: [
-            /* @__PURE__ */ jsx11("i", { className: "bx bxs-search text-white/40 text-sm" }),
-            /* @__PURE__ */ jsx11(
+          /* @__PURE__ */ jsxs13("div", { className: "flex items-center gap-2 bg-white/[0.06] border border-white/[0.08] rounded-lg px-2.5 py-2", children: [
+            /* @__PURE__ */ jsx13("i", { className: "bx bxs-search text-white/40 text-sm" }),
+            /* @__PURE__ */ jsx13(
               "input",
               {
                 id: "iconSearchInput",
@@ -2110,26 +2658,26 @@ function IconSidebar() {
                 spellCheck: false
               }
             ),
-            query && /* @__PURE__ */ jsx11("button", { onClick: () => setQuery(""), className: "text-white/30 hover:text-white/60", children: /* @__PURE__ */ jsx11("i", { className: "bx bxs-x-circle text-sm" }) })
+            query && /* @__PURE__ */ jsx13("button", { onClick: () => setQuery(""), className: "text-white/30 hover:text-white/60", children: /* @__PURE__ */ jsx13("i", { className: "bx bxs-x-circle text-sm" }) })
           ] })
         ] }),
-        /* @__PURE__ */ jsx11("div", { className: "flex flex-wrap gap-1 px-3.5 pb-2.5 shrink-0", children: CATEGORIES.map((cat) => /* @__PURE__ */ jsxs11(
+        /* @__PURE__ */ jsx13("div", { className: "flex flex-wrap gap-1 px-3.5 pb-2.5 shrink-0", children: CATEGORIES.map((cat) => /* @__PURE__ */ jsxs13(
           "button",
           {
             onClick: () => setCategory(cat.value),
             className: `flex items-center gap-1 px-2 py-1 rounded-md text-xs whitespace-nowrap transition-colors duration-100 ${category === cat.value ? "bg-accent-blue/20 text-accent-blue-hover" : "text-white/50 hover:bg-white/[0.06] hover:text-white/80"}`,
             children: [
-              /* @__PURE__ */ jsx11("i", { className: `bx ${cat.icon} text-xs` }),
+              /* @__PURE__ */ jsx13("i", { className: `bx ${cat.icon} text-xs` }),
               cat.label
             ]
           },
           cat.value || "all"
         )) }),
-        /* @__PURE__ */ jsx11("div", { className: "h-px bg-white/[0.06] mx-3.5 shrink-0" }),
-        /* @__PURE__ */ jsx11("div", { className: "flex-1 overflow-y-auto no-scrollbar px-3 py-2.5", id: "iconsContainer", children: loading ? /* @__PURE__ */ jsxs11("div", { className: "flex items-center justify-center py-12 text-white/40 text-sm", children: [
-          /* @__PURE__ */ jsx11("i", { className: "bx bxs-hourglass bx-spin text-lg mr-2" }),
+        /* @__PURE__ */ jsx13("div", { className: "h-px bg-white/[0.06] mx-3.5 shrink-0" }),
+        /* @__PURE__ */ jsx13("div", { className: "flex-1 overflow-y-auto no-scrollbar px-3 py-2.5", id: "iconsContainer", children: loading ? /* @__PURE__ */ jsxs13("div", { className: "flex items-center justify-center py-12 text-white/40 text-sm", children: [
+          /* @__PURE__ */ jsx13("i", { className: "bx bxs-hourglass bx-spin text-lg mr-2" }),
           "Loading..."
-        ] }) : icons.length === 0 ? /* @__PURE__ */ jsx11("div", { className: "flex items-center justify-center py-12 text-white/40 text-sm", children: "No icons found" }) : /* @__PURE__ */ jsx11("div", { style: { display: "grid", gridTemplateColumns: "repeat(6, minmax(0, 1fr))", gap: "2px" }, children: icons.map((icon, i) => /* @__PURE__ */ jsx11(
+        ] }) : icons.length === 0 ? /* @__PURE__ */ jsx13("div", { className: "flex items-center justify-center py-12 text-white/40 text-sm", children: "No icons found" }) : /* @__PURE__ */ jsx13("div", { style: { display: "grid", gridTemplateColumns: "repeat(6, minmax(0, 1fr))", gap: "2px" }, children: icons.map((icon, i) => /* @__PURE__ */ jsx13(
           IconCell,
           {
             icon,
@@ -2143,13 +2691,13 @@ function IconSidebar() {
 }
 
 // src/react/components/sidebars/ImageSidebar.jsx
-import { useCallback as useCallback9 } from "react";
-import { jsx as jsx12, jsxs as jsxs12 } from "react/jsx-runtime";
+import { useCallback as useCallback10 } from "react";
+import { jsx as jsx14, jsxs as jsxs14 } from "react/jsx-runtime";
 function ImageSidebar() {
   const { t } = useTranslation();
   const selectedShapeSidebar = useSketchStore_default((s) => s.selectedShapeSidebar);
   const toggleImageGenerateModal = useUIStore_default((s) => s.toggleImageGenerateModal);
-  const handleEditWithAI = useCallback9(() => {
+  const handleEditWithAI = useCallback10(() => {
     const shape = window.currentShape;
     if (!shape || shape.shapeName !== "image") return;
     const el = shape.element;
@@ -2159,45 +2707,45 @@ function ImageSidebar() {
     window.__editImageRef = { imageUrl: href, width: w, height: h, shape };
     toggleImageGenerateModal();
   }, [toggleImageGenerateModal]);
-  const handleReplace = useCallback9(() => {
+  const handleReplace = useCallback10(() => {
     if (window.openImageFilePicker) {
       window.__replaceImageShape = window.currentShape;
       window.openImageFilePicker();
     }
   }, []);
-  return /* @__PURE__ */ jsxs12(ShapeSidebar, { visible: selectedShapeSidebar === "image", children: [
-    /* @__PURE__ */ jsxs12(
+  return /* @__PURE__ */ jsxs14(ShapeSidebar, { visible: selectedShapeSidebar === "image", children: [
+    /* @__PURE__ */ jsxs14(
       "button",
       {
         onClick: handleEditWithAI,
         title: "Edit with AI",
         className: "h-9 flex items-center gap-1.5 px-3 rounded-lg text-text-muted hover:text-purple-400 hover:bg-purple-500/10 transition-all duration-100",
         children: [
-          /* @__PURE__ */ jsx12("svg", { width: "14", height: "14", viewBox: "0 0 24 24", fill: "currentColor", stroke: "none", children: /* @__PURE__ */ jsx12("path", { d: "M12 2l2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8L12 2z" }) }),
-          /* @__PURE__ */ jsx12("span", { className: "text-xs", children: "AI Edit" })
+          /* @__PURE__ */ jsx14("svg", { width: "14", height: "14", viewBox: "0 0 24 24", fill: "currentColor", stroke: "none", children: /* @__PURE__ */ jsx14("path", { d: "M12 2l2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8L12 2z" }) }),
+          /* @__PURE__ */ jsx14("span", { className: "text-xs", children: "AI Edit" })
         ]
       }
     ),
-    /* @__PURE__ */ jsx12(Divider, {}),
-    /* @__PURE__ */ jsxs12(
+    /* @__PURE__ */ jsx14(Divider, {}),
+    /* @__PURE__ */ jsxs14(
       "button",
       {
         onClick: handleReplace,
         title: "Replace image",
         className: "h-9 flex items-center gap-1.5 px-3 rounded-lg text-text-muted hover:text-white hover:bg-white/[0.06] transition-all duration-100",
         children: [
-          /* @__PURE__ */ jsx12("i", { className: "bx bx-upload text-base" }),
-          /* @__PURE__ */ jsx12("span", { className: "text-xs", children: "Replace" })
+          /* @__PURE__ */ jsx14("i", { className: "bx bx-upload text-base" }),
+          /* @__PURE__ */ jsx14("span", { className: "text-xs", children: "Replace" })
         ]
       }
     ),
-    /* @__PURE__ */ jsx12(Divider, {}),
-    /* @__PURE__ */ jsx12(LayerControls, {})
+    /* @__PURE__ */ jsx14(Divider, {}),
+    /* @__PURE__ */ jsx14(LayerControls, {})
   ] });
 }
 
 // src/react/components/canvas/MultiSelectActions.jsx
-import { useState as useState11, useEffect as useEffect7 } from "react";
+import { useState as useState12, useEffect as useEffect7 } from "react";
 
 // src/react/utils/toast.js
 function showToast(message, options = {}) {
@@ -2223,10 +2771,10 @@ function showToast(message, options = {}) {
 }
 
 // src/react/components/canvas/MultiSelectActions.jsx
-import { jsx as jsx13, jsxs as jsxs13 } from "react/jsx-runtime";
+import { jsx as jsx15, jsxs as jsxs15 } from "react/jsx-runtime";
 function MultiSelectActions() {
-  const [count, setCount] = useState11(0);
-  const [groupState, setGroupState] = useState11("none");
+  const [count, setCount] = useState12(0);
+  const [groupState, setGroupState] = useState12("none");
   useEffect7(() => {
     const interval = setInterval(() => {
       const ms = window.multiSelection;
@@ -2289,44 +2837,44 @@ function MultiSelectActions() {
     showToast(`Ungrouped ${cleared} shapes`, { tone: "success" });
   };
   const grouped = groupState === "all";
-  return /* @__PURE__ */ jsx13("div", { className: "absolute top-14 left-1/2 -translate-x-1/2 z-[1000] font-[lixFont]", children: /* @__PURE__ */ jsxs13("div", { className: "flex items-center gap-2 bg-surface/90 backdrop-blur-lg border border-border-light rounded-xl px-3 py-1.5 shadow-lg", children: [
-    /* @__PURE__ */ jsxs13("span", { className: "text-text-muted text-xs", children: [
+  return /* @__PURE__ */ jsx15("div", { className: "absolute top-14 left-1/2 -translate-x-1/2 z-[1000] font-[lixFont]", children: /* @__PURE__ */ jsxs15("div", { className: "flex items-center gap-2 bg-surface/90 backdrop-blur-lg border border-border-light rounded-xl px-3 py-1.5 shadow-lg", children: [
+    /* @__PURE__ */ jsxs15("span", { className: "text-text-muted text-xs", children: [
       count,
       " selected",
-      grouped && /* @__PURE__ */ jsx13("span", { className: "ml-1 text-accent-blue", children: "\xB7 grouped" })
+      grouped && /* @__PURE__ */ jsx15("span", { className: "ml-1 text-accent-blue", children: "\xB7 grouped" })
     ] }),
-    /* @__PURE__ */ jsx13("div", { className: "w-px h-4 bg-border-light" }),
-    !grouped && /* @__PURE__ */ jsxs13(
+    /* @__PURE__ */ jsx15("div", { className: "w-px h-4 bg-border-light" }),
+    !grouped && /* @__PURE__ */ jsxs15(
       "button",
       {
         onClick: handleFrame,
         className: "flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs text-accent-blue hover:bg-accent-blue/10 transition-all duration-150",
         title: "Wrap selection in a frame",
         children: [
-          /* @__PURE__ */ jsx13("i", { className: "bx bx-crop text-sm" }),
+          /* @__PURE__ */ jsx15("i", { className: "bx bx-crop text-sm" }),
           "Frame it"
         ]
       }
     ),
-    grouped ? /* @__PURE__ */ jsxs13(
+    grouped ? /* @__PURE__ */ jsxs15(
       "button",
       {
         onClick: handleUngroup,
         className: "flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs text-yellow-400 hover:bg-yellow-500/10 transition-all duration-150",
         title: "Ungroup (Ctrl+Shift+G)",
         children: [
-          /* @__PURE__ */ jsx13("i", { className: "bx bx-unlink text-sm" }),
+          /* @__PURE__ */ jsx15("i", { className: "bx bx-unlink text-sm" }),
           "Ungroup"
         ]
       }
-    ) : /* @__PURE__ */ jsxs13(
+    ) : /* @__PURE__ */ jsxs15(
       "button",
       {
         onClick: handleGroup,
         className: "flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs text-text-secondary hover:bg-surface-hover transition-all duration-150",
         title: "Group (Ctrl+G)",
         children: [
-          /* @__PURE__ */ jsx13("i", { className: "bx bx-link text-sm" }),
+          /* @__PURE__ */ jsx15("i", { className: "bx bx-link text-sm" }),
           "Group"
         ]
       }
@@ -2335,8 +2883,8 @@ function MultiSelectActions() {
 }
 
 // src/react/components/canvas/ContextMenu.jsx
-import { useState as useState12, useEffect as useEffect8, useCallback as useCallback10, useRef as useRef5 } from "react";
-import { Fragment as Fragment5, jsx as jsx14, jsxs as jsxs14 } from "react/jsx-runtime";
+import { useState as useState13, useEffect as useEffect8, useCallback as useCallback11, useRef as useRef5 } from "react";
+import { Fragment as Fragment6, jsx as jsx16, jsxs as jsxs16 } from "react/jsx-runtime";
 function getCleanSVG() {
   const svgEl = window.svg;
   if (!svgEl) return null;
@@ -2389,49 +2937,49 @@ function getShapeAtPoint(x, y) {
   return null;
 }
 function MenuItem({ label, shortcut, onClick, disabled, danger }) {
-  return /* @__PURE__ */ jsxs14(
+  return /* @__PURE__ */ jsxs16(
     "button",
     {
       onClick,
       disabled,
       className: `w-full flex items-center justify-between px-3 py-1.5 text-xs transition-colors duration-100 ${disabled ? "text-text-dim cursor-default" : danger ? "text-red-400 hover:bg-red-500/15 cursor-pointer" : "text-text-secondary hover:bg-surface-hover cursor-pointer"}`,
       children: [
-        /* @__PURE__ */ jsx14("span", { children: label }),
-        shortcut && /* @__PURE__ */ jsx14("span", { className: "text-text-dim text-[10px] ml-6", children: shortcut })
+        /* @__PURE__ */ jsx16("span", { children: label }),
+        shortcut && /* @__PURE__ */ jsx16("span", { className: "text-text-dim text-[10px] ml-6", children: shortcut })
       ]
     }
   );
 }
 function CheckMenuItem({ label, shortcut, checked, onClick }) {
-  return /* @__PURE__ */ jsxs14(
+  return /* @__PURE__ */ jsxs16(
     "button",
     {
       onClick,
       className: "w-full flex items-center justify-between px-3 py-1.5 text-xs text-text-secondary hover:bg-surface-hover cursor-pointer transition-colors duration-100",
       children: [
-        /* @__PURE__ */ jsxs14("span", { className: "flex items-center gap-2", children: [
-          checked && /* @__PURE__ */ jsx14("i", { className: "bx bx-check text-sm text-accent-blue -ml-0.5" }),
-          !checked && /* @__PURE__ */ jsx14("span", { className: "w-[14px]" }),
+        /* @__PURE__ */ jsxs16("span", { className: "flex items-center gap-2", children: [
+          checked && /* @__PURE__ */ jsx16("i", { className: "bx bx-check text-sm text-accent-blue -ml-0.5" }),
+          !checked && /* @__PURE__ */ jsx16("span", { className: "w-[14px]" }),
           label
         ] }),
-        shortcut && /* @__PURE__ */ jsx14("span", { className: "text-text-dim text-[10px] ml-6", children: shortcut })
+        shortcut && /* @__PURE__ */ jsx16("span", { className: "text-text-dim text-[10px] ml-6", children: shortcut })
       ]
     }
   );
 }
 function Separator() {
-  return /* @__PURE__ */ jsx14("hr", { className: "border-border-light my-1" });
+  return /* @__PURE__ */ jsx16("hr", { className: "border-border-light my-1" });
 }
 function ContextMenu() {
-  const [visible, setVisible] = useState12(false);
-  const [position, setPosition] = useState12({ x: 0, y: 0 });
-  const [targetShape, setTargetShape] = useState12(null);
+  const [visible, setVisible] = useState13(false);
+  const [position, setPosition] = useState13({ x: 0, y: 0 });
+  const [targetShape, setTargetShape] = useState13(null);
   const menuRef = useRef5(null);
   const gridEnabled = useSketchStore_default((s) => s.gridEnabled);
   const snapToObjects = useSketchStore_default((s) => s.snapToObjects);
   const zenMode = useSketchStore_default((s) => s.zenMode);
   const viewMode = useSketchStore_default((s) => s.viewMode);
-  const close = useCallback10(() => {
+  const close = useCallback11(() => {
     setVisible(false);
     setTargetShape(null);
   }, []);
@@ -2646,7 +3194,7 @@ function ContextMenu() {
     close();
   };
   const isShape = !!targetShape;
-  return /* @__PURE__ */ jsx14(
+  return /* @__PURE__ */ jsx16(
     "div",
     {
       ref: menuRef,
@@ -2655,49 +3203,49 @@ function ContextMenu() {
       onClick: (e) => e.stopPropagation(),
       children: isShape ? (
         /* ── Shape context menu ── */
-        /* @__PURE__ */ jsxs14(Fragment5, { children: [
-          /* @__PURE__ */ jsx14(MenuItem, { label: "Cut", shortcut: "Ctrl+X", onClick: handleCut }),
-          /* @__PURE__ */ jsx14(MenuItem, { label: "Copy", shortcut: "Ctrl+C", onClick: handleCopy }),
-          /* @__PURE__ */ jsx14(MenuItem, { label: "Paste", shortcut: "Ctrl+V", onClick: handlePaste }),
-          /* @__PURE__ */ jsx14(Separator, {}),
-          !fullyGrouped && /* @__PURE__ */ jsx14(MenuItem, { label: "Wrap selection in frame", onClick: handleWrapInFrame }),
-          canGroup && !fullyGrouped && /* @__PURE__ */ jsx14(MenuItem, { label: "Group", shortcut: "Ctrl+G", onClick: handleGroup }),
-          canUngroup && /* @__PURE__ */ jsx14(MenuItem, { label: "Ungroup", shortcut: "Ctrl+Shift+G", onClick: handleUngroup }),
-          /* @__PURE__ */ jsx14(Separator, {}),
-          /* @__PURE__ */ jsx14(MenuItem, { label: "Copy to clipboard as PNG", shortcut: "Shift+Alt+C", onClick: handleCopyPNG }),
-          /* @__PURE__ */ jsx14(MenuItem, { label: "Copy to clipboard as SVG", onClick: handleCopySVG }),
-          /* @__PURE__ */ jsx14(Separator, {}),
-          /* @__PURE__ */ jsx14(MenuItem, { label: "Send backward", shortcut: "Ctrl+[", onClick: () => handleLayerAction("sendBackward") }),
-          /* @__PURE__ */ jsx14(MenuItem, { label: "Bring forward", shortcut: "Ctrl+]", onClick: () => handleLayerAction("bringForward") }),
-          /* @__PURE__ */ jsx14(MenuItem, { label: "Send to back", shortcut: "Ctrl+Shift+[", onClick: () => handleLayerAction("sendToBack") }),
-          /* @__PURE__ */ jsx14(MenuItem, { label: "Bring to front", shortcut: "Ctrl+Shift+]", onClick: () => handleLayerAction("bringToFront") }),
-          /* @__PURE__ */ jsx14(Separator, {}),
-          /* @__PURE__ */ jsx14(MenuItem, { label: "Flip horizontal", shortcut: "Shift+H", onClick: () => handleFlip("h") }),
-          /* @__PURE__ */ jsx14(MenuItem, { label: "Flip vertical", shortcut: "Shift+V", onClick: () => handleFlip("v") }),
-          /* @__PURE__ */ jsx14(Separator, {}),
-          /* @__PURE__ */ jsx14(MenuItem, { label: "Duplicate", shortcut: "Ctrl+D", onClick: handleDuplicate }),
-          /* @__PURE__ */ jsx14(MenuItem, { label: "Delete", danger: true, onClick: handleDeleteShape })
+        /* @__PURE__ */ jsxs16(Fragment6, { children: [
+          /* @__PURE__ */ jsx16(MenuItem, { label: "Cut", shortcut: "Ctrl+X", onClick: handleCut }),
+          /* @__PURE__ */ jsx16(MenuItem, { label: "Copy", shortcut: "Ctrl+C", onClick: handleCopy }),
+          /* @__PURE__ */ jsx16(MenuItem, { label: "Paste", shortcut: "Ctrl+V", onClick: handlePaste }),
+          /* @__PURE__ */ jsx16(Separator, {}),
+          !fullyGrouped && /* @__PURE__ */ jsx16(MenuItem, { label: "Wrap selection in frame", onClick: handleWrapInFrame }),
+          canGroup && !fullyGrouped && /* @__PURE__ */ jsx16(MenuItem, { label: "Group", shortcut: "Ctrl+G", onClick: handleGroup }),
+          canUngroup && /* @__PURE__ */ jsx16(MenuItem, { label: "Ungroup", shortcut: "Ctrl+Shift+G", onClick: handleUngroup }),
+          /* @__PURE__ */ jsx16(Separator, {}),
+          /* @__PURE__ */ jsx16(MenuItem, { label: "Copy to clipboard as PNG", shortcut: "Shift+Alt+C", onClick: handleCopyPNG }),
+          /* @__PURE__ */ jsx16(MenuItem, { label: "Copy to clipboard as SVG", onClick: handleCopySVG }),
+          /* @__PURE__ */ jsx16(Separator, {}),
+          /* @__PURE__ */ jsx16(MenuItem, { label: "Send backward", shortcut: "Ctrl+[", onClick: () => handleLayerAction("sendBackward") }),
+          /* @__PURE__ */ jsx16(MenuItem, { label: "Bring forward", shortcut: "Ctrl+]", onClick: () => handleLayerAction("bringForward") }),
+          /* @__PURE__ */ jsx16(MenuItem, { label: "Send to back", shortcut: "Ctrl+Shift+[", onClick: () => handleLayerAction("sendToBack") }),
+          /* @__PURE__ */ jsx16(MenuItem, { label: "Bring to front", shortcut: "Ctrl+Shift+]", onClick: () => handleLayerAction("bringToFront") }),
+          /* @__PURE__ */ jsx16(Separator, {}),
+          /* @__PURE__ */ jsx16(MenuItem, { label: "Flip horizontal", shortcut: "Shift+H", onClick: () => handleFlip("h") }),
+          /* @__PURE__ */ jsx16(MenuItem, { label: "Flip vertical", shortcut: "Shift+V", onClick: () => handleFlip("v") }),
+          /* @__PURE__ */ jsx16(Separator, {}),
+          /* @__PURE__ */ jsx16(MenuItem, { label: "Duplicate", shortcut: "Ctrl+D", onClick: handleDuplicate }),
+          /* @__PURE__ */ jsx16(MenuItem, { label: "Delete", danger: true, onClick: handleDeleteShape })
         ] })
       ) : (
         /* ── Canvas context menu ── */
-        /* @__PURE__ */ jsxs14(Fragment5, { children: [
-          /* @__PURE__ */ jsx14(MenuItem, { label: "Paste", shortcut: "Ctrl+V", onClick: handlePaste }),
-          /* @__PURE__ */ jsx14(MenuItem, { label: "Copy to clipboard as PNG", shortcut: "Shift+Alt+C", onClick: handleCopyPNG }),
-          /* @__PURE__ */ jsx14(MenuItem, { label: "Copy to clipboard as SVG", onClick: handleCopySVG }),
-          /* @__PURE__ */ jsx14(Separator, {}),
-          /* @__PURE__ */ jsx14(MenuItem, { label: "Select all", shortcut: "Ctrl+A", onClick: handleSelectAll }),
-          /* @__PURE__ */ jsx14(Separator, {}),
-          /* @__PURE__ */ jsx14(CheckMenuItem, { label: "Toggle grid", shortcut: "Ctrl+'", checked: gridEnabled, onClick: handleToggleGrid }),
-          /* @__PURE__ */ jsx14(CheckMenuItem, { label: "Snap to objects", shortcut: "Alt+S", checked: snapToObjects, onClick: handleToggleSnap }),
-          /* @__PURE__ */ jsx14(Separator, {}),
-          /* @__PURE__ */ jsx14(MenuItem, { label: "Find on canvas", shortcut: "Ctrl+F", onClick: () => {
+        /* @__PURE__ */ jsxs16(Fragment6, { children: [
+          /* @__PURE__ */ jsx16(MenuItem, { label: "Paste", shortcut: "Ctrl+V", onClick: handlePaste }),
+          /* @__PURE__ */ jsx16(MenuItem, { label: "Copy to clipboard as PNG", shortcut: "Shift+Alt+C", onClick: handleCopyPNG }),
+          /* @__PURE__ */ jsx16(MenuItem, { label: "Copy to clipboard as SVG", onClick: handleCopySVG }),
+          /* @__PURE__ */ jsx16(Separator, {}),
+          /* @__PURE__ */ jsx16(MenuItem, { label: "Select all", shortcut: "Ctrl+A", onClick: handleSelectAll }),
+          /* @__PURE__ */ jsx16(Separator, {}),
+          /* @__PURE__ */ jsx16(CheckMenuItem, { label: "Toggle grid", shortcut: "Ctrl+'", checked: gridEnabled, onClick: handleToggleGrid }),
+          /* @__PURE__ */ jsx16(CheckMenuItem, { label: "Snap to objects", shortcut: "Alt+S", checked: snapToObjects, onClick: handleToggleSnap }),
+          /* @__PURE__ */ jsx16(Separator, {}),
+          /* @__PURE__ */ jsx16(MenuItem, { label: "Find on canvas", shortcut: "Ctrl+F", onClick: () => {
             useUIStore_default.getState().toggleFindBar();
             close();
           } }),
-          /* @__PURE__ */ jsx14(MenuItem, { label: "Zen mode", shortcut: "Alt+Z", onClick: handleZenMode }),
-          /* @__PURE__ */ jsx14(MenuItem, { label: "View mode", shortcut: "Alt+R", onClick: handleViewMode }),
-          /* @__PURE__ */ jsx14(Separator, {}),
-          /* @__PURE__ */ jsx14(MenuItem, { label: "Reset canvas", danger: true, onClick: () => {
+          /* @__PURE__ */ jsx16(MenuItem, { label: "Zen mode", shortcut: "Alt+Z", onClick: handleZenMode }),
+          /* @__PURE__ */ jsx16(MenuItem, { label: "View mode", shortcut: "Alt+R", onClick: handleViewMode }),
+          /* @__PURE__ */ jsx16(Separator, {}),
+          /* @__PURE__ */ jsx16(MenuItem, { label: "Reset canvas", danger: true, onClick: () => {
             const serializer = window.__sceneSerializer;
             if (serializer?.resetCanvas) serializer.resetCanvas();
             close();
@@ -2709,14 +3257,14 @@ function ContextMenu() {
 }
 
 // src/react/components/canvas/FindBar.jsx
-import { useState as useState13, useEffect as useEffect9, useRef as useRef6, useCallback as useCallback11 } from "react";
-import { jsx as jsx15, jsxs as jsxs15 } from "react/jsx-runtime";
+import { useState as useState14, useEffect as useEffect9, useRef as useRef6, useCallback as useCallback12 } from "react";
+import { jsx as jsx17, jsxs as jsxs17 } from "react/jsx-runtime";
 function FindBar() {
   const open = useUIStore_default((s) => s.findBarOpen);
   const closeFindBar = useUIStore_default((s) => s.closeFindBar);
-  const [query, setQuery] = useState13("");
-  const [results, setResults] = useState13([]);
-  const [activeIndex, setActiveIndex] = useState13(-1);
+  const [query, setQuery] = useState14("");
+  const [results, setResults] = useState14([]);
+  const [activeIndex, setActiveIndex] = useState14(-1);
   const inputRef = useRef6(null);
   const highlightRef = useRef6(null);
   useEffect9(() => {
@@ -2729,13 +3277,13 @@ function FindBar() {
       removeHighlight();
     }
   }, [open]);
-  const removeHighlight = useCallback11(() => {
+  const removeHighlight = useCallback12(() => {
     if (highlightRef.current && highlightRef.current.parentNode) {
       highlightRef.current.parentNode.removeChild(highlightRef.current);
       highlightRef.current = null;
     }
   }, []);
-  const highlightShape = useCallback11((result) => {
+  const highlightShape = useCallback12((result) => {
     removeHighlight();
     if (!result || !window.svg) return;
     const shape = result.shape;
@@ -2770,7 +3318,7 @@ function FindBar() {
       window.currentViewBox.y = newY;
     }
   }, [removeHighlight]);
-  const doSearch = useCallback11((q) => {
+  const doSearch = useCallback12((q) => {
     const finder = window.__sceneSerializer?.findText;
     if (!finder || !q.trim()) {
       setResults([]);
@@ -2788,7 +3336,7 @@ function FindBar() {
       removeHighlight();
     }
   }, [highlightShape, removeHighlight]);
-  const goToResult = useCallback11((idx) => {
+  const goToResult = useCallback12((idx) => {
     if (idx < 0 || idx >= results.length) return;
     setActiveIndex(idx);
     highlightShape(results[idx]);
@@ -2815,9 +3363,9 @@ function FindBar() {
     doSearch(q);
   };
   if (!open) return null;
-  return /* @__PURE__ */ jsx15("div", { className: "fixed top-14 right-4 z-[1000] font-[lixFont]", children: /* @__PURE__ */ jsxs15("div", { className: "flex items-center gap-2 bg-surface-card/95 backdrop-blur-lg border border-border-light rounded-xl px-3 py-2 shadow-xl min-w-[300px]", children: [
-    /* @__PURE__ */ jsx15("i", { className: "bx bx-search text-text-muted text-sm" }),
-    /* @__PURE__ */ jsx15(
+  return /* @__PURE__ */ jsx17("div", { className: "fixed top-14 right-4 z-[1000] font-[lixFont]", children: /* @__PURE__ */ jsxs17("div", { className: "flex items-center gap-2 bg-surface-card/95 backdrop-blur-lg border border-border-light rounded-xl px-3 py-2 shadow-xl min-w-[300px]", children: [
+    /* @__PURE__ */ jsx17("i", { className: "bx bx-search text-text-muted text-sm" }),
+    /* @__PURE__ */ jsx17(
       "input",
       {
         ref: inputRef,
@@ -2829,55 +3377,55 @@ function FindBar() {
         className: "flex-1 bg-transparent text-text-primary text-xs outline-none placeholder:text-text-dim font-[lixFont]"
       }
     ),
-    results.length > 0 && /* @__PURE__ */ jsxs15("span", { className: "text-text-dim text-xs whitespace-nowrap", children: [
+    results.length > 0 && /* @__PURE__ */ jsxs17("span", { className: "text-text-dim text-xs whitespace-nowrap", children: [
       activeIndex + 1,
       "/",
       results.length
     ] }),
-    query && results.length === 0 && /* @__PURE__ */ jsx15("span", { className: "text-red-400/70 text-xs whitespace-nowrap", children: "No results" }),
-    results.length > 1 && /* @__PURE__ */ jsxs15("div", { className: "flex items-center gap-0.5", children: [
-      /* @__PURE__ */ jsx15(
+    query && results.length === 0 && /* @__PURE__ */ jsx17("span", { className: "text-red-400/70 text-xs whitespace-nowrap", children: "No results" }),
+    results.length > 1 && /* @__PURE__ */ jsxs17("div", { className: "flex items-center gap-0.5", children: [
+      /* @__PURE__ */ jsx17(
         "button",
         {
           onClick: () => goToResult((activeIndex - 1 + results.length) % results.length),
           className: "w-5 h-5 flex items-center justify-center rounded text-text-muted hover:text-white hover:bg-white/10 transition-colors",
-          children: /* @__PURE__ */ jsx15("i", { className: "bx bx-chevron-up text-sm" })
+          children: /* @__PURE__ */ jsx17("i", { className: "bx bx-chevron-up text-sm" })
         }
       ),
-      /* @__PURE__ */ jsx15(
+      /* @__PURE__ */ jsx17(
         "button",
         {
           onClick: () => goToResult((activeIndex + 1) % results.length),
           className: "w-5 h-5 flex items-center justify-center rounded text-text-muted hover:text-white hover:bg-white/10 transition-colors",
-          children: /* @__PURE__ */ jsx15("i", { className: "bx bx-chevron-down text-sm" })
+          children: /* @__PURE__ */ jsx17("i", { className: "bx bx-chevron-down text-sm" })
         }
       )
     ] }),
-    /* @__PURE__ */ jsx15(
+    /* @__PURE__ */ jsx17(
       "button",
       {
         onClick: closeFindBar,
         className: "w-5 h-5 flex items-center justify-center rounded text-text-muted hover:text-white hover:bg-white/10 transition-colors",
-        children: /* @__PURE__ */ jsx15("i", { className: "bx bx-x text-sm" })
+        children: /* @__PURE__ */ jsx17("i", { className: "bx bx-x text-sm" })
       }
     )
   ] }) });
 }
 
 // src/react/components/canvas/ImageSourcePicker.jsx
-import { useState as useState14, useEffect as useEffect10, useCallback as useCallback12, useRef as useRef7 } from "react";
-import { jsx as jsx16, jsxs as jsxs16 } from "react/jsx-runtime";
+import { useState as useState15, useEffect as useEffect10, useCallback as useCallback13, useRef as useRef7 } from "react";
+import { jsx as jsx18, jsxs as jsxs18 } from "react/jsx-runtime";
 function ImageSourcePicker() {
   const ref = useRef7(null);
   const toggleImageGenerateModal = useUIStore_default((s) => s.toggleImageGenerateModal);
   const activeTool = useSketchStore_default((s) => s.activeTool);
   const setActiveTool = useSketchStore_default((s) => s.setActiveTool);
   const visible = activeTool === "image";
-  const handleGenerateAI = useCallback12(() => {
+  const handleGenerateAI = useCallback13(() => {
     setActiveTool("select");
     toggleImageGenerateModal();
   }, [setActiveTool, toggleImageGenerateModal]);
-  const handleUpload = useCallback12(() => {
+  const handleUpload = useCallback13(() => {
     setActiveTool("select");
     if (window.openImageFilePicker) {
       window.openImageFilePicker();
@@ -2933,44 +3481,44 @@ function ImageSourcePicker() {
       posY = rect.top - 10;
     }
   }
-  return /* @__PURE__ */ jsx16(
+  return /* @__PURE__ */ jsx18(
     "div",
     {
       ref,
       className: "fixed z-[1100] font-[lixFont]",
       style: { left: posX, top: posY },
-      children: /* @__PURE__ */ jsxs16("div", { className: "bg-surface-card border border-border-light rounded-xl p-1.5 shadow-2xl shadow-black/40 flex flex-col gap-1 min-w-[200px]", children: [
-        /* @__PURE__ */ jsxs16(
+      children: /* @__PURE__ */ jsxs18("div", { className: "bg-surface-card border border-border-light rounded-xl p-1.5 shadow-2xl shadow-black/40 flex flex-col gap-1 min-w-[200px]", children: [
+        /* @__PURE__ */ jsxs18(
           "button",
           {
             onClick: handleGenerateAI,
             className: "flex items-center gap-3 px-3 py-2.5 rounded-lg text-text-muted hover:text-accent-blue hover:bg-surface-hover transition-all group",
             children: [
-              /* @__PURE__ */ jsx16("div", { className: "w-8 h-8 rounded-lg bg-accent-blue/10 flex items-center justify-center group-hover:bg-accent-blue/20 transition-all", children: /* @__PURE__ */ jsxs16("svg", { width: "18", height: "18", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round", className: "text-accent-blue", children: [
-                /* @__PURE__ */ jsx16("path", { d: "M12 3l1.5 4.5L18 9l-4.5 1.5L12 15l-1.5-4.5L6 9l4.5-1.5L12 3z" }),
-                /* @__PURE__ */ jsx16("path", { d: "M18 14l1 3 3 1-3 1-1 3-1-3-3-1 3-1 1-3z" })
+              /* @__PURE__ */ jsx18("div", { className: "w-8 h-8 rounded-lg bg-accent-blue/10 flex items-center justify-center group-hover:bg-accent-blue/20 transition-all", children: /* @__PURE__ */ jsxs18("svg", { width: "18", height: "18", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round", className: "text-accent-blue", children: [
+                /* @__PURE__ */ jsx18("path", { d: "M12 3l1.5 4.5L18 9l-4.5 1.5L12 15l-1.5-4.5L6 9l4.5-1.5L12 3z" }),
+                /* @__PURE__ */ jsx18("path", { d: "M18 14l1 3 3 1-3 1-1 3-1-3-3-1 3-1 1-3z" })
               ] }) }),
-              /* @__PURE__ */ jsxs16("div", { className: "flex-1 text-left", children: [
-                /* @__PURE__ */ jsx16("div", { className: "text-sm font-medium", children: "Generate with AI" }),
-                /* @__PURE__ */ jsx16("div", { className: "text-[10px] text-text-dim", children: "10 generations \xB7 5 edits free" })
+              /* @__PURE__ */ jsxs18("div", { className: "flex-1 text-left", children: [
+                /* @__PURE__ */ jsx18("div", { className: "text-sm font-medium", children: "Generate with AI" }),
+                /* @__PURE__ */ jsx18("div", { className: "text-[10px] text-text-dim", children: "10 generations \xB7 5 edits free" })
               ] }),
-              /* @__PURE__ */ jsx16("kbd", { className: "text-[10px] text-text-dim bg-surface-dark px-1.5 py-0.5 rounded", children: "G" })
+              /* @__PURE__ */ jsx18("kbd", { className: "text-[10px] text-text-dim bg-surface-dark px-1.5 py-0.5 rounded", children: "G" })
             ]
           }
         ),
-        /* @__PURE__ */ jsx16("div", { className: "h-px bg-white/[0.06] mx-2" }),
-        /* @__PURE__ */ jsxs16(
+        /* @__PURE__ */ jsx18("div", { className: "h-px bg-white/[0.06] mx-2" }),
+        /* @__PURE__ */ jsxs18(
           "button",
           {
             onClick: handleUpload,
             className: "flex items-center gap-3 px-3 py-2.5 rounded-lg text-text-muted hover:text-text-primary hover:bg-surface-hover transition-all group",
             children: [
-              /* @__PURE__ */ jsx16("div", { className: "w-8 h-8 rounded-lg bg-surface-hover flex items-center justify-center group-hover:bg-surface-active transition-all", children: /* @__PURE__ */ jsx16("i", { className: "bx bx-upload text-lg" }) }),
-              /* @__PURE__ */ jsxs16("div", { className: "flex-1 text-left", children: [
-                /* @__PURE__ */ jsx16("div", { className: "text-sm font-medium", children: "Upload from device" }),
-                /* @__PURE__ */ jsx16("div", { className: "text-[10px] text-text-dim", children: "PNG, JPG, SVG, WebP" })
+              /* @__PURE__ */ jsx18("div", { className: "w-8 h-8 rounded-lg bg-surface-hover flex items-center justify-center group-hover:bg-surface-active transition-all", children: /* @__PURE__ */ jsx18("i", { className: "bx bx-upload text-lg" }) }),
+              /* @__PURE__ */ jsxs18("div", { className: "flex-1 text-left", children: [
+                /* @__PURE__ */ jsx18("div", { className: "text-sm font-medium", children: "Upload from device" }),
+                /* @__PURE__ */ jsx18("div", { className: "text-[10px] text-text-dim", children: "PNG, JPG, SVG, WebP" })
               ] }),
-              /* @__PURE__ */ jsx16("kbd", { className: "text-[10px] text-text-dim bg-surface-dark px-1.5 py-0.5 rounded", children: "U" })
+              /* @__PURE__ */ jsx18("kbd", { className: "text-[10px] text-text-dim bg-surface-dark px-1.5 py-0.5 rounded", children: "U" })
             ]
           }
         )
@@ -2980,13 +3528,13 @@ function ImageSourcePicker() {
 }
 
 // src/react/components/canvas/CanvasLoadingOverlay.jsx
-import { jsx as jsx17, jsxs as jsxs17 } from "react/jsx-runtime";
+import { jsx as jsx19, jsxs as jsxs19 } from "react/jsx-runtime";
 function CanvasLoadingOverlay() {
   const loading = useUIStore_default((s) => s.canvasLoading);
   const message = useUIStore_default((s) => s.canvasLoadingMessage);
   if (!loading) return null;
-  return /* @__PURE__ */ jsx17("div", { className: "fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-sm font-[lixFont] pointer-events-all", children: /* @__PURE__ */ jsxs17("div", { className: "flex flex-col items-center gap-5", children: [
-    /* @__PURE__ */ jsx17("style", { children: `
+  return /* @__PURE__ */ jsx19("div", { className: "fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-sm font-[lixFont] pointer-events-all", children: /* @__PURE__ */ jsxs19("div", { className: "flex flex-col items-center gap-5", children: [
+    /* @__PURE__ */ jsx19("style", { children: `
           @keyframes cl-glob {
             0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.7; }
             25% { transform: translate(10px, -6px) scale(1.12); opacity: 0.9; }
@@ -3004,8 +3552,8 @@ function CanvasLoadingOverlay() {
             50% { transform: translateY(-3px); }
           }
         ` }),
-    /* @__PURE__ */ jsxs17("div", { className: "relative w-20 h-20", children: [
-      /* @__PURE__ */ jsx17("div", { className: "absolute rounded-full", style: {
+    /* @__PURE__ */ jsxs19("div", { className: "relative w-20 h-20", children: [
+      /* @__PURE__ */ jsx19("div", { className: "absolute rounded-full", style: {
         width: 38,
         height: 38,
         top: 2,
@@ -3015,7 +3563,7 @@ function CanvasLoadingOverlay() {
         animation: "cl-glob 3.5s ease-in-out infinite",
         willChange: "transform, opacity"
       } }),
-      /* @__PURE__ */ jsx17("div", { className: "absolute rounded-full", style: {
+      /* @__PURE__ */ jsx19("div", { className: "absolute rounded-full", style: {
         width: 34,
         height: 34,
         top: 14,
@@ -3025,7 +3573,7 @@ function CanvasLoadingOverlay() {
         animation: "cl-glob-2 4s ease-in-out infinite",
         willChange: "transform, opacity"
       } }),
-      /* @__PURE__ */ jsx17("div", { className: "absolute rounded-full", style: {
+      /* @__PURE__ */ jsx19("div", { className: "absolute rounded-full", style: {
         width: 30,
         height: 30,
         bottom: 2,
@@ -3035,38 +3583,38 @@ function CanvasLoadingOverlay() {
         animation: "cl-glob 4.2s ease-in-out infinite reverse",
         willChange: "transform, opacity"
       } }),
-      /* @__PURE__ */ jsx17("div", { className: "absolute inset-0 flex items-center justify-center", style: { animation: "cl-float 2.5s ease-in-out infinite" }, children: /* @__PURE__ */ jsx17("div", { className: "w-9 h-9 rounded-lg bg-white/[0.06] backdrop-blur-sm border border-white/[0.08] flex items-center justify-center", children: /* @__PURE__ */ jsxs17("svg", { width: "18", height: "18", viewBox: "0 0 24 24", fill: "none", stroke: "white", strokeWidth: "1.5", strokeLinecap: "round", strokeLinejoin: "round", className: "opacity-70", children: [
-        /* @__PURE__ */ jsx17("rect", { x: "3", y: "3", width: "7", height: "7", rx: "1" }),
-        /* @__PURE__ */ jsx17("rect", { x: "14", y: "3", width: "7", height: "7", rx: "1" }),
-        /* @__PURE__ */ jsx17("rect", { x: "3", y: "14", width: "7", height: "7", rx: "1" }),
-        /* @__PURE__ */ jsx17("rect", { x: "14", y: "14", width: "7", height: "7", rx: "1" })
+      /* @__PURE__ */ jsx19("div", { className: "absolute inset-0 flex items-center justify-center", style: { animation: "cl-float 2.5s ease-in-out infinite" }, children: /* @__PURE__ */ jsx19("div", { className: "w-9 h-9 rounded-lg bg-white/[0.06] backdrop-blur-sm border border-white/[0.08] flex items-center justify-center", children: /* @__PURE__ */ jsxs19("svg", { width: "18", height: "18", viewBox: "0 0 24 24", fill: "none", stroke: "white", strokeWidth: "1.5", strokeLinecap: "round", strokeLinejoin: "round", className: "opacity-70", children: [
+        /* @__PURE__ */ jsx19("rect", { x: "3", y: "3", width: "7", height: "7", rx: "1" }),
+        /* @__PURE__ */ jsx19("rect", { x: "14", y: "3", width: "7", height: "7", rx: "1" }),
+        /* @__PURE__ */ jsx19("rect", { x: "3", y: "14", width: "7", height: "7", rx: "1" }),
+        /* @__PURE__ */ jsx19("rect", { x: "14", y: "14", width: "7", height: "7", rx: "1" })
       ] }) }) })
     ] }),
-    /* @__PURE__ */ jsxs17("div", { className: "flex items-center gap-1.5", children: [
-      /* @__PURE__ */ jsx17("span", { className: "w-1.5 h-1.5 rounded-full bg-blue-400 animate-bounce", style: { animationDelay: "0ms" } }),
-      /* @__PURE__ */ jsx17("span", { className: "w-1.5 h-1.5 rounded-full bg-purple-400 animate-bounce", style: { animationDelay: "150ms" } }),
-      /* @__PURE__ */ jsx17("span", { className: "w-1.5 h-1.5 rounded-full bg-emerald-400 animate-bounce", style: { animationDelay: "300ms" } })
+    /* @__PURE__ */ jsxs19("div", { className: "flex items-center gap-1.5", children: [
+      /* @__PURE__ */ jsx19("span", { className: "w-1.5 h-1.5 rounded-full bg-blue-400 animate-bounce", style: { animationDelay: "0ms" } }),
+      /* @__PURE__ */ jsx19("span", { className: "w-1.5 h-1.5 rounded-full bg-purple-400 animate-bounce", style: { animationDelay: "150ms" } }),
+      /* @__PURE__ */ jsx19("span", { className: "w-1.5 h-1.5 rounded-full bg-emerald-400 animate-bounce", style: { animationDelay: "300ms" } })
     ] }),
-    /* @__PURE__ */ jsx17("p", { className: "text-text-dim text-sm", children: message })
+    /* @__PURE__ */ jsx19("p", { className: "text-text-dim text-sm", children: message })
   ] }) });
 }
 
 // src/react/components/modals/ShortcutsModal.jsx
 import { useMemo } from "react";
-import { jsx as jsx18, jsxs as jsxs18 } from "react/jsx-runtime";
+import { jsx as jsx20, jsxs as jsxs20 } from "react/jsx-runtime";
 function ShortcutRow({ keys, action }) {
-  return /* @__PURE__ */ jsxs18("div", { className: "flex items-center justify-between py-1.5", children: [
-    /* @__PURE__ */ jsx18("span", { className: "text-text-secondary text-xs", children: action }),
-    /* @__PURE__ */ jsx18("div", { className: "flex items-center gap-1", children: keys.split("+").map((key, i) => /* @__PURE__ */ jsxs18("span", { children: [
-      i > 0 && /* @__PURE__ */ jsx18("span", { className: "text-text-dim text-xs mx-0.5", children: "+" }),
-      /* @__PURE__ */ jsx18("kbd", { className: "px-1.5 py-0.5 bg-surface-dark rounded text-text-muted text-xs border border-border font-[lixFont]", children: key.trim() })
+  return /* @__PURE__ */ jsxs20("div", { className: "flex items-center justify-between py-1.5", children: [
+    /* @__PURE__ */ jsx20("span", { className: "text-text-secondary text-xs", children: action }),
+    /* @__PURE__ */ jsx20("div", { className: "flex items-center gap-1", children: keys.split("+").map((key, i) => /* @__PURE__ */ jsxs20("span", { children: [
+      i > 0 && /* @__PURE__ */ jsx20("span", { className: "text-text-dim text-xs mx-0.5", children: "+" }),
+      /* @__PURE__ */ jsx20("kbd", { className: "px-1.5 py-0.5 bg-surface-dark rounded text-text-muted text-xs border border-border font-[lixFont]", children: key.trim() })
     ] }, i)) })
   ] });
 }
 function ShortcutSection({ title, shortcuts }) {
-  return /* @__PURE__ */ jsxs18("div", { children: [
-    /* @__PURE__ */ jsx18("h3", { className: "text-text-dim text-xs uppercase tracking-wider mb-2", children: title }),
-    shortcuts.map((s) => /* @__PURE__ */ jsx18(ShortcutRow, { keys: s.keys, action: s.action }, s.action))
+  return /* @__PURE__ */ jsxs20("div", { children: [
+    /* @__PURE__ */ jsx20("h3", { className: "text-text-dim text-xs uppercase tracking-wider mb-2", children: title }),
+    shortcuts.map((s) => /* @__PURE__ */ jsx20(ShortcutRow, { keys: s.keys, action: s.action }, s.action))
   ] });
 }
 function ShortcutsModal() {
@@ -3113,35 +3661,35 @@ function ShortcutsModal() {
     { keys: "Ctrl+/", action: t("shortcuts.shortcutsHelp") }
   ], [t]);
   if (!shortcutsModalOpen) return null;
-  return /* @__PURE__ */ jsxs18(
+  return /* @__PURE__ */ jsxs20(
     "div",
     {
       className: "fixed inset-0 z-[9999] flex items-center justify-center font-[lixFont]",
       onClick: toggleShortcutsModal,
       children: [
-        /* @__PURE__ */ jsx18("div", { className: "absolute inset-0 bg-black/60 backdrop-blur-sm" }),
-        /* @__PURE__ */ jsxs18(
+        /* @__PURE__ */ jsx20("div", { className: "absolute inset-0 bg-black/60 backdrop-blur-sm" }),
+        /* @__PURE__ */ jsxs20(
           "div",
           {
             className: "relative bg-surface-card border border-border-light rounded-2xl p-6 max-w-[600px] w-full mx-4 max-h-[80vh] overflow-y-auto no-scrollbar",
             onClick: (e) => e.stopPropagation(),
             children: [
-              /* @__PURE__ */ jsxs18("div", { className: "flex items-center justify-between mb-5", children: [
-                /* @__PURE__ */ jsx18("h2", { className: "text-text-primary text-base font-medium", children: t("shortcuts.title") }),
-                /* @__PURE__ */ jsx18(
+              /* @__PURE__ */ jsxs20("div", { className: "flex items-center justify-between mb-5", children: [
+                /* @__PURE__ */ jsx20("h2", { className: "text-text-primary text-base font-medium", children: t("shortcuts.title") }),
+                /* @__PURE__ */ jsx20(
                   "button",
                   {
                     onClick: toggleShortcutsModal,
                     className: "w-7 h-7 flex items-center justify-center rounded-lg text-text-muted hover:text-text-primary hover:bg-surface-hover transition-all duration-200",
-                    children: /* @__PURE__ */ jsx18("i", { className: "bx bx-x text-xl" })
+                    children: /* @__PURE__ */ jsx20("i", { className: "bx bx-x text-xl" })
                   }
                 )
               ] }),
-              /* @__PURE__ */ jsxs18("div", { className: "grid grid-cols-2 gap-6", children: [
-                /* @__PURE__ */ jsx18(ShortcutSection, { title: t("shortcuts.tools"), shortcuts: TOOL_SHORTCUTS2 }),
-                /* @__PURE__ */ jsxs18("div", { className: "flex flex-col gap-4", children: [
-                  /* @__PURE__ */ jsx18(ShortcutSection, { title: t("shortcuts.actions"), shortcuts: ACTION_SHORTCUTS2 }),
-                  /* @__PURE__ */ jsx18(ShortcutSection, { title: t("shortcuts.view"), shortcuts: VIEW_SHORTCUTS2 })
+              /* @__PURE__ */ jsxs20("div", { className: "grid grid-cols-2 gap-6", children: [
+                /* @__PURE__ */ jsx20(ShortcutSection, { title: t("shortcuts.tools"), shortcuts: TOOL_SHORTCUTS2 }),
+                /* @__PURE__ */ jsxs20("div", { className: "flex flex-col gap-4", children: [
+                  /* @__PURE__ */ jsx20(ShortcutSection, { title: t("shortcuts.actions"), shortcuts: ACTION_SHORTCUTS2 }),
+                  /* @__PURE__ */ jsx20(ShortcutSection, { title: t("shortcuts.view"), shortcuts: VIEW_SHORTCUTS2 })
                 ] })
               ] })
             ]
@@ -3153,8 +3701,8 @@ function ShortcutsModal() {
 }
 
 // src/react/components/modals/CommandPalette.jsx
-import { useState as useState15, useEffect as useEffect11, useRef as useRef8 } from "react";
-import { jsx as jsx19, jsxs as jsxs19 } from "react/jsx-runtime";
+import { useState as useState16, useEffect as useEffect11, useRef as useRef8 } from "react";
+import { jsx as jsx21, jsxs as jsxs21 } from "react/jsx-runtime";
 var COMMANDS = [
   // --- App ---
   { label: "Library", icon: "bx-library", section: "App" },
@@ -3220,8 +3768,8 @@ var TOOL_ACTION_MAP = {
 function CommandPalette() {
   const open = useUIStore_default((s) => s.commandPaletteOpen);
   const toggleCommandPalette = useUIStore_default((s) => s.toggleCommandPalette);
-  const [query, setQuery] = useState15("");
-  const [selectedIndex, setSelectedIndex] = useState15(0);
+  const [query, setQuery] = useState16("");
+  const [selectedIndex, setSelectedIndex] = useState16(0);
   const inputRef = useRef8(null);
   const listRef = useRef8(null);
   useEffect11(() => {
@@ -3349,22 +3897,22 @@ function CommandPalette() {
     }
   };
   let flatIndex = -1;
-  return /* @__PURE__ */ jsxs19(
+  return /* @__PURE__ */ jsxs21(
     "div",
     {
       className: "fixed inset-0 z-[9999] flex items-start justify-center pt-[12vh] font-[lixFont]",
       onClick: toggleCommandPalette,
       children: [
-        /* @__PURE__ */ jsx19("div", { className: "absolute inset-0 bg-black/60 backdrop-blur-sm" }),
-        /* @__PURE__ */ jsxs19(
+        /* @__PURE__ */ jsx21("div", { className: "absolute inset-0 bg-black/60 backdrop-blur-sm" }),
+        /* @__PURE__ */ jsxs21(
           "div",
           {
             className: "relative bg-surface-card border border-border-light rounded-2xl w-full max-w-[540px] mx-4 overflow-hidden",
             onClick: (e) => e.stopPropagation(),
             children: [
-              /* @__PURE__ */ jsxs19("div", { className: "flex items-center gap-3 px-4 py-3 border-b border-border-light", children: [
-                /* @__PURE__ */ jsx19("i", { className: "bx bx-search text-text-muted text-lg" }),
-                /* @__PURE__ */ jsx19(
+              /* @__PURE__ */ jsxs21("div", { className: "flex items-center gap-3 px-4 py-3 border-b border-border-light", children: [
+                /* @__PURE__ */ jsx21("i", { className: "bx bx-search text-text-muted text-lg" }),
+                /* @__PURE__ */ jsx21(
                   "input",
                   {
                     ref: inputRef,
@@ -3377,27 +3925,27 @@ function CommandPalette() {
                   }
                 )
               ] }),
-              /* @__PURE__ */ jsxs19("div", { ref: listRef, className: "max-h-[55vh] overflow-y-auto no-scrollbar py-2", children: [
-                filtered.length === 0 && /* @__PURE__ */ jsx19("div", { className: "px-4 py-6 text-center text-text-dim text-xs", children: "No commands found" }),
-                sectionOrder.map((section) => /* @__PURE__ */ jsxs19("div", { children: [
-                  /* @__PURE__ */ jsx19("div", { className: "px-4 pt-3 pb-1", children: /* @__PURE__ */ jsx19("span", { className: "text-text-dim text-xs uppercase tracking-wider", children: section }) }),
+              /* @__PURE__ */ jsxs21("div", { ref: listRef, className: "max-h-[55vh] overflow-y-auto no-scrollbar py-2", children: [
+                filtered.length === 0 && /* @__PURE__ */ jsx21("div", { className: "px-4 py-6 text-center text-text-dim text-xs", children: "No commands found" }),
+                sectionOrder.map((section) => /* @__PURE__ */ jsxs21("div", { children: [
+                  /* @__PURE__ */ jsx21("div", { className: "px-4 pt-3 pb-1", children: /* @__PURE__ */ jsx21("span", { className: "text-text-dim text-xs uppercase tracking-wider", children: section }) }),
                   sections[section].map((cmd) => {
                     flatIndex++;
                     const idx = flatIndex;
-                    return /* @__PURE__ */ jsxs19(
+                    return /* @__PURE__ */ jsxs21(
                       "button",
                       {
                         "data-index": idx,
                         onClick: () => handleCommand(cmd),
                         className: `w-full flex items-center justify-between px-4 py-2 text-text-secondary text-xs transition-all duration-100 ${idx === selectedIndex ? "bg-surface-hover text-text-primary" : "hover:bg-surface-hover/60"}`,
                         children: [
-                          /* @__PURE__ */ jsxs19("span", { className: "flex items-center gap-3", children: [
-                            /* @__PURE__ */ jsx19("i", { className: `bx ${cmd.icon} text-base text-text-muted` }),
+                          /* @__PURE__ */ jsxs21("span", { className: "flex items-center gap-3", children: [
+                            /* @__PURE__ */ jsx21("i", { className: `bx ${cmd.icon} text-base text-text-muted` }),
                             cmd.label
                           ] }),
-                          cmd.shortcut && /* @__PURE__ */ jsx19("div", { className: "flex items-center gap-0.5", children: cmd.shortcut.split("+").map((key, i) => /* @__PURE__ */ jsxs19("span", { children: [
-                            i > 0 && /* @__PURE__ */ jsx19("span", { className: "text-text-dim text-xs mx-0.5", children: "+" }),
-                            /* @__PURE__ */ jsx19("kbd", { className: "px-1.5 py-0.5 bg-surface-dark rounded text-text-dim text-xs border border-border", children: key.trim() })
+                          cmd.shortcut && /* @__PURE__ */ jsx21("div", { className: "flex items-center gap-0.5", children: cmd.shortcut.split("+").map((key, i) => /* @__PURE__ */ jsxs21("span", { children: [
+                            i > 0 && /* @__PURE__ */ jsx21("span", { className: "text-text-dim text-xs mx-0.5", children: "+" }),
+                            /* @__PURE__ */ jsx21("kbd", { className: "px-1.5 py-0.5 bg-surface-dark rounded text-text-dim text-xs border border-border", children: key.trim() })
                           ] }, i)) })
                         ]
                       },
@@ -3415,8 +3963,8 @@ function CommandPalette() {
 }
 
 // src/react/components/modals/ExportImageModal.jsx
-import { useState as useState16, useEffect as useEffect12, useRef as useRef9, useCallback as useCallback13 } from "react";
-import { jsx as jsx20, jsxs as jsxs20 } from "react/jsx-runtime";
+import { useState as useState17, useEffect as useEffect12, useRef as useRef9, useCallback as useCallback14 } from "react";
+import { jsx as jsx22, jsxs as jsxs22 } from "react/jsx-runtime";
 var SCALES = [1, 2, 3];
 function getCleanSVG2() {
   const svgEl = window.svg;
@@ -3458,11 +4006,11 @@ function renderToCanvas2(clone, scale, bgColor) {
 function ExportImageModal() {
   const open = useUIStore_default((s) => s.exportImageModalOpen);
   const toggleModal = useUIStore_default((s) => s.toggleExportImageModal);
-  const [scale, setScale] = useState16(2);
-  const [bgMode, setBgMode] = useState16("dark");
-  const [previewUrl, setPreviewUrl] = useState16(null);
+  const [scale, setScale] = useState17(2);
+  const [bgMode, setBgMode] = useState17("dark");
+  const [previewUrl, setPreviewUrl] = useState17(null);
   const previewRef = useRef9(null);
-  const getBgColor = useCallback13(() => {
+  const getBgColor = useCallback14(() => {
     if (bgMode === "dark") return "#121212";
     if (bgMode === "light") return "#ffffff";
     return null;
@@ -3541,71 +4089,71 @@ function ExportImageModal() {
     );
     toggleModal();
   };
-  return /* @__PURE__ */ jsxs20(
+  return /* @__PURE__ */ jsxs22(
     "div",
     {
       className: "fixed inset-0 z-[9999] flex items-center justify-center font-[lixFont]",
       onClick: toggleModal,
       children: [
-        /* @__PURE__ */ jsx20("div", { className: "absolute inset-0 bg-black/60 backdrop-blur-sm" }),
-        /* @__PURE__ */ jsxs20(
+        /* @__PURE__ */ jsx22("div", { className: "absolute inset-0 bg-black/60 backdrop-blur-sm" }),
+        /* @__PURE__ */ jsxs22(
           "div",
           {
             className: "relative bg-surface-card border border-border-light rounded-2xl w-full max-w-[720px] mx-4 overflow-hidden",
             onClick: (e) => e.stopPropagation(),
             children: [
-              /* @__PURE__ */ jsxs20("div", { className: "flex items-center justify-between px-6 pt-5 pb-3", children: [
-                /* @__PURE__ */ jsx20("h2", { className: "text-text-primary text-base font-medium", children: "Export Image" }),
-                /* @__PURE__ */ jsx20(
+              /* @__PURE__ */ jsxs22("div", { className: "flex items-center justify-between px-6 pt-5 pb-3", children: [
+                /* @__PURE__ */ jsx22("h2", { className: "text-text-primary text-base font-medium", children: "Export Image" }),
+                /* @__PURE__ */ jsx22(
                   "button",
                   {
                     onClick: toggleModal,
                     className: "w-7 h-7 flex items-center justify-center rounded-lg text-text-muted hover:text-text-primary hover:bg-surface-hover transition-all duration-200",
-                    children: /* @__PURE__ */ jsx20("i", { className: "bx bx-x text-xl" })
+                    children: /* @__PURE__ */ jsx22("i", { className: "bx bx-x text-xl" })
                   }
                 )
               ] }),
-              /* @__PURE__ */ jsx20("hr", { className: "border-border-light mx-6" }),
-              /* @__PURE__ */ jsxs20("div", { className: "flex gap-0", children: [
-                /* @__PURE__ */ jsx20("div", { className: "flex-1 p-6 flex items-center justify-center min-h-[300px]", children: /* @__PURE__ */ jsx20(
+              /* @__PURE__ */ jsx22("hr", { className: "border-border-light mx-6" }),
+              /* @__PURE__ */ jsxs22("div", { className: "flex gap-0", children: [
+                /* @__PURE__ */ jsx22("div", { className: "flex-1 p-6 flex items-center justify-center min-h-[300px]", children: /* @__PURE__ */ jsx22(
                   "div",
                   {
                     ref: previewRef,
                     className: "w-full max-h-[320px] rounded-xl overflow-hidden border border-border-light flex items-center justify-center",
                     style: { background: bgMode === "none" ? "repeating-conic-gradient(#2a2a35 0% 25%, #1e1e28 0% 50%) 0 0 / 16px 16px" : getBgColor() },
-                    children: previewUrl ? /* @__PURE__ */ jsx20(
+                    children: previewUrl ? /* @__PURE__ */ jsx22(
                       "img",
                       {
                         src: previewUrl,
                         alt: "Export preview",
                         className: "w-full h-full object-contain max-h-[320px]"
                       }
-                    ) : /* @__PURE__ */ jsx20("span", { className: "text-text-dim text-xs", children: "Generating preview..." })
+                    ) : /* @__PURE__ */ jsx22("span", { className: "text-text-dim text-xs", children: "Generating preview..." })
                   }
                 ) }),
-                /* @__PURE__ */ jsxs20("div", { className: "w-[240px] border-l border-border-light p-5 flex flex-col gap-5", children: [
-                  /* @__PURE__ */ jsxs20("div", { children: [
-                    /* @__PURE__ */ jsx20("p", { className: "text-text-dim text-xs uppercase tracking-wider mb-2", children: "Background" }),
-                    /* @__PURE__ */ jsx20("div", { className: "flex items-center gap-1", children: [
+                /* @__PURE__ */ jsxs22("div", { className: "w-[240px] border-l border-border-light p-5 flex flex-col gap-5", children: [
+                  /* @__PURE__ */ jsxs22("div", { children: [
+                    /* @__PURE__ */ jsx22("p", { className: "text-text-dim text-xs uppercase tracking-wider mb-2", children: "Background" }),
+                    /* @__PURE__ */ jsx22("div", { className: "flex items-center gap-1", children: [
                       { value: "dark", label: "Dark", icon: "bxs-moon" },
                       { value: "light", label: "Light", icon: "bxs-sun" },
                       { value: "none", label: "None", icon: "bx-hide" }
-                    ].map((opt) => /* @__PURE__ */ jsxs20(
+                    ].map((opt) => /* @__PURE__ */ jsxs22(
                       "button",
                       {
                         onClick: () => setBgMode(opt.value),
                         className: `flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg text-xs transition-all duration-200 ${bgMode === opt.value ? "bg-accent text-text-primary" : "text-text-muted hover:bg-surface-hover"}`,
                         children: [
-                          /* @__PURE__ */ jsx20("i", { className: `bx ${opt.icon} text-xs` }),
+                          /* @__PURE__ */ jsx22("i", { className: `bx ${opt.icon} text-xs` }),
                           opt.label
                         ]
                       },
                       opt.value
                     )) })
                   ] }),
-                  /* @__PURE__ */ jsxs20("div", { children: [
-                    /* @__PURE__ */ jsx20("p", { className: "text-text-dim text-xs uppercase tracking-wider mb-2", children: "Scale" }),
-                    /* @__PURE__ */ jsx20("div", { className: "flex items-center gap-1", children: SCALES.map((s) => /* @__PURE__ */ jsxs20(
+                  /* @__PURE__ */ jsxs22("div", { children: [
+                    /* @__PURE__ */ jsx22("p", { className: "text-text-dim text-xs uppercase tracking-wider mb-2", children: "Scale" }),
+                    /* @__PURE__ */ jsx22("div", { className: "flex items-center gap-1", children: SCALES.map((s) => /* @__PURE__ */ jsxs22(
                       "button",
                       {
                         onClick: () => setScale(s),
@@ -3618,51 +4166,51 @@ function ExportImageModal() {
                       s
                     )) })
                   ] }),
-                  /* @__PURE__ */ jsx20("hr", { className: "border-border-light" }),
-                  /* @__PURE__ */ jsxs20("div", { className: "flex flex-col gap-2", children: [
-                    /* @__PURE__ */ jsxs20(
+                  /* @__PURE__ */ jsx22("hr", { className: "border-border-light" }),
+                  /* @__PURE__ */ jsxs22("div", { className: "flex flex-col gap-2", children: [
+                    /* @__PURE__ */ jsxs22(
                       "button",
                       {
                         onClick: handleExportPNG,
                         className: "w-full flex items-center gap-2 px-3 py-2.5 rounded-lg bg-accent-blue hover:bg-accent-blue-hover text-text-primary text-xs transition-all duration-200",
                         children: [
-                          /* @__PURE__ */ jsx20("i", { className: "bx bx-image text-sm" }),
+                          /* @__PURE__ */ jsx22("i", { className: "bx bx-image text-sm" }),
                           "Export as PNG"
                         ]
                       }
                     ),
-                    /* @__PURE__ */ jsxs20(
+                    /* @__PURE__ */ jsxs22(
                       "button",
                       {
                         onClick: handleExportSVG,
                         className: "w-full flex items-center gap-2 px-3 py-2.5 rounded-lg bg-surface hover:bg-surface-hover border border-border text-text-secondary text-xs transition-all duration-200",
                         children: [
-                          /* @__PURE__ */ jsx20("i", { className: "bx bx-code-alt text-sm" }),
+                          /* @__PURE__ */ jsx22("i", { className: "bx bx-code-alt text-sm" }),
                           "Export as SVG"
                         ]
                       }
                     )
                   ] }),
-                  /* @__PURE__ */ jsx20("hr", { className: "border-border-light" }),
-                  /* @__PURE__ */ jsxs20("div", { className: "flex flex-col gap-2", children: [
-                    /* @__PURE__ */ jsxs20(
+                  /* @__PURE__ */ jsx22("hr", { className: "border-border-light" }),
+                  /* @__PURE__ */ jsxs22("div", { className: "flex flex-col gap-2", children: [
+                    /* @__PURE__ */ jsxs22(
                       "button",
                       {
                         onClick: handleCopyPNG,
                         className: "w-full flex items-center gap-2 px-3 py-2 rounded-lg text-text-secondary text-xs hover:bg-surface-hover border border-border transition-all duration-200",
                         children: [
-                          /* @__PURE__ */ jsx20("i", { className: "bx bx-clipboard text-sm" }),
+                          /* @__PURE__ */ jsx22("i", { className: "bx bx-clipboard text-sm" }),
                           "Copy as PNG"
                         ]
                       }
                     ),
-                    /* @__PURE__ */ jsxs20(
+                    /* @__PURE__ */ jsxs22(
                       "button",
                       {
                         onClick: handleCopySVG,
                         className: "w-full flex items-center gap-2 px-3 py-2 rounded-lg text-text-secondary text-xs hover:bg-surface-hover border border-border transition-all duration-200",
                         children: [
-                          /* @__PURE__ */ jsx20("i", { className: "bx bx-copy text-sm" }),
+                          /* @__PURE__ */ jsx22("i", { className: "bx bx-copy text-sm" }),
                           "Copy as SVG"
                         ]
                       }
@@ -3679,8 +4227,8 @@ function ExportImageModal() {
 }
 
 // src/react/components/modals/HelpModal.jsx
-import { useState as useState17 } from "react";
-import { jsx as jsx21, jsxs as jsxs21 } from "react/jsx-runtime";
+import { useState as useState18 } from "react";
+import { jsx as jsx23, jsxs as jsxs23 } from "react/jsx-runtime";
 var TOOL_SHORTCUTS = [
   { keys: "H", action: "Pan" },
   { keys: "V / 1", action: "Selection" },
@@ -3746,89 +4294,89 @@ var TABS = [
   { id: "docs", label: "Document", icon: "bxs-notepad" }
 ];
 function ShortcutRow2({ keys, action }) {
-  return /* @__PURE__ */ jsxs21("div", { className: "flex items-center justify-between py-1.5", children: [
-    /* @__PURE__ */ jsx21("span", { className: "text-text-secondary text-xs", children: action }),
-    /* @__PURE__ */ jsx21("div", { className: "flex items-center gap-1", children: keys.split("+").map((key, i) => /* @__PURE__ */ jsxs21("span", { children: [
-      i > 0 && /* @__PURE__ */ jsx21("span", { className: "text-text-dim text-xs mx-0.5", children: "+" }),
-      /* @__PURE__ */ jsx21("kbd", { className: "px-1.5 py-0.5 bg-surface-dark rounded text-text-muted text-xs border border-border font-[lixFont]", children: key.trim() })
+  return /* @__PURE__ */ jsxs23("div", { className: "flex items-center justify-between py-1.5", children: [
+    /* @__PURE__ */ jsx23("span", { className: "text-text-secondary text-xs", children: action }),
+    /* @__PURE__ */ jsx23("div", { className: "flex items-center gap-1", children: keys.split("+").map((key, i) => /* @__PURE__ */ jsxs23("span", { children: [
+      i > 0 && /* @__PURE__ */ jsx23("span", { className: "text-text-dim text-xs mx-0.5", children: "+" }),
+      /* @__PURE__ */ jsx23("kbd", { className: "px-1.5 py-0.5 bg-surface-dark rounded text-text-muted text-xs border border-border font-[lixFont]", children: key.trim() })
     ] }, i)) })
   ] });
 }
 function ShortcutSection2({ title, shortcuts }) {
-  return /* @__PURE__ */ jsxs21("div", { children: [
-    /* @__PURE__ */ jsx21("h3", { className: "text-text-dim text-xs uppercase tracking-wider mb-2", children: title }),
-    shortcuts.map((s) => /* @__PURE__ */ jsx21(ShortcutRow2, { keys: s.keys, action: s.action }, s.action))
+  return /* @__PURE__ */ jsxs23("div", { children: [
+    /* @__PURE__ */ jsx23("h3", { className: "text-text-dim text-xs uppercase tracking-wider mb-2", children: title }),
+    shortcuts.map((s) => /* @__PURE__ */ jsx23(ShortcutRow2, { keys: s.keys, action: s.action }, s.action))
   ] });
 }
 function HelpModal() {
   const open = useUIStore_default((s) => s.helpModalOpen);
   const toggleHelpModal = useUIStore_default((s) => s.toggleHelpModal);
-  const [activeTab, setActiveTab] = useState17("canvas");
+  const [activeTab, setActiveTab] = useState18("canvas");
   if (!open) return null;
-  return /* @__PURE__ */ jsxs21(
+  return /* @__PURE__ */ jsxs23(
     "div",
     {
       className: "fixed inset-0 z-[9999] flex items-center justify-center font-[lixFont]",
       onClick: toggleHelpModal,
       children: [
-        /* @__PURE__ */ jsx21("div", { className: "absolute inset-0 bg-black/60 backdrop-blur-sm" }),
-        /* @__PURE__ */ jsxs21(
+        /* @__PURE__ */ jsx23("div", { className: "absolute inset-0 bg-black/60 backdrop-blur-sm" }),
+        /* @__PURE__ */ jsxs23(
           "div",
           {
             className: "relative bg-surface-card border border-border-light rounded-2xl w-full max-w-[800px] mx-4 max-h-[85vh] flex flex-col",
             onClick: (e) => e.stopPropagation(),
             children: [
-              /* @__PURE__ */ jsxs21("div", { className: "flex items-center justify-between px-6 pt-5 pb-3", children: [
-                /* @__PURE__ */ jsx21("h2", { className: "text-text-primary text-base font-medium", children: "Shortcuts" }),
-                /* @__PURE__ */ jsx21(
+              /* @__PURE__ */ jsxs23("div", { className: "flex items-center justify-between px-6 pt-5 pb-3", children: [
+                /* @__PURE__ */ jsx23("h2", { className: "text-text-primary text-base font-medium", children: "Shortcuts" }),
+                /* @__PURE__ */ jsx23(
                   "button",
                   {
                     onClick: toggleHelpModal,
                     className: "w-7 h-7 flex items-center justify-center rounded-lg text-text-muted hover:text-text-primary hover:bg-surface-hover transition-all duration-200",
-                    children: /* @__PURE__ */ jsx21("i", { className: "bx bx-x text-xl" })
+                    children: /* @__PURE__ */ jsx23("i", { className: "bx bx-x text-xl" })
                   }
                 )
               ] }),
-              /* @__PURE__ */ jsx21("div", { className: "flex items-center gap-1 px-6 pb-3", children: TABS.map((tab) => /* @__PURE__ */ jsxs21(
+              /* @__PURE__ */ jsx23("div", { className: "flex items-center gap-1 px-6 pb-3", children: TABS.map((tab) => /* @__PURE__ */ jsxs23(
                 "button",
                 {
                   onClick: () => setActiveTab(tab.id),
                   className: `px-3 py-1.5 rounded-lg text-xs flex items-center gap-1.5 transition-all duration-200 ${activeTab === tab.id ? "bg-surface-hover text-text-primary" : "text-text-muted hover:text-text-secondary hover:bg-surface-hover/50"}`,
                   children: [
-                    /* @__PURE__ */ jsx21("i", { className: `bx ${tab.icon} text-sm` }),
+                    /* @__PURE__ */ jsx23("i", { className: `bx ${tab.icon} text-sm` }),
                     tab.label
                   ]
                 },
                 tab.id
               )) }),
-              /* @__PURE__ */ jsx21("hr", { className: "border-border-light mx-6" }),
-              /* @__PURE__ */ jsxs21("div", { className: "flex-1 overflow-y-auto no-scrollbar px-6 py-4", children: [
-                activeTab === "canvas" && /* @__PURE__ */ jsxs21("div", { className: "grid grid-cols-2 gap-6", children: [
-                  /* @__PURE__ */ jsx21(ShortcutSection2, { title: "Tools", shortcuts: TOOL_SHORTCUTS }),
-                  /* @__PURE__ */ jsxs21("div", { className: "flex flex-col gap-4", children: [
-                    /* @__PURE__ */ jsx21(ShortcutSection2, { title: "Actions", shortcuts: ACTION_SHORTCUTS }),
-                    /* @__PURE__ */ jsx21(ShortcutSection2, { title: "View", shortcuts: VIEW_SHORTCUTS })
+              /* @__PURE__ */ jsx23("hr", { className: "border-border-light mx-6" }),
+              /* @__PURE__ */ jsxs23("div", { className: "flex-1 overflow-y-auto no-scrollbar px-6 py-4", children: [
+                activeTab === "canvas" && /* @__PURE__ */ jsxs23("div", { className: "grid grid-cols-2 gap-6", children: [
+                  /* @__PURE__ */ jsx23(ShortcutSection2, { title: "Tools", shortcuts: TOOL_SHORTCUTS }),
+                  /* @__PURE__ */ jsxs23("div", { className: "flex flex-col gap-4", children: [
+                    /* @__PURE__ */ jsx23(ShortcutSection2, { title: "Actions", shortcuts: ACTION_SHORTCUTS }),
+                    /* @__PURE__ */ jsx23(ShortcutSection2, { title: "View", shortcuts: VIEW_SHORTCUTS })
                   ] })
                 ] }),
-                activeTab === "docs" && /* @__PURE__ */ jsxs21("div", { className: "grid grid-cols-2 gap-6", children: [
-                  /* @__PURE__ */ jsx21(ShortcutSection2, { title: "Block markdown", shortcuts: DOC_BLOCK_SHORTCUTS }),
-                  /* @__PURE__ */ jsx21(ShortcutSection2, { title: "Formatting", shortcuts: DOC_INLINE_SHORTCUTS })
+                activeTab === "docs" && /* @__PURE__ */ jsxs23("div", { className: "grid grid-cols-2 gap-6", children: [
+                  /* @__PURE__ */ jsx23(ShortcutSection2, { title: "Block markdown", shortcuts: DOC_BLOCK_SHORTCUTS }),
+                  /* @__PURE__ */ jsx23(ShortcutSection2, { title: "Formatting", shortcuts: DOC_INLINE_SHORTCUTS })
                 ] })
               ] }),
-              /* @__PURE__ */ jsx21("hr", { className: "border-border-light mx-6" }),
-              /* @__PURE__ */ jsxs21("div", { className: "flex items-center gap-3 px-6 py-4 flex-wrap", children: [
-                /* @__PURE__ */ jsxs21(
+              /* @__PURE__ */ jsx23("hr", { className: "border-border-light mx-6" }),
+              /* @__PURE__ */ jsxs23("div", { className: "flex items-center gap-3 px-6 py-4 flex-wrap", children: [
+                /* @__PURE__ */ jsxs23(
                   "a",
                   {
                     href: "/docs",
                     className: "flex items-center gap-2 px-3 py-2 rounded-lg bg-accent-blue/10 hover:bg-accent-blue/20 border border-accent-blue/20 text-accent-blue text-xs transition-all duration-200",
                     children: [
-                      /* @__PURE__ */ jsx21("i", { className: "bx bx-book-open text-sm" }),
+                      /* @__PURE__ */ jsx23("i", { className: "bx bx-book-open text-sm" }),
                       "Documentation"
                     ]
                   }
                 ),
-                /* @__PURE__ */ jsxs21(
+                /* @__PURE__ */ jsxs23(
                   "a",
                   {
                     href: "https://github.com/elixpo/sketch.elixpo",
@@ -3836,12 +4384,12 @@ function HelpModal() {
                     rel: "noopener noreferrer",
                     className: "flex items-center gap-2 px-3 py-2 rounded-lg bg-surface hover:bg-surface-hover border border-border text-text-secondary text-xs transition-all duration-200",
                     children: [
-                      /* @__PURE__ */ jsx21("i", { className: "bx bxl-github text-sm" }),
+                      /* @__PURE__ */ jsx23("i", { className: "bx bxl-github text-sm" }),
                       "View Repository"
                     ]
                   }
                 ),
-                /* @__PURE__ */ jsxs21(
+                /* @__PURE__ */ jsxs23(
                   "a",
                   {
                     href: "https://github.com/elixpo/sketch.elixpo/issues",
@@ -3849,7 +4397,7 @@ function HelpModal() {
                     rel: "noopener noreferrer",
                     className: "flex items-center gap-2 px-3 py-2 rounded-lg bg-surface hover:bg-surface-hover border border-border text-text-secondary text-xs transition-all duration-200",
                     children: [
-                      /* @__PURE__ */ jsx21("i", { className: "bx bx-bug text-sm" }),
+                      /* @__PURE__ */ jsx23("i", { className: "bx bx-bug text-sm" }),
                       "Report An Issue"
                     ]
                   }
@@ -3864,7 +4412,7 @@ function HelpModal() {
 }
 
 // src/react/LixSketchCanvas.jsx
-import { jsx as jsx22, jsxs as jsxs22 } from "react/jsx-runtime";
+import { jsx as jsx24, jsxs as jsxs24 } from "react/jsx-runtime";
 var _saveScene = null;
 var _loadScene = null;
 async function ensureSceneSerializer() {
@@ -3885,7 +4433,7 @@ function LixSketchCanvas({
   const wrapperRef = useRef10(null);
   const lastSceneJsonRef = useRef10("");
   const debounceRef = useRef10(null);
-  const [bootstrapped, setBootstrapped] = useState18(false);
+  const [bootstrapped, setBootstrapped] = useState19(false);
   useEffect13(() => {
     installImageUploadBridge(onUploadImage);
   }, [onUploadImage]);
@@ -3917,6 +4465,43 @@ function LixSketchCanvas({
       cancelled = true;
     };
   }, [initialScene, bootstrapped]);
+  useEffect13(() => {
+    function handleKey(e) {
+      if (!(e.ctrlKey || e.metaKey)) return;
+      const key = (e.key || "").toLowerCase();
+      if (key !== "s" || e.shiftKey) return;
+      e.preventDefault();
+      (async () => {
+        try {
+          await ensureSceneSerializer();
+          const scene = _saveScene("Untitled");
+          const json = JSON.stringify(scene);
+          lastSceneJsonRef.current = json;
+          if (onSceneChange) {
+            const metadata = {
+              shapeCount: Array.isArray(scene.shapes) ? scene.shapes.length : 0,
+              viewport: scene.viewport || null,
+              zoom: scene.zoom || 1,
+              sizeBytes: json.length,
+              savedAt: Date.now()
+            };
+            onSceneChange(scene, metadata);
+          }
+          const toast = document.getElementById("lixsketch-save-toast");
+          if (toast) {
+            toast.classList.remove("hidden");
+            clearTimeout(toast._hideTimer);
+            toast._hideTimer = setTimeout(() => toast.classList.add("hidden"), 1800);
+          }
+          useUIStore_default.getState().setSaveStatus?.("cloud");
+        } catch (err) {
+          console.warn("[LixSketchCanvas] Ctrl+S save failed:", err);
+        }
+      })();
+    }
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, [onSceneChange]);
   useEffect13(() => {
     if (!onSceneChange) return;
     let svg = null;
@@ -3963,33 +4548,46 @@ function LixSketchCanvas({
       clearTimeout(debounceRef.current);
     };
   }, [onSceneChange]);
-  return /* @__PURE__ */ jsxs22(
+  return /* @__PURE__ */ jsxs24(
     "div",
     {
       ref: wrapperRef,
       className: `lixsketch-canvas-root canvas-mode ${className}`,
       style,
       children: [
-        /* @__PURE__ */ jsx22(SVGCanvas, {}),
-        /* @__PURE__ */ jsx22(Toolbar, {}),
-        /* @__PURE__ */ jsx22(RectangleSidebar, {}),
-        /* @__PURE__ */ jsx22(CircleSidebar, {}),
-        /* @__PURE__ */ jsx22(LineSidebar, {}),
-        /* @__PURE__ */ jsx22(ArrowSidebar, {}),
-        /* @__PURE__ */ jsx22(PaintbrushSidebar, {}),
-        /* @__PURE__ */ jsx22(TextSidebar, {}),
-        /* @__PURE__ */ jsx22(FrameSidebar, {}),
-        /* @__PURE__ */ jsx22(IconSidebar, {}),
-        /* @__PURE__ */ jsx22(ImageSidebar, {}),
-        /* @__PURE__ */ jsx22(MultiSelectActions, {}),
-        /* @__PURE__ */ jsx22(ShortcutsModal, {}),
-        /* @__PURE__ */ jsx22(CommandPalette, {}),
-        /* @__PURE__ */ jsx22(ExportImageModal, {}),
-        /* @__PURE__ */ jsx22(HelpModal, {}),
-        /* @__PURE__ */ jsx22(ContextMenu, {}),
-        /* @__PURE__ */ jsx22(FindBar, {}),
-        /* @__PURE__ */ jsx22(ImageSourcePicker, {}),
-        /* @__PURE__ */ jsx22(CanvasLoadingOverlay, {})
+        /* @__PURE__ */ jsx24(SVGCanvas, {}),
+        /* @__PURE__ */ jsx24(Toolbar, {}),
+        /* @__PURE__ */ jsx24(Footer, {}),
+        /* @__PURE__ */ jsx24(AppMenu, {}),
+        /* @__PURE__ */ jsx24(RectangleSidebar, {}),
+        /* @__PURE__ */ jsx24(CircleSidebar, {}),
+        /* @__PURE__ */ jsx24(LineSidebar, {}),
+        /* @__PURE__ */ jsx24(ArrowSidebar, {}),
+        /* @__PURE__ */ jsx24(PaintbrushSidebar, {}),
+        /* @__PURE__ */ jsx24(TextSidebar, {}),
+        /* @__PURE__ */ jsx24(FrameSidebar, {}),
+        /* @__PURE__ */ jsx24(IconSidebar, {}),
+        /* @__PURE__ */ jsx24(ImageSidebar, {}),
+        /* @__PURE__ */ jsx24(MultiSelectActions, {}),
+        /* @__PURE__ */ jsx24(ShortcutsModal, {}),
+        /* @__PURE__ */ jsx24(CommandPalette, {}),
+        /* @__PURE__ */ jsx24(ExportImageModal, {}),
+        /* @__PURE__ */ jsx24(HelpModal, {}),
+        /* @__PURE__ */ jsx24(ContextMenu, {}),
+        /* @__PURE__ */ jsx24(FindBar, {}),
+        /* @__PURE__ */ jsx24(ImageSourcePicker, {}),
+        /* @__PURE__ */ jsx24(CanvasLoadingOverlay, {}),
+        /* @__PURE__ */ jsxs24(
+          "div",
+          {
+            id: "lixsketch-save-toast",
+            className: "hidden fixed bottom-20 left-1/2 -translate-x-1/2 z-[9999] px-4 py-2 rounded-xl bg-surface/85 backdrop-blur-md border border-border-light text-text-secondary text-xs font-[lixFont] pointer-events-none",
+            children: [
+              /* @__PURE__ */ jsx24("i", { className: "bx bx-check text-green-400 mr-1.5" }),
+              "Saved"
+            ]
+          }
+        )
       ]
     }
   );

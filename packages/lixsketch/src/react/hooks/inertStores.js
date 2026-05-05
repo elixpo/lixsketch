@@ -50,3 +50,9 @@ export function getSessionID() {
 
 export async function triggerDocCloudSync() { /* offline mode: no-op */ }
 export function persistLayoutMode() { /* offline mode: no-op */ }
+
+// Cloud-sync trigger used by the standalone product's AppMenu / keyboard
+// shortcuts. The package's offline build should never hit a server, so we
+// resolve immediately. The host's onSceneChange callback (passed to
+// LixSketchCanvas) handles real persistence.
+export async function triggerCloudSync() { return false; }

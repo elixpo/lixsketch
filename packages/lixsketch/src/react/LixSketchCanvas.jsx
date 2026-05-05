@@ -2,12 +2,6 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { compressImage } from '../utils/imageCompressor.js';
-
-// SceneSerializer.js statically imports every shape module, which in turn
-// reference bare `svg` / `rough` globals that the engine only sets during
-// init(). Pulling it in statically here would crash with "svg is not
-// defined" before the engine has a chance to wire those globals up. So we
-// load it lazily, after the engine is up.
 let _saveScene = null;
 let _loadScene = null;
 async function ensureSceneSerializer() {
@@ -18,8 +12,11 @@ async function ensureSceneSerializer() {
 }
 
 import useSketchStore, { TOOLS } from './store/useSketchStore.js';
+import useUIStore from './store/useUIStore.js';
 import SVGCanvas from './components/canvas/SVGCanvas.jsx';
 import Toolbar from './components/Toolbar.jsx';
+import Footer from './components/Footer.jsx';
+import AppMenu from './components/AppMenu.jsx';
 import RectangleSidebar from './components/sidebars/RectangleSidebar.jsx';
 import CircleSidebar from './components/sidebars/CircleSidebar.jsx';
 import LineSidebar from './components/sidebars/LineSidebar.jsx';
@@ -95,6 +92,48 @@ export default function LixSketchCanvas({
     return () => { cancelled = true; };
   }, [initialScene, bootstrapped]);
 
+  // Ctrl+S → flush + show toast. Same UX as the standalone product but
+  // with no cloud round-trip — onSceneChange (passed by the host) is the
+  // real persistence layer.
+  useEffect(() => {
+    function handleKey(e) {
+      if (!(e.ctrlKey || e.metaKey)) return;
+      const key = (e.key || '').toLowerCase();
+      if (key !== 's' || e.shiftKey) return;
+      e.preventDefault();
+      (async () => {
+        try {
+          await ensureSceneSerializer();
+          const scene = _saveScene('Untitled');
+          const json = JSON.stringify(scene);
+          lastSceneJsonRef.current = json;
+          if (onSceneChange) {
+            const metadata = {
+              shapeCount: Array.isArray(scene.shapes) ? scene.shapes.length : 0,
+              viewport: scene.viewport || null,
+              zoom: scene.zoom || 1,
+              sizeBytes: json.length,
+              savedAt: Date.now(),
+            };
+            onSceneChange(scene, metadata);
+          }
+          // Show the in-canvas save toast (rendered below).
+          const toast = document.getElementById('lixsketch-save-toast');
+          if (toast) {
+            toast.classList.remove('hidden');
+            clearTimeout(toast._hideTimer);
+            toast._hideTimer = setTimeout(() => toast.classList.add('hidden'), 1800);
+          }
+          useUIStore.getState().setSaveStatus?.('cloud');
+        } catch (err) {
+          console.warn('[LixSketchCanvas] Ctrl+S save failed:', err);
+        }
+      })();
+    }
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, [onSceneChange]);
+
   // Scene-change autosave — MutationObserver + mouseup, debounced.
   useEffect(() => {
     if (!onSceneChange) return;
@@ -154,6 +193,8 @@ export default function LixSketchCanvas({
     >
       <SVGCanvas />
       <Toolbar />
+      <Footer />
+      <AppMenu />
       <RectangleSidebar />
       <CircleSidebar />
       <LineSidebar />
@@ -164,8 +205,6 @@ export default function LixSketchCanvas({
       <IconSidebar />
       <ImageSidebar />
       <MultiSelectActions />
-
-      {/* Offline modals — no cloud sync / AI / auth coupling. */}
       <ShortcutsModal />
       <CommandPalette />
       <ExportImageModal />
@@ -175,9 +214,15 @@ export default function LixSketchCanvas({
       <ImageSourcePicker />
       <CanvasLoadingOverlay />
 
-      {/* No internal exit button — hosts (e.g. blogs.elixpo's CanvasSubpage)
-          render their own header with a "Back" link. If you mount the canvas
-          without surrounding chrome, pass `onExit` and add your own button. */}
+      {/* Save toast — same look as the standalone product. Hidden by
+          default; Ctrl+S flips the `hidden` class on/off. */}
+      <div
+        id="lixsketch-save-toast"
+        className="hidden fixed bottom-20 left-1/2 -translate-x-1/2 z-[9999] px-4 py-2 rounded-xl bg-surface/85 backdrop-blur-md border border-border-light text-text-secondary text-xs font-[lixFont] pointer-events-none"
+      >
+        <i className="bx bx-check text-green-400 mr-1.5" />
+        Saved
+      </div>
     </div>
   );
 }

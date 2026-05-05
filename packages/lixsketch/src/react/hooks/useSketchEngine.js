@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from 'react'
 import useSketchStore from '../store/useSketchStore'
-import { WORKER_URL } from '@/lib/env'
+import { WORKER_URL } from './inertStores'
 
 /**
  * Hook that initializes the SketchEngine on the provided SVG element
@@ -29,7 +29,7 @@ export default function useSketchEngine(svgRef, ready = true) {
           getState: () => useSketchStore.getState(),
         }
 
-        const { SketchEngine } = await import('@elixpo/lixsketch')
+        const { SketchEngine } = await import('../../index.js')
         if (cancelled) return
 
         const engine = new SketchEngine(svgRef.current)

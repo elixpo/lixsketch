@@ -5,7 +5,7 @@ import useUIStore from '../../store/useUIStore'
 import ShapeSidebar, { ToolbarButton, Divider, LayerControls } from './ShapeSidebar'
 import { useState, useCallback, useEffect } from 'react'
 import { useTranslation } from '../../hooks/useTranslation'
-import { compressImage } from '@/utils/imageCompressor'
+import { compressImage } from '../../../utils/imageCompressor.js'
 import { IMAGE_ACCEPT_ATTR, isAllowedImage } from '../../../index.js'
 
 const FILL_STYLES = [

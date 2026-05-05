@@ -29,7 +29,10 @@ export default function useSketchEngine(svgRef, ready = true) {
           getState: () => useSketchStore.getState(),
         }
 
-        const { SketchEngine } = await import('../../index.js')
+        // Import the engine class directly (not via ../../index.js) so the
+        // chunk doesn't pull SceneSerializer + the shape graph in before
+        // engine.init() has had a chance to wire window.svg / window.rough.
+        const { SketchEngine } = await import('../../SketchEngine.js')
         if (cancelled) return
 
         const engine = new SketchEngine(svgRef.current)

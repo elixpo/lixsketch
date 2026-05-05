@@ -1,9 +1,5 @@
 "use client";
 import {
-  SHORTCUT_MAP,
-  installEngineShortcuts
-} from "./chunk-GN7OSWJG.js";
-import {
   ALLOWED_IMAGE_EXTENSIONS,
   ALLOWED_IMAGE_MIME_TYPES,
   IMAGE_ACCEPT_ATTR,
@@ -58,7 +54,7 @@ var TOOL_SIDEBARS = {
   [TOOLS.CODE]: "text",
   [TOOLS.FRAME]: "frame"
 };
-var SHORTCUT_MAP2 = {
+var SHORTCUT_MAP = {
   h: TOOLS.PAN,
   v: TOOLS.SELECT,
   1: TOOLS.SELECT,
@@ -160,7 +156,7 @@ var useSketchStore = create((set, get) => ({
   setIsPanning: (v) => set({ isPanning: v }),
   setPanStart: (p) => set({ panStart: p }),
   // --- Canvas background ---
-  canvasBackground: "#13171C",
+  canvasBackground: "var(--lixsketch-bg, #ffffff)",
   setCanvasBackground: (color) => set({ canvasBackground: color }),
   // --- Grid ---
   gridEnabled: false,
@@ -270,7 +266,7 @@ function useSketchEngine(svgRef, ready = true) {
           setZoom: (zoom) => useSketchStore_default.setState({ zoom }),
           getState: () => useSketchStore_default.getState()
         };
-        const { SketchEngine } = await import("./.-DL2EYLUR.js");
+        const { SketchEngine } = await import("./SketchEngine-LZOBUGFH.js");
         if (cancelled) return;
         const engine = new SketchEngine(svgRef.current);
         await engine.init();
@@ -3873,7 +3869,7 @@ var _saveScene = null;
 var _loadScene = null;
 async function ensureSceneSerializer() {
   if (_saveScene && _loadScene) return;
-  const m = await import("./SceneSerializer-BS3HY5XR.js");
+  const m = await import("./SceneSerializer-DOR5BRUO.js");
   _saveScene = m.saveScene;
   _loadScene = m.loadScene;
 }
@@ -3993,21 +3989,7 @@ function LixSketchCanvas({
         /* @__PURE__ */ jsx22(ContextMenu, {}),
         /* @__PURE__ */ jsx22(FindBar, {}),
         /* @__PURE__ */ jsx22(ImageSourcePicker, {}),
-        /* @__PURE__ */ jsx22(CanvasLoadingOverlay, {}),
-        onExit && /* @__PURE__ */ jsxs22(
-          "button",
-          {
-            type: "button",
-            onClick: onExit,
-            className: "lixsketch-exit-btn",
-            "aria-label": "Exit canvas",
-            title: "Exit canvas",
-            children: [
-              /* @__PURE__ */ jsx22("i", { className: "bx bx-x" }),
-              /* @__PURE__ */ jsx22("span", { children: "Exit" })
-            ]
-          }
-        )
+        /* @__PURE__ */ jsx22(CanvasLoadingOverlay, {})
       ]
     }
   );
@@ -4079,12 +4061,227 @@ var TOOLS2 = {
   FRAME: "frame",
   ICON: "icon"
 };
+
+// src/EngineShortcuts.js
+var SHORTCUT_MAP2 = {
+  h: "pan",
+  v: "select",
+  1: "select",
+  r: "rectangle",
+  2: "rectangle",
+  o: "circle",
+  4: "circle",
+  a: "arrow",
+  5: "arrow",
+  l: "line",
+  6: "line",
+  p: "freehand",
+  7: "freehand",
+  t: "text",
+  8: "text",
+  9: "image",
+  e: "eraser",
+  0: "eraser",
+  i: "icon",
+  f: "frame",
+  k: "laser"
+};
+var TOOLS3 = {
+  SELECT: "select",
+  PAN: "pan",
+  RECTANGLE: "rectangle",
+  CIRCLE: "circle",
+  LINE: "line",
+  ARROW: "arrow",
+  FREEHAND: "freehand",
+  TEXT: "text",
+  CODE: "code",
+  ERASER: "eraser",
+  LASER: "laser",
+  IMAGE: "image",
+  FRAME: "frame",
+  ICON: "icon"
+};
+function isTypingTarget(target) {
+  if (!target) return false;
+  const tag = (target.tagName || "").toLowerCase();
+  if (tag === "input" || tag === "textarea") return true;
+  if (target.isContentEditable) return true;
+  return false;
+}
+function installEngineShortcuts(engine, options = {}) {
+  if (typeof window === "undefined" || typeof document === "undefined") {
+    return () => {
+    };
+  }
+  const onToast = typeof options.onToast === "function" ? options.onToast : () => {
+  };
+  const skipWhen = typeof options.skipWhen === "function" ? options.skipWhen : null;
+  const customSetTool = typeof options.setActiveTool === "function" ? options.setActiveTool : null;
+  function setTool(tool) {
+    if (customSetTool) {
+      customSetTool(tool);
+      return;
+    }
+    if (engine?.setActiveTool) engine.setActiveTool(tool);
+  }
+  function getActiveTool() {
+    return engine?.activeTool || engine?.getActiveTool?.() || null;
+  }
+  function handleKeyDown(e) {
+    const key = (e.key || "").toLowerCase();
+    const isMod = e.ctrlKey || e.metaKey;
+    if (isTypingTarget(e.target)) return;
+    if (document.querySelector(".text-edit-overlay:not(.hidden)")) return;
+    if (skipWhen && skipWhen(e)) return;
+    if (isMod) {
+      if (key === "a" && !e.shiftKey) {
+        e.preventDefault();
+        setTool(TOOLS3.SELECT);
+        if (window.multiSelection && Array.isArray(window.shapes)) {
+          window.multiSelection.clearSelection();
+          window.shapes.forEach((shape) => window.multiSelection.addShape(shape));
+        }
+        return;
+      }
+      if (key === "g" && !e.shiftKey) {
+        e.preventDefault();
+        try {
+          const ms = window.multiSelection;
+          const sel = ms?.selectedShapes;
+          const targets = sel && sel.size > 1 ? Array.from(sel) : window.currentShape ? [window.currentShape] : [];
+          if (targets.length > 1) {
+            const newId = `g-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
+            for (const s of targets) s.groupId = newId;
+            if (typeof ms?.updateControls === "function") ms.updateControls();
+            onToast(`Grouped ${targets.length} shapes`, { tone: "success" });
+          }
+        } catch (err) {
+          console.warn("[EngineShortcuts] group failed:", err);
+        }
+        return;
+      }
+      if (key === "g" && e.shiftKey) {
+        e.preventDefault();
+        try {
+          const ms = window.multiSelection;
+          const sel = ms?.selectedShapes;
+          const targets = sel && sel.size > 0 ? Array.from(sel) : window.currentShape ? [window.currentShape] : [];
+          const groupIds = new Set(targets.map((s) => s.groupId).filter(Boolean));
+          if (groupIds.size > 0 && Array.isArray(window.shapes)) {
+            let cleared = 0;
+            for (const s of window.shapes) {
+              if (s.groupId && groupIds.has(s.groupId)) {
+                s.groupId = null;
+                cleared++;
+              }
+            }
+            if (typeof ms?.updateControls === "function") ms.updateControls();
+            onToast(`Ungrouped ${cleared} shapes`, { tone: "success" });
+          }
+        } catch (err) {
+          console.warn("[EngineShortcuts] ungroup failed:", err);
+        }
+        return;
+      }
+      if (key === "d") {
+        e.preventDefault();
+        return;
+      }
+      return;
+    }
+    if (e.key === "Delete" || e.key === "Backspace") {
+      e.preventDefault();
+      if (window.multiSelection?.selectedShapes?.size > 0) {
+        if (typeof window.deleteSelectedShapes === "function") {
+          window.deleteSelectedShapes();
+        }
+        return;
+      }
+      if (window.currentShape) {
+        const shape = window.currentShape;
+        const shapes = window.shapes;
+        if (shapes) {
+          const idx = shapes.indexOf(shape);
+          if (idx !== -1) shapes.splice(idx, 1);
+        }
+        if (typeof window.cleanupAttachments === "function") {
+          window.cleanupAttachments(shape);
+        }
+        if (shape.parentFrame && typeof shape.parentFrame.removeShapeFromFrame === "function") {
+          shape.parentFrame.removeShapeFromFrame(shape);
+        }
+        const el = shape.group || shape.element;
+        if (el && el.parentNode) el.parentNode.removeChild(el);
+        if (typeof window.pushDeleteAction === "function") {
+          window.pushDeleteAction(shape);
+        }
+        window.currentShape = null;
+        if (typeof window.disableAllSideBars === "function") {
+          window.disableAllSideBars();
+        }
+      }
+      return;
+    }
+    if (!e.shiftKey && !e.altKey) {
+      const tool = SHORTCUT_MAP2[key];
+      if (tool) {
+        e.preventDefault();
+        setTool(tool);
+        return;
+      }
+      if (e.key === "Escape") {
+        window.currentShape = null;
+        if (typeof window.disableAllSideBars === "function") {
+          window.disableAllSideBars();
+        }
+        return;
+      }
+    }
+  }
+  let spaceHeld = false;
+  let toolBeforeSpace = null;
+  function handleSpaceDown(e) {
+    if (e.code !== "Space" || spaceHeld) return;
+    if (isTypingTarget(e.target)) return;
+    if (skipWhen && skipWhen(e)) return;
+    e.preventDefault();
+    spaceHeld = true;
+    const active = getActiveTool();
+    if (active && active !== TOOLS3.PAN) {
+      toolBeforeSpace = active;
+      setTool(TOOLS3.PAN);
+    }
+  }
+  function handleKeyUp(e) {
+    if (e.code === "Space" && spaceHeld) {
+      spaceHeld = false;
+      if (toolBeforeSpace) {
+        setTool(toolBeforeSpace);
+        toolBeforeSpace = null;
+      }
+    }
+  }
+  function handleWheel(e) {
+    if (e.ctrlKey || e.metaKey) e.preventDefault();
+  }
+  document.addEventListener("keydown", handleKeyDown);
+  document.addEventListener("keydown", handleSpaceDown);
+  document.addEventListener("keyup", handleKeyUp);
+  document.addEventListener("wheel", handleWheel, { passive: false });
+  return function uninstall() {
+    document.removeEventListener("keydown", handleKeyDown);
+    document.removeEventListener("keydown", handleSpaceDown);
+    document.removeEventListener("keyup", handleKeyUp);
+    document.removeEventListener("wheel", handleWheel);
+  };
+}
 export {
   ALLOWED_IMAGE_EXTENSIONS,
   ALLOWED_IMAGE_MIME_TYPES,
   IMAGE_ACCEPT_ATTR,
   LixSketchCanvas,
-  SHORTCUT_MAP,
+  SHORTCUT_MAP2 as SHORTCUT_MAP,
   TOOLS2 as TOOLS,
   compressImage,
   installEngineShortcuts,

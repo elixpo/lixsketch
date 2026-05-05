@@ -175,18 +175,9 @@ export default function LixSketchCanvas({
       <ImageSourcePicker />
       <CanvasLoadingOverlay />
 
-      {onExit && (
-        <button
-          type="button"
-          onClick={onExit}
-          className="lixsketch-exit-btn"
-          aria-label="Exit canvas"
-          title="Exit canvas"
-        >
-          <i className="bx bx-x" />
-          <span>Exit</span>
-        </button>
-      )}
+      {/* No internal exit button — hosts (e.g. blogs.elixpo's CanvasSubpage)
+          render their own header with a "Back" link. If you mount the canvas
+          without surrounding chrome, pass `onExit` and add your own button. */}
     </div>
   );
 }

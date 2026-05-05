@@ -1321,7 +1321,7 @@ function ToolbarButton({ icon, preview, children, tooltip }) {
       {
         onClick: () => setOpen(!open),
         title: tooltip,
-        className: `h-9 flex items-center gap-1.5 px-3 rounded-lg transition-all duration-100 ${open ? "bg-white/[0.12] text-white" : "text-text-muted hover:text-white hover:bg-white/[0.06]"}`,
+        className: `h-9 flex items-center gap-1.5 px-3 rounded-lg transition-all duration-100 ${open ? "bg-surface-active text-text-primary" : "text-text-muted hover:text-text-primary hover:bg-surface-hover"}`,
         children: [
           preview || icon && /* @__PURE__ */ jsx5("i", { className: `bx ${icon} text-base` }),
           /* @__PURE__ */ jsx5("svg", { className: `w-2 h-2 opacity-40 transition-transform duration-100 ${open ? "rotate-180" : ""}`, viewBox: "0 0 8 5", fill: "none", stroke: "currentColor", strokeWidth: "1.5", children: /* @__PURE__ */ jsx5("path", { d: "M1 1l3 3 3-3" }) })
@@ -1329,13 +1329,13 @@ function ToolbarButton({ icon, preview, children, tooltip }) {
       }
     ),
     open && /* @__PURE__ */ jsxs5("div", { className: "absolute bottom-full left-1/2 -translate-x-1/2 mb-3 z-20", children: [
-      /* @__PURE__ */ jsx5("div", { className: "bg-[#252525] border border-white/[0.1] rounded-xl p-3 shadow-xl shadow-black/50 min-w-max", children }),
-      /* @__PURE__ */ jsx5("div", { className: "absolute -bottom-[5px] left-1/2 -translate-x-1/2 w-2.5 h-2.5 rotate-45 bg-[#252525] border-r border-b border-white/[0.1]" })
+      /* @__PURE__ */ jsx5("div", { className: "bg-surface-card border border-border-light rounded-xl p-3 shadow-xl shadow-black/10 min-w-max", children }),
+      /* @__PURE__ */ jsx5("div", { className: "absolute -bottom-[5px] left-1/2 -translate-x-1/2 w-2.5 h-2.5 rotate-45 bg-surface-card border-r border-b border-border-light" })
     ] })
   ] });
 }
 function Divider() {
-  return /* @__PURE__ */ jsx5("div", { className: "w-px h-5 bg-white/[0.08] mx-0.5 shrink-0" });
+  return /* @__PURE__ */ jsx5("div", { className: "w-px h-5 bg-surface-hover mx-0.5 shrink-0" });
 }
 function ShapeSidebar({ visible, children }) {
   const viewMode = useSketchStore_default((s) => s.viewMode);
@@ -1343,7 +1343,7 @@ function ShapeSidebar({ visible, children }) {
   return /* @__PURE__ */ jsx5(
     "div",
     {
-      className: `absolute bottom-14 left-1/2 -translate-x-1/2 bg-[#1c1c1c] border border-white/[0.1] rounded-xl px-2 py-1.5 z-[999] font-[lixFont] transition-all duration-200 ${show ? "opacity-100 pointer-events-auto translate-y-0" : "opacity-0 pointer-events-none translate-y-2"}`,
+      className: `absolute bottom-14 left-1/2 -translate-x-1/2 bg-surface border border-border-light rounded-xl px-2 py-1.5 z-[999] font-[lixFont] transition-all duration-200 ${show ? "opacity-100 pointer-events-auto translate-y-0" : "opacity-0 pointer-events-none translate-y-2"}`,
       children: /* @__PURE__ */ jsx5("div", { className: "flex items-center gap-0.5", children })
     }
   );
@@ -1361,7 +1361,7 @@ function LayerControls() {
       {
         onClick: () => doLayer("sendToBack"),
         title: t("sidebar.sendToBack", { defaultValue: "Send to back" }),
-        className: "h-9 w-8 flex items-center justify-center rounded-lg text-text-muted hover:text-white hover:bg-white/[0.06] transition-all duration-100",
+        className: "h-9 w-8 flex items-center justify-center rounded-lg text-text-muted hover:text-text-primary hover:bg-surface-hover transition-all duration-100",
         children: /* @__PURE__ */ jsx5("i", { className: "bx bx-chevrons-down text-base" })
       }
     ),
@@ -1370,7 +1370,7 @@ function LayerControls() {
       {
         onClick: () => doLayer("sendBackward"),
         title: t("sidebar.sendBackward"),
-        className: "h-9 w-8 flex items-center justify-center rounded-lg text-text-muted hover:text-white hover:bg-white/[0.06] transition-all duration-100",
+        className: "h-9 w-8 flex items-center justify-center rounded-lg text-text-muted hover:text-text-primary hover:bg-surface-hover transition-all duration-100",
         children: /* @__PURE__ */ jsx5("i", { className: "bx bx-chevron-down text-base" })
       }
     ),
@@ -1379,7 +1379,7 @@ function LayerControls() {
       {
         onClick: () => doLayer("bringForward"),
         title: t("sidebar.bringForward"),
-        className: "h-9 w-8 flex items-center justify-center rounded-lg text-text-muted hover:text-white hover:bg-white/[0.06] transition-all duration-100",
+        className: "h-9 w-8 flex items-center justify-center rounded-lg text-text-muted hover:text-text-primary hover:bg-surface-hover transition-all duration-100",
         children: /* @__PURE__ */ jsx5("i", { className: "bx bx-chevron-up text-base" })
       }
     ),
@@ -1388,7 +1388,7 @@ function LayerControls() {
       {
         onClick: () => doLayer("bringToFront"),
         title: t("sidebar.bringToFront", { defaultValue: "Bring to front" }),
-        className: "h-9 w-8 flex items-center justify-center rounded-lg text-text-muted hover:text-white hover:bg-white/[0.06] transition-all duration-100",
+        className: "h-9 w-8 flex items-center justify-center rounded-lg text-text-muted hover:text-text-primary hover:bg-surface-hover transition-all duration-100",
         children: /* @__PURE__ */ jsx5("i", { className: "bx bx-chevrons-up text-base" })
       }
     )
@@ -2520,7 +2520,7 @@ function IconCell({ icon, onClick }) {
       onClick,
       title: name,
       style: { width: "44px", height: "44px", overflow: "hidden", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "8px", cursor: "pointer", background: "transparent", border: "none", padding: 0 },
-      className: "hover:bg-white/10 transition-colors duration-100",
+      className: "hover:bg-surface-hover transition-colors duration-100",
       children: normalizedSvg ? /* @__PURE__ */ jsx13(
         "div",
         {
@@ -2636,23 +2636,23 @@ function IconSidebar() {
   return /* @__PURE__ */ jsxs13(
     "div",
     {
-      className: `absolute top-[60px] right-2 bottom-[56px] w-[300px] bg-[#18181c] border border-white/[0.06] rounded-2xl z-[999] font-[lixFont] flex flex-col transition-transform duration-200 ${visible ? "translate-x-0" : "translate-x-full"}`,
+      className: `absolute top-[60px] right-2 bottom-[56px] w-[300px] bg-surface border border-border-light rounded-2xl z-[999] font-[lixFont] flex flex-col transition-transform duration-200 ${visible ? "translate-x-0" : "translate-x-full"}`,
       children: [
         /* @__PURE__ */ jsxs13("div", { className: "px-3.5 pt-3.5 pb-2 shrink-0", children: [
           /* @__PURE__ */ jsxs13("div", { className: "flex items-center justify-between mb-2.5", children: [
-            /* @__PURE__ */ jsx13("h3", { className: "text-white/90 text-sm font-medium", children: "Icons" }),
+            /* @__PURE__ */ jsx13("h3", { className: "text-text-primary text-sm font-medium", children: "Icons" }),
             /* @__PURE__ */ jsx13(
               "button",
               {
                 onClick: () => setActiveTool(TOOLS.SELECT),
-                className: "w-6 h-6 flex items-center justify-center rounded-md text-white/40 hover:text-white/80 hover:bg-white/10 transition-colors duration-100",
+                className: "w-6 h-6 flex items-center justify-center rounded-md text-text-muted hover:text-text-primary hover:bg-surface-hover transition-colors duration-100",
                 title: "Close (Esc)",
                 children: /* @__PURE__ */ jsx13("i", { className: "bx bx-x text-lg" })
               }
             )
           ] }),
-          /* @__PURE__ */ jsxs13("div", { className: "flex items-center gap-2 bg-white/[0.06] border border-white/[0.08] rounded-lg px-2.5 py-2", children: [
-            /* @__PURE__ */ jsx13("i", { className: "bx bxs-search text-white/40 text-sm" }),
+          /* @__PURE__ */ jsxs13("div", { className: "flex items-center gap-2 bg-surface-hover border border-border-light rounded-lg px-2.5 py-2", children: [
+            /* @__PURE__ */ jsx13("i", { className: "bx bxs-search text-text-muted text-sm" }),
             /* @__PURE__ */ jsx13(
               "input",
               {
@@ -2661,18 +2661,18 @@ function IconSidebar() {
                 value: query,
                 onChange: (e) => setQuery(e.target.value),
                 placeholder: "Search icons...",
-                className: "flex-1 bg-transparent text-white/90 text-sm outline-none placeholder:text-white/30",
+                className: "flex-1 bg-transparent text-text-primary text-sm outline-none placeholder:text-text-dim",
                 spellCheck: false
               }
             ),
-            query && /* @__PURE__ */ jsx13("button", { onClick: () => setQuery(""), className: "text-white/30 hover:text-white/60", children: /* @__PURE__ */ jsx13("i", { className: "bx bxs-x-circle text-sm" }) })
+            query && /* @__PURE__ */ jsx13("button", { onClick: () => setQuery(""), className: "text-text-dim hover:text-text-secondary", children: /* @__PURE__ */ jsx13("i", { className: "bx bxs-x-circle text-sm" }) })
           ] })
         ] }),
         /* @__PURE__ */ jsx13("div", { className: "flex flex-wrap gap-1 px-3.5 pb-2.5 shrink-0", children: CATEGORIES.map((cat) => /* @__PURE__ */ jsxs13(
           "button",
           {
             onClick: () => setCategory(cat.value),
-            className: `flex items-center gap-1 px-2 py-1 rounded-md text-xs whitespace-nowrap transition-colors duration-100 ${category === cat.value ? "bg-accent-blue/20 text-accent-blue-hover" : "text-white/50 hover:bg-white/[0.06] hover:text-white/80"}`,
+            className: `flex items-center gap-1 px-2 py-1 rounded-md text-xs whitespace-nowrap transition-colors duration-100 ${category === cat.value ? "bg-accent-blue/20 text-accent-blue-hover" : "text-text-muted hover:bg-surface-hover hover:text-text-primary"}`,
             children: [
               /* @__PURE__ */ jsx13("i", { className: `bx ${cat.icon} text-xs` }),
               cat.label
@@ -2680,11 +2680,11 @@ function IconSidebar() {
           },
           cat.value || "all"
         )) }),
-        /* @__PURE__ */ jsx13("div", { className: "h-px bg-white/[0.06] mx-3.5 shrink-0" }),
-        /* @__PURE__ */ jsx13("div", { className: "flex-1 overflow-y-auto no-scrollbar px-3 py-2.5", id: "iconsContainer", children: loading ? /* @__PURE__ */ jsxs13("div", { className: "flex items-center justify-center py-12 text-white/40 text-sm", children: [
+        /* @__PURE__ */ jsx13("div", { className: "h-px bg-surface-hover mx-3.5 shrink-0" }),
+        /* @__PURE__ */ jsx13("div", { className: "flex-1 overflow-y-auto no-scrollbar px-3 py-2.5", id: "iconsContainer", children: loading ? /* @__PURE__ */ jsxs13("div", { className: "flex items-center justify-center py-12 text-text-muted text-sm", children: [
           /* @__PURE__ */ jsx13("i", { className: "bx bxs-hourglass bx-spin text-lg mr-2" }),
           "Loading..."
-        ] }) : icons.length === 0 ? /* @__PURE__ */ jsx13("div", { className: "flex items-center justify-center py-12 text-white/40 text-sm", children: "No icons found" }) : /* @__PURE__ */ jsx13("div", { style: { display: "grid", gridTemplateColumns: "repeat(6, minmax(0, 1fr))", gap: "2px" }, children: icons.map((icon, i) => /* @__PURE__ */ jsx13(
+        ] }) : icons.length === 0 ? /* @__PURE__ */ jsx13("div", { className: "flex items-center justify-center py-12 text-text-muted text-sm", children: "No icons found" }) : /* @__PURE__ */ jsx13("div", { style: { display: "grid", gridTemplateColumns: "repeat(6, minmax(0, 1fr))", gap: "2px" }, children: icons.map((icon, i) => /* @__PURE__ */ jsx13(
           IconCell,
           {
             icon,

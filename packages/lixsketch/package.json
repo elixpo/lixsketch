@@ -55,19 +55,25 @@
     "url": "https://github.com/elixpo/sketch.elixpo/issues"
   },
   "dependencies": {
-    "roughjs": "^4.6.6",
+    "boxicons": "^2.1.4",
     "perfect-freehand": "^1.2.3",
-    "boxicons": "^2.1.4"
+    "roughjs": "^4.6.6"
   },
   "peerDependencies": {
     "react": ">=18.0.0",
     "react-dom": ">=18.0.0",
-    "zustand": ">=4.0.0"
+    "zustand": "^5.0.13"
   },
   "peerDependenciesMeta": {
-    "react": { "optional": true },
-    "react-dom": { "optional": true },
-    "zustand": { "optional": true }
+    "react": {
+      "optional": true
+    },
+    "react-dom": {
+      "optional": true
+    },
+    "zustand": {
+      "optional": true
+    }
   },
   "devDependencies": {
     "esbuild": "^0.24.0"

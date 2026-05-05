@@ -4,9 +4,12 @@
 
 @import 'boxicons/css/boxicons.min.css';
 
-/* Product CSS — toolbars + per-shape sidebars (copied from sketch.elixpo). */
+/* Product CSS — toolbars + per-shape sidebars (copied from sketch.elixpo).
+ * NOTE: canvasStroke.css is intentionally NOT bundled — it ships
+ * destructive global selectors (`* { margin: 0 }`, `svg { width: 100vw }`)
+ * that escape the canvas root and break the host page. SVGCanvas.jsx
+ * styles its own <svg> element directly. */
 @import './styles/canvasTools.css';
-@import './styles/canvasStroke.css';
 @import './styles/squareSidebar.css';
 @import './styles/circleSidebar.css';
 @import './styles/arrowSidebar.css';

@@ -639,29 +639,33 @@ var useUIStore_default = useUIStore;
 
 // src/react/components/Toolbar.jsx
 import { Fragment, jsx as jsx2, jsxs as jsxs2 } from "react/jsx-runtime";
-var VIEW_MODE_ITEMS = [
-  { tool: TOOLS2.PAN, icon: "bxs-hand", title: "Pan (H)", key: "H" }
-];
-var TOOL_ITEMS = [
-  { tool: TOOLS2.PAN, icon: "bxs-hand", title: "Pan (H)", key: "H" },
-  { tool: TOOLS2.SELECT, icon: "bxs-pointer", title: "Select (V)", key: "V" },
-  "spacer",
-  { tool: TOOLS2.RECTANGLE, icon: "bx-square", title: "Rectangle (R)", key: "R" },
-  { tool: TOOLS2.CIRCLE, icon: "bx-circle", title: "Circle (O)", key: "O" },
-  { tool: TOOLS2.LINE, icon: "bx-minus", title: "Line (L)", key: "L" },
-  { tool: TOOLS2.ARROW, icon: "bx-right-arrow-alt", title: "Arrow (A)", rotate: true, key: "A" },
-  { tool: TOOLS2.TEXT, icon: "bx-text", title: "Text (T)", key: "T" },
-  { tool: TOOLS2.FREEHAND, icon: "bx-pen", title: "Freehand (P)", key: "P" },
-  { tool: TOOLS2.IMAGE, icon: "bx-image-alt", title: "Image (9)", key: "9" },
-  { tool: TOOLS2.ICON, icon: "bx-wink-smile", title: "Icon (I)", key: "I" },
-  "spacer",
-  { tool: TOOLS2.FRAME, icon: "bx-crop", title: "Frame (F)", key: "F" },
-  { tool: TOOLS2.LASER, icon: "bxs-magic-wand", title: "Laser (K)", key: "K" },
-  { tool: TOOLS2.ERASER, icon: "bxs-eraser", title: "Eraser (E)", key: "E" }
-  // AI tool entry removed while the assistant is coming-soon.
-  // Restore `{ tool: 'ai', icon: null, title: 'AI', isAI: true }` here
-  // when the modal becomes a real feature again.
-];
+function getViewModeItems() {
+  return [
+    { tool: TOOLS2.PAN, icon: "bxs-hand", title: "Pan (H)", key: "H" }
+  ];
+}
+function getToolItems() {
+  return [
+    { tool: TOOLS2.PAN, icon: "bxs-hand", title: "Pan (H)", key: "H" },
+    { tool: TOOLS2.SELECT, icon: "bxs-pointer", title: "Select (V)", key: "V" },
+    "spacer",
+    { tool: TOOLS2.RECTANGLE, icon: "bx-square", title: "Rectangle (R)", key: "R" },
+    { tool: TOOLS2.CIRCLE, icon: "bx-circle", title: "Circle (O)", key: "O" },
+    { tool: TOOLS2.LINE, icon: "bx-minus", title: "Line (L)", key: "L" },
+    { tool: TOOLS2.ARROW, icon: "bx-right-arrow-alt", title: "Arrow (A)", rotate: true, key: "A" },
+    { tool: TOOLS2.TEXT, icon: "bx-text", title: "Text (T)", key: "T" },
+    { tool: TOOLS2.FREEHAND, icon: "bx-pen", title: "Freehand (P)", key: "P" },
+    { tool: TOOLS2.IMAGE, icon: "bx-image-alt", title: "Image (9)", key: "9" },
+    { tool: TOOLS2.ICON, icon: "bx-wink-smile", title: "Icon (I)", key: "I" },
+    "spacer",
+    { tool: TOOLS2.FRAME, icon: "bx-crop", title: "Frame (F)", key: "F" },
+    { tool: TOOLS2.LASER, icon: "bxs-magic-wand", title: "Laser (K)", key: "K" },
+    { tool: TOOLS2.ERASER, icon: "bxs-eraser", title: "Eraser (E)", key: "E" }
+    // AI tool entry removed while the assistant is coming-soon.
+    // Restore `{ tool: 'ai', icon: null, title: 'AI', isAI: true }` here
+    // when the modal becomes a real feature again.
+  ];
+}
 function Toolbar() {
   const activeTool = useSketchStore_default((s) => s.activeTool);
   const setActiveTool = useSketchStore_default((s) => s.setActiveTool);
@@ -669,7 +673,7 @@ function Toolbar() {
   const toolLock = useSketchStore_default((s) => s.toolLock);
   const toggleToolLock = useSketchStore_default((s) => s.toggleToolLock);
   const toggleAIModal = useUIStore_default((s) => s.toggleAIModal);
-  const items = viewMode ? VIEW_MODE_ITEMS : TOOL_ITEMS;
+  const items = viewMode ? getViewModeItems() : getToolItems();
   return /* @__PURE__ */ jsxs2(Fragment, { children: [
     /* @__PURE__ */ jsxs2("div", { className: `absolute left-2.5 top-1/2 -translate-y-1/2 w-[46px] rounded-xl bg-surface z-[1000] flex flex-col items-center py-1.5 gap-0.5 font-[lixFont] max-h-[calc(100vh-120px)] overflow-y-auto no-scrollbar`, children: [
       !viewMode && /* @__PURE__ */ jsxs2(Fragment, { children: [

@@ -3,11 +3,16 @@
 import useSketchStore, { TOOLS } from '../store/useSketchStore'
 import useUIStore from '../store/useUIStore'
 
-const VIEW_MODE_ITEMS = [
-  { tool: TOOLS.PAN, icon: 'bxs-hand', title: 'Pan (H)', key: 'H' },
-]
+// Items are built lazily inside the component body so esbuild's lazy ESM
+// wrapper can't evaluate them before the store module finishes init.
+function getViewModeItems() {
+  return [
+    { tool: TOOLS.PAN, icon: 'bxs-hand', title: 'Pan (H)', key: 'H' },
+  ]
+}
 
-const TOOL_ITEMS = [
+function getToolItems() {
+  return [
   { tool: TOOLS.PAN, icon: 'bxs-hand', title: 'Pan (H)', key: 'H' },
   { tool: TOOLS.SELECT, icon: 'bxs-pointer', title: 'Select (V)', key: 'V' },
   'spacer',
@@ -26,7 +31,8 @@ const TOOL_ITEMS = [
   // AI tool entry removed while the assistant is coming-soon.
   // Restore `{ tool: 'ai', icon: null, title: 'AI', isAI: true }` here
   // when the modal becomes a real feature again.
-]
+  ]
+}
 
 export default function Toolbar() {
   const activeTool = useSketchStore((s) => s.activeTool)
@@ -36,7 +42,7 @@ export default function Toolbar() {
   const toggleToolLock = useSketchStore((s) => s.toggleToolLock)
   const toggleAIModal = useUIStore((s) => s.toggleAIModal)
 
-  const items = viewMode ? VIEW_MODE_ITEMS : TOOL_ITEMS
+  const items = viewMode ? getViewModeItems() : getToolItems()
 
   return (
     <>

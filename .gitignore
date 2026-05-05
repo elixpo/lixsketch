@@ -12,3 +12,6 @@ plans/
 *.lixsketch
 # SOPS: unencrypted local env
 .env.local
+dist/
+build
+*.tgz

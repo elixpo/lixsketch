@@ -1,8 +1,7 @@
 import { build } from 'esbuild';
-import { copyFileSync, mkdirSync, readdirSync, statSync, existsSync, rmSync } from 'fs';
+import { mkdirSync, existsSync, rmSync } from 'fs';
 import { join, resolve } from 'path';
 
-const root = resolve('.');
 const src = resolve('src');
 const dist = resolve('dist');
 
@@ -23,12 +22,17 @@ const EXTERNAL = [
   'perfect-freehand',
 ];
 
-// ── React subpath (ESM) ───────────────────────────────────────────────
+// ── React subpath (ESM with code splitting) ───────────────────────────
+// SketchEngine uses dynamic import() to load shape/tool modules AFTER
+// setting up the engine's window globals (rough, svg, etc.). Code
+// splitting keeps those imports asynchronous at runtime so the shape
+// modules don't evaluate before init() has wired the globals up.
 await build({
   entryPoints: ['src/react/index.js'],
   bundle: true,
   format: 'esm',
-  outfile: 'dist/react/index.js',
+  outdir: 'dist/react',
+  splitting: true,
   jsx: 'automatic',
   loader: { '.js': 'jsx', '.jsx': 'jsx' },
   target: 'es2020',
@@ -38,22 +42,6 @@ await build({
   sourcemap: true,
   treeShaking: true,
   banner: { js: '"use client";' },
-});
-
-// ── React subpath (CJS) ───────────────────────────────────────────────
-await build({
-  entryPoints: ['src/react/index.js'],
-  bundle: true,
-  format: 'cjs',
-  outfile: 'dist/react/index.cjs',
-  jsx: 'automatic',
-  loader: { '.js': 'jsx', '.jsx': 'jsx' },
-  target: 'es2020',
-  platform: 'browser',
-  external: EXTERNAL,
-  minify: false,
-  sourcemap: true,
-  treeShaking: true,
 });
 
 // ── Bundle the React subpath's CSS into a single file ─────────────────
@@ -73,4 +61,4 @@ await build({
   minify: false,
 });
 
-console.log('✓ Built React subpath (ESM + CJS) and bundled CSS to dist/react/');
+console.log('✓ Built React subpath (ESM, code-split) and bundled CSS to dist/react/');

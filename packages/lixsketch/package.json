@@ -7,8 +7,7 @@
   "exports": {
     ".": "./src/index.js",
     "./react": {
-      "import": "./dist/react/index.js",
-      "require": "./dist/react/index.cjs"
+      "import": "./dist/react/index.js"
     },
     "./react/styles": {
       "style": "./dist/react/styles.css",

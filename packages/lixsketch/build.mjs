@@ -57,8 +57,12 @@ await build({
     '.woff': 'file',
     '.woff2': 'file',
     '.ttf': 'file',
+    '.eot': 'file',
+    '.otf': 'file',
     '.svg': 'file',
     '.png': 'file',
+    '.jpg': 'file',
+    '.gif': 'file',
   },
   minify: false,
 });

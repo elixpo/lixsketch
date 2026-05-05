@@ -1,22 +1,40 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { SketchEngine } from '../SketchEngine.js';
 import { saveScene, loadScene } from '../core/SceneSerializer.js';
-import { installEngineShortcuts, TOOLS } from '../index.js';
 import { compressImage } from '../utils/imageCompressor.js';
-import Toolbar from './Toolbar.jsx';
+
+import useSketchStore, { TOOLS } from './store/useSketchStore.js';
+import SVGCanvas from './components/canvas/SVGCanvas.jsx';
+import Toolbar from './components/Toolbar.jsx';
+import RectangleSidebar from './components/sidebars/RectangleSidebar.jsx';
+import CircleSidebar from './components/sidebars/CircleSidebar.jsx';
+import LineSidebar from './components/sidebars/LineSidebar.jsx';
+import ArrowSidebar from './components/sidebars/ArrowSidebar.jsx';
+import PaintbrushSidebar from './components/sidebars/PaintbrushSidebar.jsx';
+import TextSidebar from './components/sidebars/TextSidebar.jsx';
+import FrameSidebar from './components/sidebars/FrameSidebar.jsx';
+import IconSidebar from './components/sidebars/IconSidebar.jsx';
+import ImageSidebar from './components/sidebars/ImageSidebar.jsx';
+import MultiSelectActions from './components/canvas/MultiSelectActions.jsx';
+import ContextMenu from './components/canvas/ContextMenu.jsx';
+import FindBar from './components/canvas/FindBar.jsx';
+import ImageSourcePicker from './components/canvas/ImageSourcePicker.jsx';
+import CanvasLoadingOverlay from './components/canvas/CanvasLoadingOverlay.jsx';
+import ShortcutsModal from './components/modals/ShortcutsModal.jsx';
+import CommandPalette from './components/modals/CommandPalette.jsx';
+import ExportImageModal from './components/modals/ExportImageModal.jsx';
+import HelpModal from './components/modals/HelpModal.jsx';
 
 const SAVE_DEBOUNCE_MS = 1500;
 
 /**
  * Self-contained canvas component. Mounts the SketchEngine on an internal
- * <svg>, renders a top-bar toolbar, wires keyboard shortcuts, and surfaces
- * scene changes + image uploads to the host.
+ * <svg>, renders the full toolbar + per-shape sidebars + offline modals,
+ * and surfaces scene changes + image uploads to the host.
  *
- * Phase 1 ships the engine + tool-switching toolbar. Per-shape sidebars
- * (rectangle styling, brush settings, etc.) and chrome modals (command
- * palette, export, find bar) come in subsequent phases.
+ * Offline-first: no cloud sync, AI, or auth code paths reach this build.
+ * The host owns persistence and image upload via the two callbacks.
  */
 export default function LixSketchCanvas({
   initialScene = null,
@@ -27,90 +45,46 @@ export default function LixSketchCanvas({
   style = null,
 }) {
   const wrapperRef = useRef(null);
-  const svgRef = useRef(null);
-  const engineRef = useRef(null);
   const lastSceneJsonRef = useRef('');
   const debounceRef = useRef(null);
+  const [bootstrapped, setBootstrapped] = useState(false);
 
-  const [activeTool, setActiveToolState] = useState(TOOLS.SELECT);
-  const [ready, setReady] = useState(false);
-
-  // ── Engine bootstrap ────────────────────────────────────────────────
+  // Re-route engine image uploads through the host before any user action.
   useEffect(() => {
-    if (!svgRef.current) return;
+    installImageUploadBridge(onUploadImage);
+  }, [onUploadImage]);
+
+  // Apply initialScene once the engine reports ready (via window.__sketchEngine).
+  useEffect(() => {
+    if (!initialScene || bootstrapped) return;
     let cancelled = false;
-    let uninstallShortcuts = null;
-
-    (async () => {
-      const svg = svgRef.current;
-      svg.setAttribute('viewBox', `0 0 ${svg.clientWidth || window.innerWidth} ${svg.clientHeight || window.innerHeight}`);
-
-      const engine = new SketchEngine(svg);
-      await engine.init();
-      if (cancelled) { engine.cleanup?.(); return; }
-
-      engineRef.current = engine;
-      window.__sketchEngine = engine;
-
-      // Wire image uploads to the host BEFORE the user can drop anything in.
-      installImageUploadBridge(onUploadImage);
-
-      // Apply initial scene if given.
-      if (initialScene) {
-        try {
-          const data = typeof initialScene === 'string' ? JSON.parse(initialScene) : initialScene;
-          if (data && data.format === 'lixsketch') {
-            loadScene(data);
-            lastSceneJsonRef.current = JSON.stringify(data);
-          }
-        } catch (err) {
-          console.warn('[LixSketchCanvas] initialScene load failed:', err);
-        }
+    function tryLoad() {
+      if (cancelled) return;
+      const serializer = window.__sceneSerializer;
+      if (!serializer) {
+        setTimeout(tryLoad, 200);
+        return;
       }
+      try {
+        const data = typeof initialScene === 'string' ? JSON.parse(initialScene) : initialScene;
+        if (data && data.format === 'lixsketch') {
+          loadScene(data);
+          lastSceneJsonRef.current = JSON.stringify(data);
+        }
+      } catch (err) {
+        console.warn('[LixSketchCanvas] initialScene load failed:', err);
+      }
+      setBootstrapped(true);
+    }
+    tryLoad();
+    return () => { cancelled = true; };
+  }, [initialScene, bootstrapped]);
 
-      // Force select tool so the user can interact immediately.
-      engine.setActiveTool(TOOLS.SELECT);
-      setActiveToolState(TOOLS.SELECT);
-
-      uninstallShortcuts = installEngineShortcuts(engine, {
-        // Mirror tool switches into local state so the toolbar UI stays in sync.
-        setActiveTool: (tool) => {
-          engine.setActiveTool(tool);
-          setActiveToolState(tool);
-        },
-        skipWhen: (e) => !!e.target?.closest?.('[data-shortcut-skip]'),
-      });
-
-      setReady(true);
-    })().catch((err) => console.error('[LixSketchCanvas] init failed:', err));
-
-    return () => {
-      cancelled = true;
-      if (uninstallShortcuts) uninstallShortcuts();
-      if (debounceRef.current) clearTimeout(debounceRef.current);
-      if (engineRef.current?.cleanup) engineRef.current.cleanup();
-      engineRef.current = null;
-      if (window.__sketchEngine) delete window.__sketchEngine;
-    };
-  // initialScene / onUploadImage intentionally not in deps — engine boots once.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // Keep onUploadImage current without re-mounting the engine.
-  const onUploadImageRef = useRef(onUploadImage);
-  useEffect(() => { onUploadImageRef.current = onUploadImage; }, [onUploadImage]);
-
-  // Re-install the upload bridge whenever onUploadImage identity changes.
+  // Scene-change autosave — MutationObserver + mouseup, debounced.
   useEffect(() => {
-    if (!ready) return;
-    installImageUploadBridge((dataUrl) => onUploadImageRef.current?.(dataUrl));
-  }, [ready]);
-
-  // ── Scene-change autosave ───────────────────────────────────────────
-  useEffect(() => {
-    if (!ready || !onSceneChange) return;
-    const svg = svgRef.current;
-    if (!svg) return;
+    if (!onSceneChange) return;
+    let svg = null;
+    let observer = null;
 
     const flush = () => {
       try {
@@ -130,69 +104,83 @@ export default function LixSketchCanvas({
         console.warn('[LixSketchCanvas] save failed:', err);
       }
     };
-
     const debounced = () => {
       clearTimeout(debounceRef.current);
       debounceRef.current = setTimeout(flush, SAVE_DEBOUNCE_MS);
     };
 
-    const observer = new MutationObserver(debounced);
-    observer.observe(svg, { childList: true, subtree: true, attributes: true });
-    svg.addEventListener('mouseup', debounced);
+    function attach() {
+      svg = window.svg;
+      if (!svg) {
+        setTimeout(attach, 200);
+        return;
+      }
+      observer = new MutationObserver(debounced);
+      observer.observe(svg, { childList: true, subtree: true, attributes: true });
+      svg.addEventListener('mouseup', debounced);
+    }
+    attach();
     window.addEventListener('beforeunload', flush);
 
     return () => {
-      observer.disconnect();
-      svg.removeEventListener('mouseup', debounced);
+      if (observer) observer.disconnect();
+      if (svg) svg.removeEventListener('mouseup', debounced);
       window.removeEventListener('beforeunload', flush);
       clearTimeout(debounceRef.current);
     };
-  }, [ready, onSceneChange]);
-
-  // ── Toolbar handlers ────────────────────────────────────────────────
-  const handleSelectTool = useCallback((tool) => {
-    const engine = engineRef.current;
-    if (!engine) return;
-    engine.setActiveTool(tool);
-    setActiveToolState(tool);
-  }, []);
+  }, [onSceneChange]);
 
   return (
     <div
       ref={wrapperRef}
-      className={`lixsketch-canvas-root ${className}`}
+      className={`lixsketch-canvas-root canvas-mode ${className}`}
       style={style}
     >
-      <Toolbar
-        activeTool={activeTool}
-        onSelectTool={handleSelectTool}
-        onExit={onExit || undefined}
-      />
-      <svg
-        id="freehand-canvas"
-        ref={svgRef}
-        className="lixsketch-canvas-svg"
-        xmlns="http://www.w3.org/2000/svg"
-      />
-      {!ready && (
-        <div className="lixsketch-canvas-loading">
-          <div className="lixsketch-canvas-spinner" />
-        </div>
+      <SVGCanvas />
+      <Toolbar />
+      <RectangleSidebar />
+      <CircleSidebar />
+      <LineSidebar />
+      <ArrowSidebar />
+      <PaintbrushSidebar />
+      <TextSidebar />
+      <FrameSidebar />
+      <IconSidebar />
+      <ImageSidebar />
+      <MultiSelectActions />
+
+      {/* Offline modals — no cloud sync / AI / auth coupling. */}
+      <ShortcutsModal />
+      <CommandPalette />
+      <ExportImageModal />
+      <HelpModal />
+      <ContextMenu />
+      <FindBar />
+      <ImageSourcePicker />
+      <CanvasLoadingOverlay />
+
+      {onExit && (
+        <button
+          type="button"
+          onClick={onExit}
+          className="lixsketch-exit-btn"
+          aria-label="Exit canvas"
+          title="Exit canvas"
+        >
+          <i className="bx bx-x" />
+          <span>Exit</span>
+        </button>
       )}
     </div>
   );
 }
 
 // ── Image upload bridge ───────────────────────────────────────────────
-// The engine calls window.uploadImageToCloudinary when a user adds an image.
-// Replace that with a callback-driven version that compresses client-side
-// and hands the data URL to the host. Host does the network round-trip and
-// returns the final URL, which we write back onto the SVG <image>.
 function installImageUploadBridge(onUploadImage) {
   if (typeof window === 'undefined') return;
   if (!onUploadImage) {
-    // Offline mode (e.g. VS Code, npm consumer with no upload pipeline):
-    // leave the engine's compressed data-URL placement in place.
+    // Offline mode (no host upload pipeline): leave the engine's
+    // compressed-data-URL placement as the final state.
     window.uploadImageToCloudinary = async () => {};
     return;
   }

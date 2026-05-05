@@ -57,6 +57,7 @@
     "@elixpo/lixsketch": "workspace:*",
     "@mantine/core": "^8.3.11",
     "@mantine/hooks": "^8.3.11",
+    "boxicons": "^2.1.4",
     "framer-motion": "^12.35.2",
     "fuse.js": "^7.1.0",
     "highlight.js": "^11.11.1",

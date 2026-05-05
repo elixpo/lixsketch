@@ -140,3 +140,29 @@
 .lixsketch-canvas-root * {
   box-sizing: border-box;
 }
+
+.lixsketch-exit-btn {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 10000;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  background: rgba(20, 22, 28, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: rgba(230, 232, 236, 0.85);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  transition: background 0.12s, color 0.12s, border-color 0.12s;
+}
+.lixsketch-exit-btn:hover {
+  background: rgba(155, 123, 247, 0.12);
+  border-color: rgba(155, 123, 247, 0.3);
+  color: #b69aff;
+}
+.lixsketch-exit-btn .bx { font-size: 16px; }

@@ -457,7 +457,7 @@ function useSketchEngine(svgRef, ready = true) {
           setZoom: (zoom) => useSketchStore_default.setState({ zoom }),
           getState: () => useSketchStore_default.getState()
         };
-        const { SketchEngine } = await import("./SketchEngine-LZOBUGFH.js");
+        const { SketchEngine } = await import("./SketchEngine-6RWLN74B.js");
         if (cancelled) return;
         const engine = new SketchEngine(svgRef.current);
         await engine.init();
@@ -2478,6 +2478,13 @@ function FrameSidebar() {
 // src/react/components/sidebars/IconSidebar.jsx
 import { useState as useState11, useEffect as useEffect6, useCallback as useCallback9, useRef as useRef4 } from "react";
 import { jsx as jsx13, jsxs as jsxs13 } from "react/jsx-runtime";
+var DEFAULT_ICONS_ORIGIN = "https://sketch.elixpo.com";
+function getIconsBaseUrl() {
+  if (typeof window === "undefined") return "";
+  if (window.__lixsketchIconsOrigin) return window.__lixsketchIconsOrigin;
+  if (typeof location !== "undefined" && /sketch\.elixpo/.test(location.host)) return "";
+  return DEFAULT_ICONS_ORIGIN;
+}
 var iconResultCache = /* @__PURE__ */ new Map();
 var CATEGORIES = [
   { value: null, label: "All", icon: "bxs-grid-alt" },
@@ -2573,7 +2580,7 @@ function IconSidebar() {
     }
     setLoading(true);
     try {
-      const res = await fetch(`/api/icons/search?${cacheKey}`);
+      const res = await fetch(`${getIconsBaseUrl()}/api/icons/search?${cacheKey}`);
       if (res.ok) {
         const data = await res.json();
         const results = data.results || [];
@@ -2603,7 +2610,7 @@ function IconSidebar() {
       params.set("inline", "1");
       const key = params.toString();
       if (!iconResultCache.has(key)) {
-        fetch(`/api/icons/search?${key}`).then((r) => r.ok ? r.json() : null).then((data) => {
+        fetch(`${getIconsBaseUrl()}/api/icons/search?${key}`).then((r) => r.ok ? r.json() : null).then((data) => {
           if (data?.results) iconResultCache.set(key, data.results);
         }).catch(() => {
         });
@@ -2622,7 +2629,7 @@ function IconSidebar() {
     if (icon.svg) {
       place(icon.svg);
     } else {
-      fetch(`/icons/${encodeURIComponent(icon.filename)}`).then((r) => r.text()).then(place).catch(() => {
+      fetch(`${getIconsBaseUrl()}/api/icons/serve?name=${encodeURIComponent(icon.filename)}`).then((r) => r.text()).then(place).catch(() => {
       });
     }
   }, []);
@@ -4417,7 +4424,7 @@ var _saveScene = null;
 var _loadScene = null;
 async function ensureSceneSerializer() {
   if (_saveScene && _loadScene) return;
-  const m = await import("./SceneSerializer-DOR5BRUO.js");
+  const m = await import("./SceneSerializer-ESK6A5WB.js");
   _saveScene = m.saveScene;
   _loadScene = m.loadScene;
 }

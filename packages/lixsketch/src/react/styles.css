@@ -5,11 +5,15 @@
 @import 'boxicons/css/boxicons.min.css';
 
 /* Product CSS — toolbars + per-shape sidebars (copied from sketch.elixpo).
- * NOTE: canvasStroke.css is intentionally NOT bundled — it ships
- * destructive global selectors (`* { margin: 0 }`, `svg { width: 100vw }`)
- * that escape the canvas root and break the host page. SVGCanvas.jsx
- * styles its own <svg> element directly. */
-@import './styles/canvasTools.css';
+ *
+ * NOT bundled here:
+ *   - canvasStroke.css: ships destructive globals (`* { margin: 0 }`,
+ *     `svg { width: 100vw }`) that escape the canvas root and break the
+ *     host page. SVGCanvas.jsx styles its own <svg> directly.
+ *   - canvasTools.css: hardcodes sketch's dark palette for fixed-position
+ *     toolbars (`background: #232329`, etc.). The React Toolbar component
+ *     positions / styles itself via Tailwind utility classes, which pick
+ *     up the consumer's theme tokens — so we let those drive instead. */
 @import './styles/squareSidebar.css';
 @import './styles/circleSidebar.css';
 @import './styles/arrowSidebar.css';

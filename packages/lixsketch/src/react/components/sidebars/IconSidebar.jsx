@@ -4,6 +4,20 @@ import useSketchStore, { TOOLS } from '../../store/useSketchStore'
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useTranslation } from '../../hooks/useTranslation'
 
+// Origin of the icons API. When the package runs same-origin with
+// sketch.elixpo this stays empty (relative path). External hosts (e.g.
+// blogs.elixpo) point at the public sketch.elixpo deploy via
+//   window.__lixsketchIconsOrigin = 'https://sketch.elixpo.com'
+// The endpoints are CORS-enabled so any origin can fetch.
+const DEFAULT_ICONS_ORIGIN = 'https://sketch.elixpo.com';
+function getIconsBaseUrl() {
+  if (typeof window === 'undefined') return '';
+  if (window.__lixsketchIconsOrigin) return window.__lixsketchIconsOrigin;
+  // Same-origin if the host is sketch.elixpo itself; otherwise default to prod.
+  if (typeof location !== 'undefined' && /sketch\.elixpo/.test(location.host)) return '';
+  return DEFAULT_ICONS_ORIGIN;
+}
+
 const iconResultCache = new Map()
 
 const CATEGORIES = [
@@ -115,7 +129,7 @@ export default function IconSidebar() {
 
     setLoading(true)
     try {
-      const res = await fetch(`/api/icons/search?${cacheKey}`)
+      const res = await fetch(`${getIconsBaseUrl()}/api/icons/search?${cacheKey}`)
       if (res.ok) {
         const data = await res.json()
         const results = data.results || []
@@ -150,7 +164,7 @@ export default function IconSidebar() {
       params.set('inline', '1')
       const key = params.toString()
       if (!iconResultCache.has(key)) {
-        fetch(`/api/icons/search?${key}`)
+        fetch(`${getIconsBaseUrl()}/api/icons/search?${key}`)
           .then((r) => r.ok ? r.json() : null)
           .then((data) => { if (data?.results) iconResultCache.set(key, data.results) })
           .catch(() => {})
@@ -170,7 +184,7 @@ export default function IconSidebar() {
     if (icon.svg) {
       place(icon.svg)
     } else {
-      fetch(`/icons/${encodeURIComponent(icon.filename)}`)
+      fetch(`${getIconsBaseUrl()}/api/icons/serve?name=${encodeURIComponent(icon.filename)}`)
         .then((r) => r.text())
         .then(place)
         .catch(() => {})

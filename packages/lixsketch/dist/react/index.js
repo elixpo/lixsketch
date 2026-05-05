@@ -836,9 +836,73 @@ function Footer() {
 import { useState as useState2 } from "react";
 
 // src/react/hooks/useTranslation.js
+var OVERRIDES = {
+  "sidebar.sectionHeader.stroke": "Stroke",
+  "sidebar.sectionHeader.fill": "Fill",
+  "sidebar.sectionHeader.background": "Background",
+  "sidebar.sectionHeader.backgroundImage": "Background image",
+  "sidebar.sectionHeader.width": "Width",
+  "sidebar.sectionHeader.edge": "Edge style",
+  "sidebar.sectionHeader.head": "Arrow head",
+  "sidebar.sectionHeader.type": "Type",
+  "sidebar.sectionHeader.name": "Name",
+  "sidebar.sectionHeader.color": "Color",
+  "sidebar.sectionHeader.fit": "Fit",
+  "sidebar.sectionHeader.roughness": "Roughness",
+  "sidebar.sectionHeader.sloppiness": "Sloppiness",
+  "sidebar.sectionHeader.taper": "Taper",
+  "menu.canvasBackground": "Canvas background",
+  "menu.canvasProperties": "Canvas properties",
+  "menu.exportImage": "Export as image",
+  "menu.findText": "Find text",
+  "menu.quickSave": "Quick save",
+  "menu.resetCanvas": "Reset canvas",
+  "menu.saveShare": "Save & share",
+  "menu.showGrid": "Show grid",
+  "menu.signIn": "Sign in",
+  "menu.signOut": "Sign out",
+  "prefs.toolLock": "Tool lock",
+  "prefs.toggleGrid": "Toggle grid",
+  "prefs.snapObjects": "Snap to objects",
+  "prefs.snapMidpoints": "Snap to midpoints",
+  "prefs.zenMode": "Zen mode",
+  "prefs.viewMode": "View mode",
+  "prefs.canvasShapeProps": "Canvas & shape properties",
+  "prefs.arrowBinding": "Arrow binding",
+  "prefs.language": "Language",
+  "sidebar.bringForward": "Bring forward",
+  "sidebar.bringToFront": "Bring to front",
+  "sidebar.sendBackward": "Send backward",
+  "sidebar.sendToBack": "Send to back",
+  "sidebar.fillColor": "Fill color",
+  "sidebar.strokeColor": "Stroke color",
+  "sidebar.codeMode": "Code mode",
+  "sidebar.renderText": "Render text",
+  "sidebar.newLine": "New line"
+};
+function camelToWords(s) {
+  return s.replace(/([a-z])([A-Z])/g, "$1 $2").replace(/-/g, " ");
+}
+function autoFormat(key) {
+  const last = key.split(".").pop() || key;
+  const words = camelToWords(last);
+  return words.charAt(0).toUpperCase() + words.slice(1);
+}
+function tImpl(key, fallbackOrOpts) {
+  if (typeof key !== "string") return fallbackOrOpts ?? "";
+  let fallback = "";
+  if (typeof fallbackOrOpts === "string") {
+    fallback = fallbackOrOpts;
+  } else if (fallbackOrOpts && typeof fallbackOrOpts === "object") {
+    fallback = fallbackOrOpts.defaultValue || "";
+  }
+  if (fallback) return fallback;
+  if (OVERRIDES[key]) return OVERRIDES[key];
+  return autoFormat(key);
+}
 function useTranslation() {
   return {
-    t: (key, fallback) => fallback ?? key,
+    t: tImpl,
     locale: "en",
     setLocale: () => {
     }
@@ -1398,7 +1462,7 @@ function LayerControls() {
 // src/react/components/sidebars/RectangleSidebar.jsx
 import { useState as useState4, useCallback as useCallback2 } from "react";
 import { jsx as jsx6, jsxs as jsxs6 } from "react/jsx-runtime";
-var STROKE_COLORS = ["#fff", "#FF8383", "#3A994C", "#56A2E8", "#FFD700", "#FF69B4", "#A855F7"];
+var STROKE_COLORS = ["#1a1a20", "#ffffff", "#FF8383", "#3A994C", "#56A2E8", "#FFD700", "#FF69B4", "#A855F7"];
 var BG_COLORS = ["transparent", "#f0f0f0", "#ffcccb", "#90ee90", "#add8e6", "#FFE4B5", "#DDA0DD", "#2d2d2d"];
 var FILLS = [
   { value: "hachure", label: "sidebar.fill.hachure" },
@@ -1533,7 +1597,7 @@ function RectangleSidebar() {
 // src/react/components/sidebars/CircleSidebar.jsx
 import { useState as useState5, useCallback as useCallback3 } from "react";
 import { jsx as jsx7, jsxs as jsxs7 } from "react/jsx-runtime";
-var STROKE_COLORS2 = ["#fff", "#FF8383", "#3A994C", "#56A2E8", "#FFD700", "#FF69B4", "#A855F7"];
+var STROKE_COLORS2 = ["#1a1a20", "#ffffff", "#FF8383", "#3A994C", "#56A2E8", "#FFD700", "#FF69B4", "#A855F7"];
 var BG_COLORS2 = ["transparent", "#f0f0f0", "#ffcccb", "#90ee90", "#add8e6", "#FFE4B5", "#DDA0DD", "#2d2d2d"];
 var FILLS2 = [
   { value: "hachure", label: "sidebar.fill.hachure" },
@@ -1660,7 +1724,7 @@ function CircleSidebar() {
 // src/react/components/sidebars/LineSidebar.jsx
 import { useState as useState6, useCallback as useCallback4 } from "react";
 import { jsx as jsx8, jsxs as jsxs8 } from "react/jsx-runtime";
-var STROKE_COLORS3 = ["#fff", "#FF8383", "#3A994C", "#56A2E8", "#FFD700", "#FF69B4", "#A855F7"];
+var STROKE_COLORS3 = ["#1a1a20", "#ffffff", "#FF8383", "#3A994C", "#56A2E8", "#FFD700", "#FF69B4", "#A855F7"];
 function ColorGrid3({ colors, selected, onSelect }) {
   return /* @__PURE__ */ jsx8("div", { className: "grid grid-cols-4 gap-1.5", children: colors.map((c) => /* @__PURE__ */ jsx8(
     "button",
@@ -1777,7 +1841,7 @@ function LineSidebar() {
 // src/react/components/sidebars/ArrowSidebar.jsx
 import { useState as useState7, useCallback as useCallback5 } from "react";
 import { Fragment as Fragment3, jsx as jsx9, jsxs as jsxs9 } from "react/jsx-runtime";
-var STROKE_COLORS4 = ["#fff", "#FF8383", "#3A994C", "#56A2E8", "#FFD700", "#FF69B4", "#A855F7"];
+var STROKE_COLORS4 = ["#1a1a20", "#ffffff", "#FF8383", "#3A994C", "#56A2E8", "#FFD700", "#FF69B4", "#A855F7"];
 var HEAD_STYLES = [
   { value: "default", svg: '<svg width="22" height="12" viewBox="0 0 24 14"><line x1="2" y1="7" x2="16" y2="7" stroke="#fff" stroke-width="2"/><polyline points="13,2 19,7 13,12" fill="none" stroke="#fff" stroke-width="2" stroke-linejoin="round"/></svg>' },
   { value: "square", svg: '<svg width="22" height="12" viewBox="0 0 24 14"><line x1="2" y1="7" x2="14" y2="7" stroke="#fff" stroke-width="2"/><rect x="14" y="3" width="6" height="8" fill="none" stroke="#fff" stroke-width="1.5"/></svg>' },
@@ -1933,7 +1997,7 @@ function ArrowSidebar() {
 // src/react/components/sidebars/PaintbrushSidebar.jsx
 import { useState as useState8, useCallback as useCallback6 } from "react";
 import { jsx as jsx10, jsxs as jsxs10 } from "react/jsx-runtime";
-var STROKE_COLORS5 = ["#fff", "#FF8383", "#3A994C", "#56A2E8", "#FFD700", "#FF69B4", "#A855F7"];
+var STROKE_COLORS5 = ["#1a1a20", "#ffffff", "#FF8383", "#3A994C", "#56A2E8", "#FFD700", "#FF69B4", "#A855F7"];
 var TAPER_MAP = { uniform: 0, pen: 0.5, brush: 0.8 };
 function ColorGrid5({ colors, selected, onSelect }) {
   return /* @__PURE__ */ jsx10("div", { className: "grid grid-cols-4 gap-1.5", children: colors.map((c) => /* @__PURE__ */ jsx10(
@@ -2071,7 +2135,7 @@ function PaintbrushSidebar() {
 // src/react/components/sidebars/TextSidebar.jsx
 import { useState as useState9, useCallback as useCallback7, useEffect as useEffect4 } from "react";
 import { Fragment as Fragment4, jsx as jsx11, jsxs as jsxs11 } from "react/jsx-runtime";
-var TEXT_COLORS = ["#fff", "#FF8383", "#3A994C", "#56A2E8", "#FFD700", "#FF69B4", "#A855F7"];
+var TEXT_COLORS = ["#1a1a20", "#ffffff", "#FF8383", "#3A994C", "#56A2E8", "#FFD700", "#FF69B4", "#A855F7"];
 var FONTS = [
   { value: "lixFont", label: "Lix" },
   { value: "lixCode", label: "Code" },
@@ -4445,6 +4509,14 @@ function LixSketchCanvas({
     installImageUploadBridge(onUploadImage);
   }, [onUploadImage]);
   useEffect13(() => {
+    if (typeof document === "undefined" || !document.fonts?.load) return;
+    Promise.allSettled([
+      document.fonts.load("1em lixFont"),
+      document.fonts.load("1em lixCode")
+    ]).catch(() => {
+    });
+  }, []);
+  useEffect13(() => {
     if (!initialScene || bootstrapped) return;
     let cancelled = false;
     async function tryLoad() {
@@ -4584,6 +4656,38 @@ function LixSketchCanvas({
         /* @__PURE__ */ jsx24(FindBar, {}),
         /* @__PURE__ */ jsx24(ImageSourcePicker, {}),
         /* @__PURE__ */ jsx24(CanvasLoadingOverlay, {}),
+        /* @__PURE__ */ jsxs24("div", { className: "lixsketch-floating-header absolute top-2 right-2 z-[1000] flex items-center gap-1.5 font-[lixFont]", children: [
+          /* @__PURE__ */ jsx24(
+            "button",
+            {
+              type: "button",
+              title: "Help (?)",
+              onClick: () => useUIStore_default.getState().toggleHelpModal?.(),
+              className: "w-9 h-9 flex items-center justify-center rounded-lg bg-surface border border-border-light text-text-muted hover:text-text-primary hover:bg-surface-hover transition-colors",
+              children: /* @__PURE__ */ jsx24("i", { className: "bx bx-help-circle text-base" })
+            }
+          ),
+          /* @__PURE__ */ jsx24(
+            "button",
+            {
+              type: "button",
+              title: "Shortcuts (Ctrl+/)",
+              onClick: () => useUIStore_default.getState().toggleShortcutsModal?.(),
+              className: "w-9 h-9 flex items-center justify-center rounded-lg bg-surface border border-border-light text-text-muted hover:text-text-primary hover:bg-surface-hover transition-colors",
+              children: /* @__PURE__ */ jsx24("i", { className: "bx bx-command text-base" })
+            }
+          ),
+          /* @__PURE__ */ jsx24(
+            "button",
+            {
+              type: "button",
+              title: "Menu",
+              onClick: () => useUIStore_default.getState().toggleMenu?.(),
+              className: "w-9 h-9 flex items-center justify-center rounded-lg bg-surface border border-border-light text-text-muted hover:text-text-primary hover:bg-surface-hover transition-colors",
+              children: /* @__PURE__ */ jsx24("i", { className: "bx bx-menu text-base" })
+            }
+          )
+        ] }),
         /* @__PURE__ */ jsxs24(
           "div",
           {

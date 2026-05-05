@@ -64,6 +64,18 @@ export default function LixSketchCanvas({
     installImageUploadBridge(onUploadImage);
   }, [onUploadImage]);
 
+  // Eager-load lixFont / lixCode so the textarea overlay used while a user
+  // types into a text shape uses the same font as the final rendered text.
+  // Without this, the first text edit shows in a system font and snaps to
+  // lixFont only after the SVG re-renders.
+  useEffect(() => {
+    if (typeof document === 'undefined' || !document.fonts?.load) return;
+    Promise.allSettled([
+      document.fonts.load('1em lixFont'),
+      document.fonts.load('1em lixCode'),
+    ]).catch(() => {});
+  }, []);
+
   // Apply initialScene once the engine reports ready (via window.__sketchEngine).
   useEffect(() => {
     if (!initialScene || bootstrapped) return;
@@ -213,6 +225,36 @@ export default function LixSketchCanvas({
       <FindBar />
       <ImageSourcePicker />
       <CanvasLoadingOverlay />
+
+      {/* Floating header — menu trigger + help / shortcuts. Hosts can
+          hide this strip by setting CSS `.lixsketch-floating-header { display: none }`
+          if they render their own chrome (blogs.elixpo's CanvasSubpage does). */}
+      <div className="lixsketch-floating-header absolute top-2 right-2 z-[1000] flex items-center gap-1.5 font-[lixFont]">
+        <button
+          type="button"
+          title="Help (?)"
+          onClick={() => useUIStore.getState().toggleHelpModal?.()}
+          className="w-9 h-9 flex items-center justify-center rounded-lg bg-surface border border-border-light text-text-muted hover:text-text-primary hover:bg-surface-hover transition-colors"
+        >
+          <i className="bx bx-help-circle text-base" />
+        </button>
+        <button
+          type="button"
+          title="Shortcuts (Ctrl+/)"
+          onClick={() => useUIStore.getState().toggleShortcutsModal?.()}
+          className="w-9 h-9 flex items-center justify-center rounded-lg bg-surface border border-border-light text-text-muted hover:text-text-primary hover:bg-surface-hover transition-colors"
+        >
+          <i className="bx bx-command text-base" />
+        </button>
+        <button
+          type="button"
+          title="Menu"
+          onClick={() => useUIStore.getState().toggleMenu?.()}
+          className="w-9 h-9 flex items-center justify-center rounded-lg bg-surface border border-border-light text-text-muted hover:text-text-primary hover:bg-surface-hover transition-colors"
+        >
+          <i className="bx bx-menu text-base" />
+        </button>
+      </div>
 
       {/* Save toast — same look as the standalone product. Hidden by
           default; Ctrl+S flips the `hidden` class on/off. */}

@@ -3,7 +3,7 @@ import {
   SHORTCUT_MAP,
   TOOLS,
   installEngineShortcuts
-} from "./chunk-KGLFQ6EX.js";
+} from "./chunk-M5QSN7GX.js";
 import {
   ALLOWED_IMAGE_MIME_TYPES,
   IMAGE_ACCEPT_ATTR,
@@ -286,7 +286,7 @@ function useSketchEngine(svgRef, ready = true) {
           setZoom: (zoom) => useSketchStore_default.setState({ zoom }),
           getState: () => useSketchStore_default.getState()
         };
-        const { SketchEngine } = await import("./.-VVNWCTZB.js");
+        const { SketchEngine } = await import("./.-JELL4EXO.js");
         if (cancelled) return;
         const engine = new SketchEngine(svgRef.current);
         await engine.init();

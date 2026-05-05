@@ -4,6 +4,16 @@
 
 @import 'boxicons/css/boxicons.min.css';
 
+/* Product CSS — toolbars + per-shape sidebars (copied from sketch.elixpo). */
+@import './styles/canvasTools.css';
+@import './styles/canvasStroke.css';
+@import './styles/squareSidebar.css';
+@import './styles/circleSidebar.css';
+@import './styles/arrowSidebar.css';
+@import './styles/lineSidebar.css';
+@import './styles/paintbrushSidebar.css';
+@import './styles/writeText.css';
+
 .lixsketch-canvas-root {
   position: relative;
   width: 100%;

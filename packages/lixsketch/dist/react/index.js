@@ -1,39 +1,23 @@
 "use client";
 import {
   SHORTCUT_MAP,
-  TOOLS,
   installEngineShortcuts
-} from "./chunk-M5QSN7GX.js";
+} from "./chunk-GN7OSWJG.js";
 import {
+  ALLOWED_IMAGE_EXTENSIONS,
   ALLOWED_IMAGE_MIME_TYPES,
   IMAGE_ACCEPT_ATTR,
   compressImage,
   isAllowedImage,
   isAllowedImageDataUrl
 } from "./chunk-DNAG7ML6.js";
-import {
-  loadScene,
-  saveScene
-} from "./chunk-SAFUTOWQ.js";
-import "./chunk-A4AQHY3T.js";
-import "./chunk-QXFBG7OM.js";
-import "./chunk-7TZSIR6V.js";
-import "./chunk-XON7IYMZ.js";
-import "./chunk-3QHZH6SO.js";
-import "./chunk-T6ZVV5ZO.js";
-import "./chunk-AJAZC37E.js";
-import "./chunk-56SJRGL3.js";
-import "./chunk-6B3YSJ5C.js";
-import "./chunk-CRAY3B7U.js";
-import "./chunk-XISEAGBV.js";
-import "./chunk-YKJUBFHE.js";
 
 // src/react/LixSketchCanvas.jsx
 import { useCallback as useCallback14, useEffect as useEffect13, useRef as useRef10, useState as useState18 } from "react";
 
 // src/react/store/useSketchStore.js
 import { create } from "zustand";
-var TOOLS2 = {
+var TOOLS = {
   SELECT: "select",
   PAN: "pan",
   RECTANGLE: "rectangle",
@@ -50,63 +34,63 @@ var TOOLS2 = {
   ICON: "icon"
 };
 var TOOL_CURSORS = {
-  [TOOLS2.SELECT]: "default",
-  [TOOLS2.PAN]: "grab",
-  [TOOLS2.RECTANGLE]: "crosshair",
-  [TOOLS2.CIRCLE]: "crosshair",
-  [TOOLS2.LINE]: "crosshair",
-  [TOOLS2.ARROW]: "crosshair",
-  [TOOLS2.FREEHAND]: "crosshair",
-  [TOOLS2.TEXT]: "text",
-  [TOOLS2.CODE]: "text",
-  [TOOLS2.LASER]: "crosshair",
-  [TOOLS2.IMAGE]: "crosshair",
-  [TOOLS2.FRAME]: "crosshair",
-  [TOOLS2.ICON]: "crosshair"
+  [TOOLS.SELECT]: "default",
+  [TOOLS.PAN]: "grab",
+  [TOOLS.RECTANGLE]: "crosshair",
+  [TOOLS.CIRCLE]: "crosshair",
+  [TOOLS.LINE]: "crosshair",
+  [TOOLS.ARROW]: "crosshair",
+  [TOOLS.FREEHAND]: "crosshair",
+  [TOOLS.TEXT]: "text",
+  [TOOLS.CODE]: "text",
+  [TOOLS.LASER]: "crosshair",
+  [TOOLS.IMAGE]: "crosshair",
+  [TOOLS.FRAME]: "crosshair",
+  [TOOLS.ICON]: "crosshair"
 };
 var TOOL_SIDEBARS = {
-  [TOOLS2.FREEHAND]: "paintbrush",
-  [TOOLS2.RECTANGLE]: "rectangle",
-  [TOOLS2.CIRCLE]: "circle",
-  [TOOLS2.LINE]: "line",
-  [TOOLS2.ARROW]: "arrow",
-  [TOOLS2.TEXT]: "text",
-  [TOOLS2.CODE]: "text",
-  [TOOLS2.FRAME]: "frame"
+  [TOOLS.FREEHAND]: "paintbrush",
+  [TOOLS.RECTANGLE]: "rectangle",
+  [TOOLS.CIRCLE]: "circle",
+  [TOOLS.LINE]: "line",
+  [TOOLS.ARROW]: "arrow",
+  [TOOLS.TEXT]: "text",
+  [TOOLS.CODE]: "text",
+  [TOOLS.FRAME]: "frame"
 };
 var SHORTCUT_MAP2 = {
-  h: TOOLS2.PAN,
-  v: TOOLS2.SELECT,
-  1: TOOLS2.SELECT,
-  r: TOOLS2.RECTANGLE,
-  2: TOOLS2.RECTANGLE,
-  o: TOOLS2.CIRCLE,
-  4: TOOLS2.CIRCLE,
-  a: TOOLS2.ARROW,
-  5: TOOLS2.ARROW,
-  l: TOOLS2.LINE,
-  6: TOOLS2.LINE,
-  p: TOOLS2.FREEHAND,
-  7: TOOLS2.FREEHAND,
-  t: TOOLS2.TEXT,
-  8: TOOLS2.TEXT,
-  9: TOOLS2.IMAGE,
-  e: TOOLS2.ERASER,
-  0: TOOLS2.ERASER,
-  i: TOOLS2.ICON,
-  f: TOOLS2.FRAME,
-  k: TOOLS2.LASER
+  h: TOOLS.PAN,
+  v: TOOLS.SELECT,
+  1: TOOLS.SELECT,
+  r: TOOLS.RECTANGLE,
+  2: TOOLS.RECTANGLE,
+  o: TOOLS.CIRCLE,
+  4: TOOLS.CIRCLE,
+  a: TOOLS.ARROW,
+  5: TOOLS.ARROW,
+  l: TOOLS.LINE,
+  6: TOOLS.LINE,
+  p: TOOLS.FREEHAND,
+  7: TOOLS.FREEHAND,
+  t: TOOLS.TEXT,
+  8: TOOLS.TEXT,
+  9: TOOLS.IMAGE,
+  e: TOOLS.ERASER,
+  0: TOOLS.ERASER,
+  i: TOOLS.ICON,
+  f: TOOLS.FRAME,
+  k: TOOLS.LASER
 };
 var useSketchStore = create((set, get) => ({
   // --- Active tool (replaces 15 boolean flags) ---
-  activeTool: TOOLS2.SELECT,
+  activeTool: TOOLS.SELECT,
   activeSidebar: null,
   // which sidebar to show
   selectedShapeSidebar: null,
   // sidebar shown when a shape is selected (overrides activeSidebar)
   setActiveTool: (tool, { afterDraw } = {}) => {
-    if (get().viewMode && tool !== TOOLS2.PAN) return;
-    if (afterDraw && tool === TOOLS2.SELECT && get().toolLock) return;
+    if (get().viewMode && tool !== TOOLS.PAN) return;
+    if (afterDraw && tool === TOOLS.SELECT && get().toolLock) return;
     set({
       activeTool: tool,
       activeSidebar: TOOL_SIDEBARS[tool] || null,
@@ -118,10 +102,10 @@ var useSketchStore = create((set, get) => ({
   clearSelectedShapeSidebar: () => set({ selectedShapeSidebar: null }),
   getCursor: () => {
     const tool = get().activeTool;
-    if (tool === TOOLS2.ERASER) {
+    if (tool === TOOLS.ERASER) {
       return `url("data:image/svg+xml;base64,${typeof btoa !== "undefined" ? btoa('<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20"><circle cx="10" cy="10" r="7" fill="#222" stroke="white" stroke-width="2"/></svg>') : ""}") 10 10, auto`;
     }
-    if (tool === TOOLS2.LASER) {
+    if (tool === TOOLS.LASER) {
       return `url("data:image/svg+xml;base64,${typeof btoa !== "undefined" ? btoa('<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1971c2" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>') : ""}") 0 0, auto`;
     }
     return TOOL_CURSORS[tool] || "crosshair";
@@ -189,9 +173,9 @@ var useSketchStore = create((set, get) => ({
   toggleViewMode: () => {
     const entering = !get().viewMode;
     if (entering) {
-      set({ viewMode: true, zenMode: false, activeTool: TOOLS2.PAN, activeSidebar: null, selectedShapeSidebar: null });
+      set({ viewMode: true, zenMode: false, activeTool: TOOLS.PAN, activeSidebar: null, selectedShapeSidebar: null });
     } else {
-      set({ viewMode: false, activeTool: TOOLS2.SELECT, activeSidebar: null });
+      set({ viewMode: false, activeTool: TOOLS.SELECT, activeSidebar: null });
     }
   },
   toggleZenMode: () => set((s) => ({ zenMode: !s.zenMode, viewMode: false })),
@@ -286,7 +270,7 @@ function useSketchEngine(svgRef, ready = true) {
           setZoom: (zoom) => useSketchStore_default.setState({ zoom }),
           getState: () => useSketchStore_default.getState()
         };
-        const { SketchEngine } = await import("./.-JELL4EXO.js");
+        const { SketchEngine } = await import("./.-DL2EYLUR.js");
         if (cancelled) return;
         const engine = new SketchEngine(svgRef.current);
         await engine.init();
@@ -369,8 +353,8 @@ function SVGCanvas() {
     if (!svg) return;
     const handleCanvasClick = () => {
       const activeTool = useSketchStore_default.getState().activeTool;
-      if (activeTool === TOOLS2.ICON && !window.isIconToolActive) {
-        useSketchStore_default.getState().setActiveTool(TOOLS2.SELECT);
+      if (activeTool === TOOLS.ICON && !window.isIconToolActive) {
+        useSketchStore_default.getState().setActiveTool(TOOLS.SELECT);
       }
     };
     svg.addEventListener("pointerdown", handleCanvasClick);
@@ -641,26 +625,26 @@ var useUIStore_default = useUIStore;
 import { Fragment, jsx as jsx2, jsxs as jsxs2 } from "react/jsx-runtime";
 function getViewModeItems() {
   return [
-    { tool: TOOLS2.PAN, icon: "bxs-hand", title: "Pan (H)", key: "H" }
+    { tool: TOOLS.PAN, icon: "bxs-hand", title: "Pan (H)", key: "H" }
   ];
 }
 function getToolItems() {
   return [
-    { tool: TOOLS2.PAN, icon: "bxs-hand", title: "Pan (H)", key: "H" },
-    { tool: TOOLS2.SELECT, icon: "bxs-pointer", title: "Select (V)", key: "V" },
+    { tool: TOOLS.PAN, icon: "bxs-hand", title: "Pan (H)", key: "H" },
+    { tool: TOOLS.SELECT, icon: "bxs-pointer", title: "Select (V)", key: "V" },
     "spacer",
-    { tool: TOOLS2.RECTANGLE, icon: "bx-square", title: "Rectangle (R)", key: "R" },
-    { tool: TOOLS2.CIRCLE, icon: "bx-circle", title: "Circle (O)", key: "O" },
-    { tool: TOOLS2.LINE, icon: "bx-minus", title: "Line (L)", key: "L" },
-    { tool: TOOLS2.ARROW, icon: "bx-right-arrow-alt", title: "Arrow (A)", rotate: true, key: "A" },
-    { tool: TOOLS2.TEXT, icon: "bx-text", title: "Text (T)", key: "T" },
-    { tool: TOOLS2.FREEHAND, icon: "bx-pen", title: "Freehand (P)", key: "P" },
-    { tool: TOOLS2.IMAGE, icon: "bx-image-alt", title: "Image (9)", key: "9" },
-    { tool: TOOLS2.ICON, icon: "bx-wink-smile", title: "Icon (I)", key: "I" },
+    { tool: TOOLS.RECTANGLE, icon: "bx-square", title: "Rectangle (R)", key: "R" },
+    { tool: TOOLS.CIRCLE, icon: "bx-circle", title: "Circle (O)", key: "O" },
+    { tool: TOOLS.LINE, icon: "bx-minus", title: "Line (L)", key: "L" },
+    { tool: TOOLS.ARROW, icon: "bx-right-arrow-alt", title: "Arrow (A)", rotate: true, key: "A" },
+    { tool: TOOLS.TEXT, icon: "bx-text", title: "Text (T)", key: "T" },
+    { tool: TOOLS.FREEHAND, icon: "bx-pen", title: "Freehand (P)", key: "P" },
+    { tool: TOOLS.IMAGE, icon: "bx-image-alt", title: "Image (9)", key: "9" },
+    { tool: TOOLS.ICON, icon: "bx-wink-smile", title: "Icon (I)", key: "I" },
     "spacer",
-    { tool: TOOLS2.FRAME, icon: "bx-crop", title: "Frame (F)", key: "F" },
-    { tool: TOOLS2.LASER, icon: "bxs-magic-wand", title: "Laser (K)", key: "K" },
-    { tool: TOOLS2.ERASER, icon: "bxs-eraser", title: "Eraser (E)", key: "E" }
+    { tool: TOOLS.FRAME, icon: "bx-crop", title: "Frame (F)", key: "F" },
+    { tool: TOOLS.LASER, icon: "bxs-magic-wand", title: "Laser (K)", key: "K" },
+    { tool: TOOLS.ERASER, icon: "bxs-eraser", title: "Eraser (E)", key: "E" }
     // AI tool entry removed while the assistant is coming-soon.
     // Restore `{ tool: 'ai', icon: null, title: 'AI', isAI: true }` here
     // when the modal becomes a real feature again.
@@ -927,7 +911,7 @@ function RectangleSidebar() {
     setFillStyle(v);
     if (window.updateSelectedRectStyle) window.updateSelectedRectStyle({ fillStyle: v });
   }, []);
-  return /* @__PURE__ */ jsxs4(ShapeSidebar, { visible: activeTool === TOOLS2.RECTANGLE || selectedShapeSidebar === "rectangle", children: [
+  return /* @__PURE__ */ jsxs4(ShapeSidebar, { visible: activeTool === TOOLS.RECTANGLE || selectedShapeSidebar === "rectangle", children: [
     /* @__PURE__ */ jsxs4(
       ToolbarButton,
       {
@@ -1058,7 +1042,7 @@ function CircleSidebar() {
     setFillStyle(v);
     if (window.updateSelectedCircleStyle) window.updateSelectedCircleStyle({ fillStyle: v });
   }, []);
-  return /* @__PURE__ */ jsxs5(ShapeSidebar, { visible: activeTool === TOOLS2.CIRCLE || selectedShapeSidebar === "circle", children: [
+  return /* @__PURE__ */ jsxs5(ShapeSidebar, { visible: activeTool === TOOLS.CIRCLE || selectedShapeSidebar === "circle", children: [
     /* @__PURE__ */ jsxs5(
       ToolbarButton,
       {
@@ -1173,7 +1157,7 @@ function LineSidebar() {
     setEdge(v);
     if (window.updateSelectedLineStyle) window.updateSelectedLineStyle({ edge: v === "smooth" ? 1 : 5 });
   }, []);
-  return /* @__PURE__ */ jsxs6(ShapeSidebar, { visible: activeTool === TOOLS2.LINE || selectedShapeSidebar === "line", children: [
+  return /* @__PURE__ */ jsxs6(ShapeSidebar, { visible: activeTool === TOOLS.LINE || selectedShapeSidebar === "line", children: [
     /* @__PURE__ */ jsxs6(
       ToolbarButton,
       {
@@ -1310,7 +1294,7 @@ function ArrowSidebar() {
     if (window.arrowToolSettings) window.arrowToolSettings.curveAmount = v;
     if (window.updateSelectedArrowStyle) window.updateSelectedArrowStyle({ arrowCurveAmount: v });
   }, []);
-  return /* @__PURE__ */ jsxs7(ShapeSidebar, { visible: activeTool === TOOLS2.ARROW || selectedShapeSidebar === "arrow", children: [
+  return /* @__PURE__ */ jsxs7(ShapeSidebar, { visible: activeTool === TOOLS.ARROW || selectedShapeSidebar === "arrow", children: [
     /* @__PURE__ */ jsxs7(ToolbarButton, { icon: "bxs-right-arrow", tooltip: "Arrow head", children: [
       /* @__PURE__ */ jsx7("p", { className: "text-xs text-text-secondary uppercase tracking-wider mb-2", children: t("sidebar.sectionHeader.head") }),
       /* @__PURE__ */ jsx7("div", { className: "flex items-center gap-1", children: HEAD_STYLES.map((h) => /* @__PURE__ */ jsx7(
@@ -1448,7 +1432,7 @@ function PaintbrushSidebar() {
     setOpacity(v);
     if (window.updateSelectedFreehandStyle) window.updateSelectedFreehandStyle({ opacity: v });
   }, []);
-  return /* @__PURE__ */ jsxs8(ShapeSidebar, { visible: activeTool === TOOLS2.FREEHAND || selectedShapeSidebar === "paintbrush", children: [
+  return /* @__PURE__ */ jsxs8(ShapeSidebar, { visible: activeTool === TOOLS.FREEHAND || selectedShapeSidebar === "paintbrush", children: [
     /* @__PURE__ */ jsxs8(
       ToolbarButton,
       {
@@ -1617,7 +1601,7 @@ function TextSidebar() {
     setLanguage(lang);
     if (window.__setCodeLanguage) window.__setCodeLanguage(lang);
   }, []);
-  const visible = activeTool === TOOLS2.TEXT || activeTool === TOOLS2.CODE || selectedShapeSidebar === "text";
+  const visible = activeTool === TOOLS.TEXT || activeTool === TOOLS.CODE || selectedShapeSidebar === "text";
   return /* @__PURE__ */ jsxs9(Fragment3, { children: [
     /* @__PURE__ */ jsxs9(ShapeSidebar, { visible, children: [
       /* @__PURE__ */ jsxs9(
@@ -1743,7 +1727,7 @@ function FrameSidebar() {
   const [fillStyle, setFillStyle] = useState9("transparent");
   const [fillColor, setFillColor] = useState9("#1e1e28");
   useEffect5(() => {
-    if (selectedShapeSidebar === "frame" || activeTool === TOOLS2.FRAME) {
+    if (selectedShapeSidebar === "frame" || activeTool === TOOLS.FRAME) {
       const shape = typeof window !== "undefined" ? window.currentShape : null;
       if (shape && shape.shapeName === "frame") {
         if (shape.frameName) setFrameName(shape.frameName);
@@ -1795,7 +1779,7 @@ function FrameSidebar() {
       toggleAIModal();
     }
   }, [toggleAIModal]);
-  return /* @__PURE__ */ jsxs10(ShapeSidebar, { visible: activeTool === TOOLS2.FRAME || selectedShapeSidebar === "frame", children: [
+  return /* @__PURE__ */ jsxs10(ShapeSidebar, { visible: activeTool === TOOLS.FRAME || selectedShapeSidebar === "frame", children: [
     /* @__PURE__ */ jsxs10(ToolbarButton, { icon: "bxs-rename", tooltip: "Frame name", children: [
       /* @__PURE__ */ jsx10("p", { className: "text-xs text-text-muted uppercase tracking-wider mb-2", children: t("sidebar.sectionHeader.name") }),
       /* @__PURE__ */ jsx10(
@@ -2008,7 +1992,7 @@ function IconSidebar() {
   const { t } = useTranslation();
   const activeTool = useSketchStore_default((s) => s.activeTool);
   const setActiveTool = useSketchStore_default((s) => s.setActiveTool);
-  const visible = activeTool === TOOLS2.ICON;
+  const visible = activeTool === TOOLS.ICON;
   const [query, setQuery] = useState10("");
   const [category, setCategory] = useState10(null);
   const [icons, setIcons] = useState10([]);
@@ -2019,7 +2003,7 @@ function IconSidebar() {
     const handler = (e) => {
       if (e.key === "Escape") {
         e.stopPropagation();
-        setActiveTool(TOOLS2.SELECT);
+        setActiveTool(TOOLS.SELECT);
       }
     };
     document.addEventListener("keydown", handler, true);
@@ -2029,7 +2013,7 @@ function IconSidebar() {
     if (!visible) return;
     const svgEl = document.getElementById("freehand-canvas");
     if (!svgEl) return;
-    const handleCanvasClick = () => setActiveTool(TOOLS2.SELECT);
+    const handleCanvasClick = () => setActiveTool(TOOLS.SELECT);
     svgEl.addEventListener("mousedown", handleCanvasClick);
     return () => svgEl.removeEventListener("mousedown", handleCanvasClick);
   }, [visible, setActiveTool]);
@@ -2109,7 +2093,7 @@ function IconSidebar() {
             /* @__PURE__ */ jsx11(
               "button",
               {
-                onClick: () => setActiveTool(TOOLS2.SELECT),
+                onClick: () => setActiveTool(TOOLS.SELECT),
                 className: "w-6 h-6 flex items-center justify-center rounded-md text-white/40 hover:text-white/80 hover:bg-white/10 transition-colors duration-100",
                 title: "Close (Esc)",
                 children: /* @__PURE__ */ jsx11("i", { className: "bx bx-x text-lg" })
@@ -3222,20 +3206,20 @@ var COMMANDS = [
   { label: "Report an issue", icon: "bx-bug", section: "Links", action: "link:issues" }
 ];
 var TOOL_ACTION_MAP = {
-  "tool:pan": TOOLS2.PAN,
-  "tool:select": TOOLS2.SELECT,
-  "tool:rectangle": TOOLS2.RECTANGLE,
-  "tool:diamond": TOOLS2.RECTANGLE,
+  "tool:pan": TOOLS.PAN,
+  "tool:select": TOOLS.SELECT,
+  "tool:rectangle": TOOLS.RECTANGLE,
+  "tool:diamond": TOOLS.RECTANGLE,
   // diamond is a rectangle variant
-  "tool:circle": TOOLS2.CIRCLE,
-  "tool:arrow": TOOLS2.ARROW,
-  "tool:line": TOOLS2.LINE,
-  "tool:freehand": TOOLS2.FREEHAND,
-  "tool:text": TOOLS2.TEXT,
-  "tool:image": TOOLS2.IMAGE,
-  "tool:eraser": TOOLS2.ERASER,
-  "tool:laser": TOOLS2.LASER,
-  "tool:frame": TOOLS2.FRAME
+  "tool:circle": TOOLS.CIRCLE,
+  "tool:arrow": TOOLS.ARROW,
+  "tool:line": TOOLS.LINE,
+  "tool:freehand": TOOLS.FREEHAND,
+  "tool:text": TOOLS.TEXT,
+  "tool:image": TOOLS.IMAGE,
+  "tool:eraser": TOOLS.ERASER,
+  "tool:laser": TOOLS.LASER,
+  "tool:frame": TOOLS.FRAME
 };
 function CommandPalette() {
   const open = useUIStore_default((s) => s.commandPaletteOpen);
@@ -3323,7 +3307,7 @@ function CommandPalette() {
         if (typeof window.redo === "function") window.redo();
         break;
       case "selectAll":
-        useSketchStore_default.getState().setActiveTool(TOOLS2.SELECT);
+        useSketchStore_default.getState().setActiveTool(TOOLS.SELECT);
         if (window.multiSelection && window.shapes) {
           window.multiSelection.clearSelection();
           window.shapes.forEach((shape) => window.multiSelection.addShape(shape));
@@ -3885,6 +3869,14 @@ function HelpModal() {
 
 // src/react/LixSketchCanvas.jsx
 import { jsx as jsx22, jsxs as jsxs22 } from "react/jsx-runtime";
+var _saveScene = null;
+var _loadScene = null;
+async function ensureSceneSerializer() {
+  if (_saveScene && _loadScene) return;
+  const m = await import("./SceneSerializer-BS3HY5XR.js");
+  _saveScene = m.saveScene;
+  _loadScene = m.loadScene;
+}
 var SAVE_DEBOUNCE_MS = 1500;
 function LixSketchCanvas({
   initialScene = null,
@@ -3904,7 +3896,7 @@ function LixSketchCanvas({
   useEffect13(() => {
     if (!initialScene || bootstrapped) return;
     let cancelled = false;
-    function tryLoad() {
+    async function tryLoad() {
       if (cancelled) return;
       const serializer = window.__sceneSerializer;
       if (!serializer) {
@@ -3912,9 +3904,11 @@ function LixSketchCanvas({
         return;
       }
       try {
+        await ensureSceneSerializer();
+        if (cancelled) return;
         const data = typeof initialScene === "string" ? JSON.parse(initialScene) : initialScene;
         if (data && data.format === "lixsketch") {
-          loadScene(data);
+          _loadScene(data);
           lastSceneJsonRef.current = JSON.stringify(data);
         }
       } catch (err) {
@@ -3931,9 +3925,10 @@ function LixSketchCanvas({
     if (!onSceneChange) return;
     let svg = null;
     let observer = null;
-    const flush = () => {
+    const flush = async () => {
       try {
-        const scene = saveScene("Untitled");
+        await ensureSceneSerializer();
+        const scene = _saveScene("Untitled");
         const json = JSON.stringify(scene);
         if (json === lastSceneJsonRef.current) return;
         lastSceneJsonRef.current = json;
@@ -4066,17 +4061,34 @@ function installImageUploadBridge(onUploadImage) {
     }
   };
 }
+
+// src/react/toolsEnum.js
+var TOOLS2 = {
+  SELECT: "select",
+  PAN: "pan",
+  RECTANGLE: "rectangle",
+  CIRCLE: "circle",
+  LINE: "line",
+  ARROW: "arrow",
+  FREEHAND: "freehand",
+  TEXT: "text",
+  CODE: "code",
+  ERASER: "eraser",
+  LASER: "laser",
+  IMAGE: "image",
+  FRAME: "frame",
+  ICON: "icon"
+};
 export {
+  ALLOWED_IMAGE_EXTENSIONS,
   ALLOWED_IMAGE_MIME_TYPES,
   IMAGE_ACCEPT_ATTR,
   LixSketchCanvas,
   SHORTCUT_MAP,
-  TOOLS,
+  TOOLS2 as TOOLS,
   compressImage,
   installEngineShortcuts,
   isAllowedImage,
-  isAllowedImageDataUrl,
-  loadScene,
-  saveScene
+  isAllowedImageDataUrl
 };
 //# sourceMappingURL=index.js.map

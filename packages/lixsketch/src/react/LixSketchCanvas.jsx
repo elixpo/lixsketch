@@ -1,8 +1,21 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { saveScene, loadScene } from '../core/SceneSerializer.js';
 import { compressImage } from '../utils/imageCompressor.js';
+
+// SceneSerializer.js statically imports every shape module, which in turn
+// reference bare `svg` / `rough` globals that the engine only sets during
+// init(). Pulling it in statically here would crash with "svg is not
+// defined" before the engine has a chance to wire those globals up. So we
+// load it lazily, after the engine is up.
+let _saveScene = null;
+let _loadScene = null;
+async function ensureSceneSerializer() {
+  if (_saveScene && _loadScene) return;
+  const m = await import('../core/SceneSerializer.js');
+  _saveScene = m.saveScene;
+  _loadScene = m.loadScene;
+}
 
 import useSketchStore, { TOOLS } from './store/useSketchStore.js';
 import SVGCanvas from './components/canvas/SVGCanvas.jsx';
@@ -58,7 +71,7 @@ export default function LixSketchCanvas({
   useEffect(() => {
     if (!initialScene || bootstrapped) return;
     let cancelled = false;
-    function tryLoad() {
+    async function tryLoad() {
       if (cancelled) return;
       const serializer = window.__sceneSerializer;
       if (!serializer) {
@@ -66,9 +79,11 @@ export default function LixSketchCanvas({
         return;
       }
       try {
+        await ensureSceneSerializer();
+        if (cancelled) return;
         const data = typeof initialScene === 'string' ? JSON.parse(initialScene) : initialScene;
         if (data && data.format === 'lixsketch') {
-          loadScene(data);
+          _loadScene(data);
           lastSceneJsonRef.current = JSON.stringify(data);
         }
       } catch (err) {
@@ -86,9 +101,10 @@ export default function LixSketchCanvas({
     let svg = null;
     let observer = null;
 
-    const flush = () => {
+    const flush = async () => {
       try {
-        const scene = saveScene('Untitled');
+        await ensureSceneSerializer();
+        const scene = _saveScene('Untitled');
         const json = JSON.stringify(scene);
         if (json === lastSceneJsonRef.current) return;
         lastSceneJsonRef.current = json;

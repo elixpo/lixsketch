@@ -24,16 +24,18 @@
 
 export { default as LixSketchCanvas } from './LixSketchCanvas.jsx';
 
-// Re-exports from the engine that hosts may want for advanced cases.
+// Re-exports — we import each from its specific source file rather than
+// going through `../index.js`, which would pull SceneSerializer.js (and
+// the entire shape graph that references engine globals) into the entry
+// chunk. The engine entry stays available for hosts that explicitly want
+// raw scene IO (`import { saveScene } from '@elixpo/lixsketch'`).
+export { TOOLS } from './toolsEnum.js';
+export { compressImage } from '../utils/imageCompressor.js';
 export {
-  TOOLS,
-  saveScene,
-  loadScene,
-  compressImage,
   ALLOWED_IMAGE_MIME_TYPES,
   IMAGE_ACCEPT_ATTR,
+  ALLOWED_IMAGE_EXTENSIONS,
   isAllowedImage,
   isAllowedImageDataUrl,
-  installEngineShortcuts,
-  SHORTCUT_MAP,
-} from '../index.js';
+} from '../utils/allowedImageTypes.js';
+export { installEngineShortcuts, SHORTCUT_MAP } from '../EngineShortcuts.js';

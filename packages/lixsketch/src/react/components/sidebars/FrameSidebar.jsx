@@ -6,7 +6,7 @@ import ShapeSidebar, { ToolbarButton, Divider, LayerControls } from './ShapeSide
 import { useState, useCallback, useEffect } from 'react'
 import { useTranslation } from '../../hooks/useTranslation'
 import { compressImage } from '../../../utils/imageCompressor.js'
-import { IMAGE_ACCEPT_ATTR, isAllowedImage } from '../../../index.js'
+import { IMAGE_ACCEPT_ATTR, isAllowedImage } from '../../../utils/allowedImageTypes.js'
 
 const FILL_STYLES = [
   { id: 'transparent', label: 'None', icon: 'bx-x' },

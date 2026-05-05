@@ -20,6 +20,8 @@ const EXTERNAL = [
   'roughjs/bin/rough.js',
   'roughjs/bundled/rough.esm.js',
   'perfect-freehand',
+  'zustand',
+  'zustand/middleware',
 ];
 
 // ── React subpath (ESM with code splitting) ───────────────────────────

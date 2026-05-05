@@ -56,7 +56,8 @@
   },
   "dependencies": {
     "roughjs": "^4.6.6",
-    "perfect-freehand": "^1.2.3"
+    "perfect-freehand": "^1.2.3",
+    "boxicons": "^2.1.4"
   },
   "peerDependencies": {
     "react": ">=18.0.0",

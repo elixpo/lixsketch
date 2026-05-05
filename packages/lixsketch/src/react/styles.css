@@ -1,6 +1,8 @@
 /* @elixpo/lixsketch/react — host-agnostic styles for <LixSketchCanvas />.
- * No Tailwind, no icon-font dep. Tokens (--lixsketch-*) are the only
- * theming hooks; hosts can override them at any ancestor scope. */
+ * Bundles boxicons (used by toolbar + sidebars). Tokens (--lixsketch-*)
+ * are the theming hooks; hosts can override them at any ancestor scope. */
+
+@import 'boxicons/css/boxicons.min.css';
 
 .lixsketch-canvas-root {
   position: relative;

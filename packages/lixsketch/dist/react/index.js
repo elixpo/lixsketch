@@ -156,7 +156,7 @@ var useSketchStore = create((set, get) => ({
   setIsPanning: (v) => set({ isPanning: v }),
   setPanStart: (p) => set({ panStart: p }),
   // --- Canvas background ---
-  canvasBackground: "var(--lixsketch-bg, #ffffff)",
+  canvasBackground: "var(--lixsketch-bg, #13171C)",
   setCanvasBackground: (color) => set({ canvasBackground: color }),
   // --- Grid ---
   gridEnabled: false,
